@@ -267,6 +267,6 @@ Primary Auto Research sources reviewed for this deck:
 
 Dslide usage:
 
-#+begin_example
-M-x dslide-deck-start
-#+end_example
+#+begin_src emacs-lisp :eval never
+(dslide-deck-start)
+#+end_src
