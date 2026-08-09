@@ -1,0 +1,15 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "starintel-auto-research-adapter"
+version = "0.1.0"
+description = "Read-only Auto Research status adapter"
+requires-python = ">=3.11"
+
+[project.scripts]
+starintel-auto-research = "starintel_auto_research.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/starintel_auto_research"]
