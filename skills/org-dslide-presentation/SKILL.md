@@ -25,11 +25,11 @@ is companion spoken copy; it does not satisfy a deck request.
    - top-level headings are slide boundaries;
    - keep one idea per slide;
    - use short slide titles;
-   - use lists, `#+begin_example` blocks, quote blocks, and image links only where
-     they support the slide;
-   - reserve `#+begin_src` blocks for actual code; do not use them for commands,
-     terminal output, or text diagrams.
-3. Render commands, terminal output, and simple diagrams with `#+begin_example` / `#+end_example`. Use `#+begin_src` only for actual code. Keep demo checkpoints explicit. Put narrative
+   - use lists, example blocks, quote blocks, and image links only where they
+     support the slide;
+   - use `#+begin_src` blocks for code and commands;
+   - use `#+begin_example` blocks for plain text, terminal output, and text diagrams.
+3. Render code and commands with `#+begin_src`. Render terminal output and simple text diagrams with `#+begin_example` / `#+end_example`. Keep demo checkpoints explicit. Put narrative
    and recording direction in the sibling `script.org`, not instead of the deck.
 4. Include only verified product claims. Mark roadmap/review material as such.
 5. Put source links and research notes under a top-level `:noexport:` heading
