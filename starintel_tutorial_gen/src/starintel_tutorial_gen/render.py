@@ -23,7 +23,7 @@ def _steps(plan: TutorialPlan, *, include_production_notes: bool = False) -> lis
     for index, step in enumerate(plan.steps, 1):
         lines.extend([f"* {index}. {step.title}", "", step.body, ""])
         if step.command:
-            lines.extend(["#+begin_example", step.command, "#+end_example", ""])
+            lines.extend(["#+begin_src shell", step.command, "#+end_src", ""])
         if step.expected:
             lines.extend(["Expected:", f": {step.expected}", ""])
         lines.append("Sources: " + ", ".join(f"={ref}=" for ref in step.source_refs))
@@ -51,7 +51,7 @@ def render_presentation(plan: TutorialPlan) -> str:
     for step in plan.steps:
         lines.extend([f"* {step.title}", step.body, ""])
         if step.command:
-            lines.extend(["#+begin_example", step.command, "#+end_example", ""])
+            lines.extend(["#+begin_src shell", step.command, "#+end_src", ""])
         lines.append("Sources: " + ", ".join(f"={ref}=" for ref in step.source_refs))
         lines.append("")
     lines.extend(_source_block(plan))
