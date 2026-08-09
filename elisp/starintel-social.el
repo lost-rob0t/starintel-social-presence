@@ -186,6 +186,7 @@ With prefix argument OPEN, open the resulting HTML in a browser."
 (require 'starintel-blog-deslop)
 (require 'starintel-blog-gen)
 (require 'starintel-social-discovery)
+(require 'starintel-social-dslide)
 (defalias 'starintel-social-deslop #'starintel-blog-deslop)
 
 (defun starintel-social-blog-assist-region (beg end)
@@ -202,7 +203,9 @@ With prefix argument OPEN, open the resulting HTML in a browser."
           ("o" "Open workspace" starintel-social-open-workspace)
           ("b" "Blog" starintel-social-list-blog)
           ("n" "New post" starintel-social-new-post)
-          ("v" "Video source" starintel-social-open-video-source)]
+          ("v" "Video source" starintel-social-open-video-source)
+          ("p" "Open Dslide deck" starintel-social-dslide-open-current)
+          ("P" "Present Dslide deck" starintel-social-dslide-present)]
          ["Facts"
           ("f" "Fetch changes" starintel-social-fetch-changes)
           ("i" "Insert change" starintel-social-insert-change-at-point)
@@ -229,7 +232,11 @@ With prefix argument OPEN, open the resulting HTML in a browser."
          "starintel-social-insert-change-at-point"
          "starintel-blog-deslop"
          "starintel-social-blog-assist-region"
-         "starintel-social-export-current")
+         "starintel-social-export-current"
+         "starintel-social-dslide-open-current"
+         "starintel-social-dslide-start"
+         "starintel-social-dslide-develop"
+         "starintel-social-dslide-present")
        nil t)))))
 
 (provide 'starintel-social)
