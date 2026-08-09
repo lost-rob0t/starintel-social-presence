@@ -185,6 +185,7 @@ With prefix argument OPEN, open the resulting HTML in a browser."
   (add-to-list 'load-path (file-name-concat module-dir "blog-deslop")))
 (require 'starintel-blog-deslop)
 (require 'starintel-blog-gen)
+(defalias 'starintel-social-deslop #'starintel-blog-deslop)
 
 (defun starintel-social-blog-assist-region (beg end)
   "Request a non-destructive editorial suggestion for selected region BEG..END."
