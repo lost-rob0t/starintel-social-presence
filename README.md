@@ -76,6 +76,10 @@ The important variables are repository locations, not invented service credentia
 - `STARINTEL_AUTO_RESEARCH_DIR`
 - `STARINTEL_QUASAR_DIR`
 - `STARINTEL_QUASAR_UI_DIR`
+- `STARINTEL_REPOSITORIES_DIR` (optional parent directory for additional local
+  `star*` and `quasar*` checkouts)
+- `STARINTEL_WORKSPACE_ROOT` (optional parent containing versioned roots such
+  as `starintelV4`, `starintelV5`, and later)
 - `STARINTEL_API_URL` when a live server is intentionally used
 - optional model/provider settings for editorial assistance
 
@@ -134,6 +138,37 @@ PYTHONPATH=auto_research/src \
 python -m starintel_auto_research.cli \
   "$STARINTEL_AUTO_RESEARCH_DIR"
 ```
+
+## Discovery and production
+
+Discovery is deliberately a set of direct Emacs commands over local canonical
+checkouts, not an editorial service or a second StarIntel database.
+
+The installed `starintel-local-repositories` skill keeps these checkouts usable
+by refusing dirty/divergent repositories and refreshing clean ones only with
+`git pull --ff-only` during its first workspace pass. The resolved local
+catalog is cached under `.cache/`; use `M-x starintel-social-refresh-repositories`
+or an explicit agent refresh request when repositories are added, moved, or
+should be updated again. Paths are configured in `.env`, never embedded in
+agent prompts or source code.
+
+- `M-x starintel-social-findings` opens source-preserving Auto Dig candidates.
+- `M-x starintel-social-features` opens recent commits from configured local
+  StarIntel checkouts. Set `STARINTEL_REPOSITORIES_DIR` to additionally discover
+  immediate `star*` and `quasar*` Git repositories. Set
+  `STARINTEL_WORKSPACE_ROOT` to its parent to include every immediate
+  `starintelV*` root—V4, V5, and later—without maintaining a Python repository
+  list.
+- Press `RET` to inspect exact records, source URLs, commit IDs, and changed
+  files; press `t` to create a selected `editorial/topics/<slug>.org` topic.
+- `M-x starintel-social-topic-production` creates linked blog, `script.org`,
+  `present.org`, and `demo.org` source files. The topic keeps the source
+  references; generated Org starts as a human-reviewed scaffold.
+
+Feature views report Git facts. They do not claim that a commit is a completed
+feature until the editor inspects its linked code, documentation, and demo.
+Finding views preserve canonical records and sources; they do not infer a
+relationship from graph adjacency.
 
 ## Tutorial pipeline
 

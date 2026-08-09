@@ -1,0 +1,249 @@
+#+title: What Is StarIntel? — Video Script
+#+author: lost-rob0t
+#+options: toc:nil num:nil ^:nil
+#+startup: content
+
+* What Is StarIntel?
+
+StarIntel is a local-first intelligence platform. The short version is: it takes
+information from a bunch of different places, turns it into structured records,
+connects those records, runs analysis over them, and gives you a way to actually
+inspect how the result was produced.
+
+The project definition I keep coming back to is simple: collect, normalize,
+connect, search, analyze, and export structured information through actor-based
+components.
+
+That sentence is basically the whole project.
+
+* The Mission
+
+The mission is to turn scattered information into something you can genuinely
+investigate without losing the source trail along the way.
+
+I do not want a system where an AI model spits out a conclusion and the analyst
+just has to trust it. I want the original source, the normalized record, the
+relationship, the analysis run, and the final view to stay connected.
+
+Machines should be able to do the repetitive work. The person running the
+investigation should still be able to inspect it, interrupt it, change it, query
+it, and export it.
+
+* Not Just Another OSINT Tool
+
+StarIntel is not supposed to be one more isolated OSINT utility.
+
+The idea is to provide the layer that lets collectors, search, graph analysis,
+logic engines, enrichment tools, and exports operate on the same structured
+document model.
+
+A collector emits typed records. Those records can trigger actors. Actors can
+produce more records or relationships. Quasar can visualize them. Logic engines
+can reason over them. Another tool can export them.
+
+The important bit is that the data does not have to get reinvented at every
+step.
+
+* Source-First Data
+
+One of the biggest design rules is that a graph edge should not magically become
+a fact just because it looks convincing on screen.
+
+The research is moving toward explicitly separating source records, canonical
+entities, claims or assertions, evidence, relationships, and the activities that
+produced them.
+
+That gives you room for disagreement. Two sources can conflict. A fuzzy match can
+stay a fuzzy match. An inferred relationship can stay visibly inferred instead
+of pretending it came directly from a source.
+
+Similarity is not identity. Adjacency is not association. Inference is not source
+evidence.
+
+* Actors Everywhere
+
+The runtime is actor-oriented.
+
+Instead of building one giant pipeline, StarIntel can break work into supervised,
+specialized components. The current architecture research divides work into
+domains like HUMINT, social-media intelligence, signals, cyber, bug bounty, and
+threat intelligence.
+
+Inside those domains you can have collectors, parsers, enrichers, correlation
+workers, search workers, exporters, and whatever else the workflow needs.
+
+The actor model matters because these jobs fail in real life. Networks die.
+Providers rate-limit you. Parsers crash. Queues back up. A supervised runtime can
+restart or isolate pieces instead of taking the entire investigation down.
+
+* Quasar: The Investigation Workbench
+
+Quasar is the visual investigation side of StarIntel.
+
+At its core it is a typed graph editor. You can create and connect objects,
+inspect them, save and restore graph state, run actions against selections, and
+undo graph-operation batches.
+
+The larger investigation-workspace research goes further: the same identifiers
+can be projected into a graph, table, map, timeline, document viewer, and job
+trace.
+
+The graph is not supposed to be the database of truth. It is a view over the
+investigation.
+
+That distinction is huge because it means the UI can change without destroying
+the provenance model underneath it.
+
+* Automation Without The Black Box
+
+I absolutely want automation. I just do not want opaque automation.
+
+If a run changes the investigation, I want to be able to answer what triggered
+it, which actor ran, what version it was, which parameters it used, which records
+went in, what came out, and what failed or retried.
+
+So the model is not "automation suggests things and waits forever for a human."
+Configured automation should be able to execute end-to-end.
+
+The requirement is that the execution leaves a trail.
+
+* Logic As A Tool, Not An Oracle
+
+StarIntel also has a logic layer under active research.
+
+The direction is bounded, supervised reasoning using Prolog or other rule
+engines behind a stable interface.
+
+The cool part is not just that Prolog is involved. The cool part is attaching a
+derived result to the rule package, the exact input assertions, the engine and
+version, and proof or dependency information.
+
+If an input later gets retracted or changed, the derived result should not sit
+there forever looking current.
+
+That is the difference between "the computer inferred this" and an inference you
+can actually audit.
+
+* Star-Lang: Declarative Analysis Runs
+
+Star-Lang is the declarative workflow side of the project.
+
+The idea is to describe a durable analysis run in terms of typed inputs, actor
+effects, capabilities, dependencies, branches, checkpoints, retries, and failure
+handling.
+
+Instead of burying the whole investigation workflow inside application code, you
+describe the plan and let the runtime resolve where the work should execute.
+
+That also makes replay and resume much more realistic. If a long run dies halfway
+through, the system should know what completed and what still needs to happen.
+
+* One Investigation, Many Views
+
+A relationship graph is great for some questions and terrible for others.
+
+Sometimes I want a table. Sometimes I need a map. Sometimes the only useful view
+is a timeline. Sometimes I need to open the source document and see the exact
+passage behind a claim.
+
+The workspace research treats those as projections over shared identifiers,
+selections, queries, and evidence references.
+
+That means moving from graph to table to source document does not mean leaving
+one application and manually rebuilding context in another.
+
+* Auto Research + Auto Dig
+
+StarIntel also has systems for researching and documenting StarIntel itself.
+
+Auto Research is the Org-roam research and design graph. It tracks research
+questions, architectural decisions, implementation status, source links, and the
+history of why a design exists.
+
+Auto Dig is where canonical StarIntel records and source-preserving investigation
+material live.
+
+The editorial desk I am using for this video can consume both development facts
+and research state. That is useful because I do not want these videos to become
+marketing copy generated from my memory of what I think the project does.
+
+* What A Real Workflow Looks Like
+
+A basic StarIntel workflow looks something like this.
+
+You ingest a target or source document. It gets normalized into typed StarIntel
+records. Those records route to actors that know how to handle them. The actors
+can enrich them, correlate them, or send them through a logic query. New claims,
+relations, evidence, and run metadata get persisted. Then you inspect the result
+in Quasar and pivot into the next action.
+
+The output of one stage becomes typed input for the next stage.
+
+That loop is where StarIntel starts becoming more than a pile of tools.
+
+* Where This Is Going
+
+This slide is roadmap and research direction, not me claiming every item is
+already shipped.
+
+Some of the strongest ideas in the current research are a capability catalog
+generated from actor manifests, declarative playbooks, resumable analysis jobs,
+connector checkpoints, configurable correlation rules, warning-list datasets,
+analyst annotations, saved queries, change detection, alerts, and policy-aware
+exports.
+
+The common theme is composability.
+
+I do not want one enormous intelligence application where every feature knows
+every other feature. I want small capabilities with typed contracts that can be
+assembled into investigations.
+
+* Why Build It This Way?
+
+Most investigation tooling starts getting sketchy when context disappears.
+
+Sources get detached from claims. Graph edges look stronger than the evidence
+behind them. Fuzzy matches turn into identities. Automated pipelines become
+impossible to reproduce. Results get stranded in separate tools.
+
+StarIntel is being designed around the opposite assumption.
+
+Keep the data structured. Keep the source visible. Keep the machinery
+inspectable.
+
+* StarIntel
+
+So that is StarIntel.
+
+Collect. Normalize. Connect. Search. Analyze. Export.
+
+Then show your work.
+
+It is local-first, actor-driven, source-aware, and built to be extended. A lot of
+the architecture is still actively evolving, and that is exactly why I am going
+to keep making these videos: I can show the system becoming real instead of only
+showing the finished product at the end.
+
+StarIntel is at starintel.actor.
+
+* Production Notes :noexport:
+
+- Keep the first two slides visually sparse. Mission first.
+- When saying "graph edge should not magically become a fact," show a Quasar
+  graph and then zoom into a source/provenance panel if available.
+- For Actors Everywhere, use a simple supervisor-tree diagram rather than a wall
+  of text.
+- For One Investigation, Many Views, cut between graph/table/map/timeline UI if
+  current builds are demo-ready.
+- Treat STAR-RESEARCH-001, STAR-RESEARCH-007, QUASAR-RESEARCH-000, and
+  STAR-SERVER-000 according to their current research/design status. Verify code
+  before verbally calling a roadmap capability shipped.
+- End on the StarIntel site or a live Quasar view rather than a static logo.
+
+Primary research references:
+
+- https://github.com/lost-rob0t/starintel-auto-research/blob/main/roam/indexes/star-server/STAR-INDEX-000-fourth-generation.org
+- https://github.com/lost-rob0t/starintel-auto-research/blob/main/roam/research/star-server/QUASAR-RESEARCH-000-investigation-workspace-architecture.org
+- https://github.com/lost-rob0t/starintel-auto-research/blob/main/roam/research/star-server/STAR-RESEARCH-001-osint-feature-landscape.org
+- https://github.com/lost-rob0t/starintel-auto-research/blob/main/roam/research/star-server/STAR-RESEARCH-007-starintel-ontology-foundations.org
+- https://github.com/lost-rob0t/starintel-auto-research/blob/main/roam/design/star-server/STAR-SERVER-000-composable-intelligence-gservers.org
