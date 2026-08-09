@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export STARINTEL_SOCIAL_ROOT="$root"
+export PYTHONPATH="$root/change_fetcher/src:$root/auto_findings/src:$root/auto_research/src:$root/starintel_tutorial_gen/src${PYTHONPATH:+:$PYTHONPATH}"
+
+python3 -m compileall -q \
+  "$root/change_fetcher/src" \
+  "$root/auto_findings/src" \
+  "$root/auto_research/src" \
+  "$root/starintel_tutorial_gen/src" \
+  "$root/install_skills.py"
+
+pytest -q \
+  "$root/change_fetcher/tests" \
+  "$root/auto_findings/tests" \
+  "$root/auto_research/tests" \
+  "$root/starintel_tutorial_gen/tests"
+
+python3 "$root/install_skills.py" --list
+skill_tmp="$(mktemp -d)"
+trap 'rm -rf "$skill_tmp"' EXIT
+python3 "$root/install_skills.py" --target codex --destination "$skill_tmp/codex" --dry-run
+python3 "$root/install_skills.py" --target codex --destination "$skill_tmp/codex"
+python3 "$root/install_skills.py" --target codex --destination "$skill_tmp/codex"
+
+emacs --batch -Q \
+  --eval "(add-to-list 'load-path \"$root/elisp\")" \
+  -l "$root/elisp/starintel-social.el" \
+  --eval '(message "starintel-social loaded")'
+
+emacs --batch -Q -l "$root/scripts/export-smoke.el"
+
+if git -C "$root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  git -C "$root" diff --check
+fi
+
+if ! git -C "$root" check-ignore -q .env 2>/dev/null; then
+  grep -Eq '^\.env$' "$root/.gitignore"
+fi
+
+grep -Eq '^youtube/videos/' "$root/.gitignore"
+grep -Eq '^local-exports/' "$root/.gitignore"
+
+echo "all checks passed"

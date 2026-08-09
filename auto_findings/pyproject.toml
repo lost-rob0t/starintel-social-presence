@@ -1,0 +1,15 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "starintel-auto-findings"
+version = "0.1.0"
+description = "Read-only Auto Dig editorial candidate adapter"
+requires-python = ">=3.11"
+
+[project.scripts]
+starintel-auto-findings = "starintel_auto_findings.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/starintel_auto_findings"]

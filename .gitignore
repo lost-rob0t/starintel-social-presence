@@ -1,0 +1,62 @@
+# Secrets / local environment
+.env
+.env.*.local
+.direnv/
+.envrc.local
+
+# Nix
+result
+result-*
+
+# Python
+.venv/
+venv/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/*.egg-info/
+build/
+dist/
+
+# Emacs
+*~
+#*#
+.#*
+*.elc
+.emacs.desktop
+.emacs.desktop.lock
+
+# Generated/local exports
+_exports/
+exports/
+blog/exports/
+local-exports/
+_site/
+.cache/
+**/.cache/
+.generated/
+**/.generated/
+
+# Local research/download/model scratch
+scratch/
+research-scratch/
+downloads/
+.model-cache/
+models/
+
+# Video/audio recordings and renders (directory policy, not global extensions)
+youtube/videos/
+youtube/renders/
+youtube/rendered/
+youtube/audio/
+youtube/recordings/
+
+# Temporary editor/export artifacts
+*.tmp
+*.temp
+*.bak
+
+# Curated source assets under blog/**/assets/images and
+# youtube/video-source/**/assets/images remain trackable.

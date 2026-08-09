@@ -1,0 +1,15 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "starintel-change-fetcher"
+version = "0.1.0"
+description = "Deterministic Git change ingestion for the StarIntel editorial desk"
+requires-python = ">=3.11"
+
+[project.scripts]
+starintel-changes = "starintel_change_fetcher.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/starintel_change_fetcher"]

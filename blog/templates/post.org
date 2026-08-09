@@ -1,0 +1,8 @@
+#+title: ${title}
+#+date: ${date}
+#+author: ${author}
+#+description: ${description}
+#+slug: ${slug}
+#+tags: ${tags}
+
+* Draft

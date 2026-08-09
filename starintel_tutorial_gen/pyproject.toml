@@ -1,0 +1,15 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "starintel-tutorial-gen"
+version = "0.1.0"
+description = "Traceable tutorial IR and Org renderers for StarIntel"
+requires-python = ">=3.11"
+
+[project.scripts]
+starintel-tutorial = "starintel_tutorial_gen.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/starintel_tutorial_gen"]

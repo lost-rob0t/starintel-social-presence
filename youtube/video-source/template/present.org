@@ -1,0 +1,8 @@
+#+title: Video presentation
+#+description: dslide source presentation.
+
+* Opening
+
+* Demo
+
+* Close
