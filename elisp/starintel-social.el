@@ -207,7 +207,7 @@ With prefix argument OPEN, open the resulting HTML in a browser."
          ["Edit"
           ("d" "Deslop lint" starintel-blog-deslop)
           ("a" "Assist region" starintel-social-blog-assist-region)
-          ("e" "Export HTML" starintel-social-export-current)]])))
+          ("e" "Export HTML" starintel-social-export-current)]]))
   (defun starintel-social-menu ()
     "Fallback StarIntel command menu when transient is unavailable."
     (interactive)
