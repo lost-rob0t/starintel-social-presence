@@ -185,6 +185,7 @@ With prefix argument OPEN, open the resulting HTML in a browser."
   (add-to-list 'load-path (file-name-concat module-dir "blog-deslop")))
 (require 'starintel-blog-deslop)
 (require 'starintel-blog-gen)
+(require 'starintel-social-discovery)
 (defalias 'starintel-social-deslop #'starintel-blog-deslop)
 
 (defun starintel-social-blog-assist-region (beg end)
@@ -204,7 +205,12 @@ With prefix argument OPEN, open the resulting HTML in a browser."
           ("v" "Video source" starintel-social-open-video-source)]
          ["Facts"
           ("f" "Fetch changes" starintel-social-fetch-changes)
-          ("i" "Insert change" starintel-social-insert-change-at-point)]
+          ("i" "Insert change" starintel-social-insert-change-at-point)
+          ("F" "Findings" starintel-social-findings)
+          ("N" "New features" starintel-social-features)]
+         ["Production"
+          ("t" "Topic from selection" starintel-social-discovery-topic)
+          ("y" "Create blog/video sources" starintel-social-topic-production)]
          ["Edit"
           ("d" "Deslop lint" starintel-blog-deslop)
           ("a" "Assist region" starintel-social-blog-assist-region)
