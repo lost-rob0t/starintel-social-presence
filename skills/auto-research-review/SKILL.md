@@ -5,6 +5,9 @@ description: Surface Auto Research documents with their actual workflow status s
 
 # Auto Research review
 
+Use the `starintel-local-repositories` workflow first so the configured
+`STARINTEL_AUTO_RESEARCH_DIR` checkout is current and its exact revision is recorded.
+
 1. Read the canonical Org document and its `#+status` value.
 2. Preserve path, title, description, status, and relevant linked nodes.
 3. Treat only explicitly `APPROVED` material as approved.
