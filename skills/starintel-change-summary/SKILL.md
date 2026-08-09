@@ -7,6 +7,10 @@ description: Turn verified Git change records from StarIntel repositories into c
 
 Use `change_fetcher` or direct repository evidence first. Preserve repository, commit SHA, timestamp, changed paths, and comparison range.
 
+Use the `starintel-local-repositories` workflow before collection. Enumerate
+the configured `.env` repository paths and any qualifying checkout beneath
+`STARINTEL_REPOSITORIES_DIR`; do not rely on a fixed prompt list.
+
 1. Read the raw normalized changes before summarizing.
 2. Group changes only when the shared topic is visible in paths or commit messages.
 3. Describe what changed, not what you assume the change enables.
