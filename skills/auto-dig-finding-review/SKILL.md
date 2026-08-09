@@ -7,6 +7,9 @@ description: Review source-backed Auto Dig records as candidate stories while pr
 
 Treat the Auto Dig repository's executable schema and canonical database as authority.
 
+Use the `starintel-local-repositories` workflow first so the configured
+`STARINTEL_AUTO_DIG_DIR` checkout is current and its exact revision is recorded.
+
 1. Read canonical `db/<dtype>/<id>.ndjson` records or the repository's own validated query output.
 2. Preserve `_id`, dtype, dataset, sources, and source path in the review record.
 3. A relation or graph edge may be described when the record explicitly represents it.
