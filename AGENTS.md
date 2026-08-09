@@ -20,6 +20,11 @@ Read, in order:
 
 When work depends on another StarIntel repository, inspect that repository's current `AGENTS.md`, schema, code, and status conventions before writing an adapter.
 
+Local checkout paths belong in the gitignored `.env`.  Before treating a local
+repository as current evidence, inspect its worktree and upstream state.  A
+clean checkout may be refreshed with `git pull --ff-only`; never overwrite a
+dirty or divergent checkout.
+
 ## Git
 
 - Always create a branch before implementation.
