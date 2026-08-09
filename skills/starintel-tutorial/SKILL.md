@@ -7,6 +7,10 @@ description: Build tutorial source and plans from current StarIntel repositories
 
 Tutorials must be grounded in current StarIntel state.
 
+Use the `starintel-local-repositories` workflow before extracting commands or
+demo steps. A command from a dirty, behind, or divergent checkout is not a
+verified demo command.
+
 1. Inspect the relevant repository and its local instructions.
 2. Capture exact source references and commands in `TutorialSource` material.
 3. Separate prerequisites, steps, expected results, and troubleshooting.
