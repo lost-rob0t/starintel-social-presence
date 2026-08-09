@@ -76,6 +76,8 @@ The important variables are repository locations, not invented service credentia
 - `STARINTEL_AUTO_RESEARCH_DIR`
 - `STARINTEL_QUASAR_DIR`
 - `STARINTEL_QUASAR_UI_DIR`
+- `STARINTEL_REPOSITORIES_DIR` (optional parent directory for additional local
+  `star*` and `quasar*` checkouts)
 - `STARINTEL_API_URL` when a live server is intentionally used
 - optional model/provider settings for editorial assistance
 
@@ -139,6 +141,11 @@ python -m starintel_auto_research.cli \
 
 Discovery is deliberately a set of direct Emacs commands over local canonical
 checkouts, not an editorial service or a second StarIntel database.
+
+The installed `starintel-local-repositories` skill keeps these checkouts usable
+by refusing dirty/divergent repositories and refreshing clean ones only with
+`git pull --ff-only`. Paths are configured in `.env`, never embedded in agent
+prompts or source code.
 
 - `M-x starintel-social-findings` opens source-preserving Auto Dig candidates.
 - `M-x starintel-social-features` opens recent commits from configured local
