@@ -16,6 +16,21 @@ When set, immediate Git repositories whose name or origin mentions StarIntel
 are included alongside the explicitly configured repository paths."
   :type '(choice (const :tag "Disabled" nil) directory))
 
+(defcustom starintel-social-workspace-root
+  (let ((value (getenv "STARINTEL_WORKSPACE_ROOT")))
+    (and value (not (string-empty-p value)) (expand-file-name value)))
+  "Optional parent containing versioned StarIntel workspace roots.
+Immediate directories named `starintelV*` are searched one level deep for Git
+checkouts.  This makes V4, V5, and later trees available without a hard-coded
+repository list or an unbounded filesystem crawl."
+  :type '(choice (const :tag "Disabled" nil) directory))
+
+(defcustom starintel-social-repository-catalog-file
+  (starintel-social--path ".cache" "local-repositories")
+  "Local cache of discovered checkout paths.
+The catalog is built on first use and reused until an explicit refresh."
+  :type 'file)
+
 (defvar-local starintel-social--discovery-items nil)
 (defvar-local starintel-social--discovery-kind nil)
 
@@ -33,7 +48,27 @@ are included alongside the explicitly configured repository paths."
         (string-trim (buffer-string))
       "")))
 
-(defun starintel-social--configured-repositories ()
+(defun starintel-social--repository-search-roots ()
+  (let ((roots (delq nil (list starintel-social-repositories-directory))))
+    (when (file-directory-p starintel-social-workspace-root)
+      (dolist (directory (directory-files starintel-social-workspace-root t directory-files-no-dot-files-regexp))
+        (when (and (file-directory-p directory)
+                   (string-match-p "\\`starintelV[[:digit:]]+" (file-name-nondirectory directory)))
+          (push directory roots))))
+    (delete-dups roots)))
+
+(defun starintel-social--cached-repository-paths ()
+  (when (file-readable-p starintel-social-repository-catalog-file)
+    (seq-filter #'starintel-social--git-directory-p
+                (split-string (with-temp-buffer
+                                (insert-file-contents starintel-social-repository-catalog-file)
+                                (buffer-string)) "\n" t))))
+
+(defun starintel-social--write-repository-cache (paths)
+  (make-directory (file-name-directory starintel-social-repository-catalog-file) t)
+  (write-region (concat (string-join paths "\n") "\n") nil starintel-social-repository-catalog-file))
+
+(defun starintel-social--configured-repositories (&optional refresh)
   "Return available local StarIntel repositories without a hard-coded catalog."
   (let* ((environment-names '("STARINTEL_SERVER_DIR" "STARINTEL_AUTO_DIG_DIR"
                               "STARINTEL_AUTO_RESEARCH_DIR" "STARINTEL_QUASAR_DIR"
@@ -44,16 +79,29 @@ are included alongside the explicitly configured repository paths."
                                                 (expand-file-name value))))
                                        environment-names)))
          (discovered
-          (when (file-directory-p starintel-social-repositories-directory)
-            (seq-filter
-             (lambda (directory)
-               (and (file-directory-p directory)
-                    (starintel-social--git-directory-p directory)
-                    (string-match-p "star\\|quasar" (downcase (file-name-nondirectory directory)))))
-             (directory-files starintel-social-repositories-directory t directory-files-no-dot-files-regexp))))
-         (repositories (delete-dups (append configured discovered))))
+          (apply #'append
+                 (mapcar
+                  (lambda (root)
+                    (seq-filter
+                     (lambda (directory)
+                       (and (file-directory-p directory)
+                            (starintel-social--git-directory-p directory)
+                            (string-match-p "star\\|quasar" (downcase (file-name-nondirectory directory)))))
+                     (directory-files root t directory-files-no-dot-files-regexp)))
+                  (starintel-social--repository-search-roots))))
+         (repositories (or (and (not refresh) (starintel-social--cached-repository-paths))
+                           (delete-dups (append configured discovered)))))
+    (when (or refresh (not (file-exists-p starintel-social-repository-catalog-file)))
+      (starintel-social--write-repository-cache repositories))
     (mapcar (lambda (directory) (cons (starintel-social--repository-label directory) directory))
             (seq-filter #'starintel-social--git-directory-p repositories))))
+
+(defun starintel-social-refresh-repositories ()
+  "Explicitly rediscover local StarIntel checkouts and replace the local cache."
+  (interactive)
+  (let ((repositories (starintel-social--configured-repositories t)))
+    (message "Refreshed %d local StarIntel repositories" (length repositories))
+    repositories))
 
 (defun starintel-social--call-python-json (module &rest arguments)
   (let ((process-environment (copy-sequence process-environment))
