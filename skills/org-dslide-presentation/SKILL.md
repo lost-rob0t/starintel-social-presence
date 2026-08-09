@@ -27,8 +27,9 @@ is companion spoken copy; it does not satisfy a deck request.
    - use short slide titles;
    - use lists, `#+begin_example` blocks, quote blocks, and image links only where
      they support the slide;
-   - never use `#+begin_src` blocks in generated deck or script source.
-3. Render commands, terminal output, and simple diagrams with `#+begin_example` / `#+end_example`, never `#+begin_src`. Keep demo checkpoints explicit. Put narrative
+   - reserve `#+begin_src` blocks for actual code; do not use them for commands,
+     terminal output, or text diagrams.
+3. Render commands, terminal output, and simple diagrams with `#+begin_example` / `#+end_example`. Use `#+begin_src` only for actual code. Keep demo checkpoints explicit. Put narrative
    and recording direction in the sibling `script.org`, not instead of the deck.
 4. Include only verified product claims. Mark roadmap/review material as such.
 5. Put source links and research notes under a top-level `:noexport:` heading
