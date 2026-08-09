@@ -135,6 +135,27 @@ python -m starintel_auto_research.cli \
   "$STARINTEL_AUTO_RESEARCH_DIR"
 ```
 
+## Discovery and production
+
+Discovery is deliberately a set of direct Emacs commands over local canonical
+checkouts, not an editorial service or a second StarIntel database.
+
+- `M-x starintel-social-findings` opens source-preserving Auto Dig candidates.
+- `M-x starintel-social-features` opens recent commits from configured local
+  StarIntel checkouts. Set `STARINTEL_REPOSITORIES_DIR` to additionally discover
+  immediate `star*` and `quasar*` Git repositories without maintaining a Python
+  repository list.
+- Press `RET` to inspect exact records, source URLs, commit IDs, and changed
+  files; press `t` to create a selected `editorial/topics/<slug>.org` topic.
+- `M-x starintel-social-topic-production` creates linked blog, `script.org`,
+  `present.org`, and `demo.org` source files. The topic keeps the source
+  references; generated Org starts as a human-reviewed scaffold.
+
+Feature views report Git facts. They do not claim that a commit is a completed
+feature until the editor inspects its linked code, documentation, and demo.
+Finding views preserve canonical records and sources; they do not infer a
+relationship from graph adjacency.
+
 ## Tutorial pipeline
 
 The first vertical slice uses a deterministic intermediate representation:
