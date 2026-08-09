@@ -178,12 +178,16 @@ The first vertical slice uses a deterministic intermediate representation:
 real facts -> TutorialSource -> TutorialPlan -> blog.org / script.org / present.org
 ```
 
-Try it with a JSON `TutorialPlan`:
+Render the presentation directly into its canonical dslide source:
 
 ```bash
 PYTHONPATH=starintel_tutorial_gen/src \
-python -m starintel_tutorial_gen.cli plan.json --format blog --output /tmp/tutorial.org
+python -m starintel_tutorial_gen.cli plan.json --format present \
+  --output youtube/video-source/<slug>/present.org
 ```
+
+A request for a deck must update that `present.org` file; a script or outline
+alone is not a presentation deliverable.
 
 The input `TutorialPlan` contains traced `TutorialSource` records, and every rendered step retains its source references so a later editor can inspect where claims came from.
 
