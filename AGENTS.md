@@ -116,6 +116,19 @@ Org is authoritative for blog posts, scripts, and presentations. Keep source rea
 
 Do not stuff site HTML/CSS into each post. Export configuration belongs in the Emacs exporter/theme.
 
+## Dslide deliverables
+
+When the request is to create or update a presentation, slide deck, dslide, or
+video slides, the deliverable is the actual
+`youtube/video-source/<slug>/present.org` file. Create or update that file in
+the same change; do not stop at a script, a topic scaffold, instructions, or a
+description of a deck.
+
+- Use top-level Org headings as slide boundaries and keep one clear idea per slide.
+- Keep speaker copy in `script.org`; it is not a substitute for `present.org`.
+- Put provenance and implementation/research caveats in a `:noexport:` section.
+- Do not commit rendered video or local presentation exports.
+
 ## Deslop/editorial cleanup
 
 Start with deterministic, inspectable lint rules. Report locations/reasons. Do not automatically destroy the author's voice.
