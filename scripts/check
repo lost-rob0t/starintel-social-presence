@@ -28,7 +28,10 @@ python3 "$root/install_skills.py" --target codex --destination "$skill_tmp/codex
 emacs --batch -Q \
   --eval "(add-to-list 'load-path \"$root/elisp\")" \
   -l "$root/elisp/starintel-social.el" \
-  --eval '(message "starintel-social loaded")'
+  --eval '(unless (and (fboundp (quote starintel-social-findings))
+                       (fboundp (quote starintel-social-features))
+                       (fboundp (quote starintel-social-topic-production)))
+            (error "discovery commands failed to load"))'
 
 emacs --batch -Q -l "$root/scripts/export-smoke.el"
 
