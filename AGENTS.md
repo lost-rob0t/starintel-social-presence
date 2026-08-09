@@ -126,6 +126,7 @@ description of a deck.
 
 - Use top-level Org headings as slide boundaries and keep one clear idea per slide.
 - Keep speaker copy in `script.org`; it is not a substitute for `present.org`.
+- Use `#+begin_src` for code and commands. Use `#+begin_example` / `#+end_example` for plain text, terminal output, and diagrams.
 - Put provenance and implementation/research caveats in a `:noexport:` section.
 - Do not commit rendered video or local presentation exports.
 
