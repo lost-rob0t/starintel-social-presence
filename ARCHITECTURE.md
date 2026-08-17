@@ -135,6 +135,8 @@ media-gen accepts ground, validated Prolog request data and produces an inspecta
 
 LLM output is data to validate, not executable Prolog.
 
+Mutable concrete model identifiers are configuration. An unset model remains visibly `unconfigured`; the expert does not silently embed a stale model name as permanent truth.
+
 ### generic media request
 
 The reusable `prolog/media/` layer owns provider-neutral image/video/voice request terms. It contains no StarIntel, Emacs, or social-platform assumptions.
@@ -147,25 +149,47 @@ execute predicate
   -> optional caller await
 ```
 
+Remote video generation is represented explicitly:
+
+```text
+video request
+  -> submit
+  -> remote_media_job(remote_id, request identity, remote_pending)
+  -> persist job handle
+  -> poll or cancel later
+  -> artifact
+```
+
+A graph handler already executing inside a bounded worker calls the trusted execute ABI directly rather than starting and waiting on a nested Future.
+
 ## media-gen workflow
 
-`rlm_graph` is the media workflow engine. The first executable vertical slice performs:
+`rlm_graph` is the media workflow engine. The executable vertical slice performs:
 
 ```text
 expert plan
   -> generation context
   -> provider request
-  -> fake provider execution
+  -> fake keyframe generation
   -> human-review interrupt
-  -> resume
+  -> resume approved
+  -> fake remote-video submit
+  -> persist remote job ID
+  -> remote-pending interrupt
+  -> process may exit
+  -> fresh process reopens checkpoint
+  -> resume poll
+  -> video artifact
   -> completion
 ```
 
-The fake provider uses the same generic media request boundary as future live providers, allowing graph/async behavior to be tested without spending money.
+The fake provider uses the same generic media request and remote-job boundaries as future live providers, allowing graph/async behavior to be tested without spending money.
 
-Long remote-provider jobs must later persist stable remote job IDs and resume polling without holding an `rlm_async` worker asleep. Human review likewise uses graph interruption/pending-operation semantics rather than blocking a worker.
+The repository gate launches three separate SWI-Prolog processes against the same persistent graph backend: process 1 reaches the human-review checkpoint, process 2 resumes approval and persists exactly one remote job, and process 3 reloads that job and completes it. A graph `submit_count` reducer remains exactly `1` through completion, proving that restart after a persisted remote job does not rerun the submit node.
 
-Prolog-RLM issue #57 currently tracks the broader once-only external-effect identity ledger. media-gen must not invent a competing generic ledger; paid/retry-sensitive provider integration must either reuse that upstream mechanism when available or remain bounded until the required upstream invariant exists.
+No worker sleeps between remote submit and polling. The `remote_pending` graph interrupt releases execution just like the human-review interrupt does.
+
+This restart guarantee begins once the remote job observation has been durably checkpointed. Prolog-RLM issue #57 still tracks the broader once-only external-effect identity problem, including the pathological crash window where a real provider accepted a paid effect but the process died before the observation could be persisted. media-gen must not invent a competing generic ledger for that boundary.
 
 ## Deep research
 
@@ -196,7 +220,7 @@ Org remains the canonical editable source.
 
 Generated HTML is an export artifact. Video recordings/renders are local artifacts. Curated images used as article/presentation source assets may be tracked.
 
-For media projects, `assets.json` remains the intended canonical project asset manifest. Large generated payloads belong outside Prolog facts; durable state should retain stable identifiers/artifact references instead.
+For media projects, `assets.json` is canonical project asset state. Prolog loads, validates, writes, and generates the human-readable Org view. Large generated payloads belong outside Prolog facts; durable state retains stable paths, URLs, artifact refs, asset IDs, remote provider IDs, and structured provenance instead.
 
 ## Model/vendor independence
 
