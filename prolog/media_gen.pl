@@ -13,6 +13,9 @@
             image_generate_async/2,
             video_generate_async/2,
             voice_generate_async/2,
+            video_submit_remote_async/2,
+            video_poll_remote_async/2,
+            video_cancel_remote_async/2,
             media_future_await/2,
             media_future_destroy/1,
             media_graph_backend_open/2,
@@ -67,6 +70,18 @@ video_generate_async(Request, Future) :-
 voice_generate_async(Request, Future) :-
     media_gen_runtime_ready,
     media:voice_generate_async(Request, Future).
+
+video_submit_remote_async(Request, Future) :-
+    media_gen_runtime_ready,
+    media:video_submit_remote_async(Request, Future).
+
+video_poll_remote_async(Job, Future) :-
+    media_gen_runtime_ready,
+    media:video_poll_remote_async(Job, Future).
+
+video_cancel_remote_async(Job, Future) :-
+    media_gen_runtime_ready,
+    media:video_cancel_remote_async(Job, Future).
 
 media_future_await(Future, Outcome) :-
     media_gen_runtime_ready,
