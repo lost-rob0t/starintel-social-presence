@@ -18,6 +18,24 @@ pytest -q \
   "$root/auto_research/tests" \
   "$root/starintel_tutorial_gen/tests"
 
+swipl -q \
+  -g "use_module('$root/prolog/media_gen.pl'), media_gen:media_gen_ready, halt."
+
+swipl -q \
+  -g "use_module('$root/prolog/media_gen_runtime.pl'), media_gen_runtime:media_gen_runtime_ready, use_module('$root/prolog/media/media.pl'), current_predicate(media:media_generate_async/2), current_predicate(media:video_submit_remote_async/2), halt."
+
+(
+  cd "$root/test"
+  swipl -q -s run.pl
+)
+
+restart_dir="$(mktemp -d)"
+checkpoint="$restart_dir/media-graph-checkpoint.db"
+swipl -q -s "$root/test/media_graph_restart_phase1.pl" -- "$checkpoint"
+swipl -q -s "$root/test/media_graph_restart_phase2.pl" -- "$checkpoint"
+swipl -q -s "$root/test/media_graph_restart_phase3.pl" -- "$checkpoint"
+rm -rf "$restart_dir"
+
 python3 "$root/install_skills.py" --list
 skill_tmp="$(mktemp -d)"
 trap 'rm -rf "$skill_tmp"' EXIT
@@ -30,8 +48,11 @@ emacs --batch -Q \
   -l "$root/elisp/starintel-social.el" \
   --eval '(unless (and (fboundp (quote starintel-social-findings))
                        (fboundp (quote starintel-social-features))
-                       (fboundp (quote starintel-social-topic-production)))
-            (error "discovery commands failed to load"))'
+                       (fboundp (quote starintel-social-topic-production))
+                       (fboundp (quote starintel-social-media-route))
+                       (fboundp (quote starintel-social-media-template))
+                       (fboundp (quote media-gen-expert-shell)))
+            (error "StarIntel social commands failed to load"))'
 
 emacs --batch -Q -l "$root/scripts/export-smoke.el"
 

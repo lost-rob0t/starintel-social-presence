@@ -1,0 +1,337 @@
+#+title: media-gen — Prolog-RLM Media Generation Workflow
+#+date: 2026-08-17
+#+description: Run and inspect the Prolog-RLM-first media-gen vertical slice.
+
+* What media-gen is
+
+=media-gen= is a SWI-Prolog application built on =prolog-rlm=.
+
+The canonical path is:
+
+#+begin_example
+Emacs
+  -> media-gen
+  -> Prolog-RLM
+       -> rlm_graph
+       -> rlm_async
+       -> rlm_chain / artifacts / authority as required
+  -> media providers
+#+end_example
+
+Python is not the media-gen application runtime.
+
+The current executable slice intentionally stops before paid live media calls. It proves the deterministic expert, character resolution, =assets.json= authority, provider-neutral request boundary, asynchronous Future execution, explicit remote-video job state, durable graph interrupt/resume across fresh SWI processes, Org production template, and Emacs/comint integration with a fake provider that uses the same generic API.
+
+* 1. Enter the development environment
+
+#+begin_src sh
+cp .env.example .env
+direnv allow
+#+end_src
+
+The Nix shell provides SWI-Prolog and pins the inspected =prolog-rlm= revision used by this slice. It exports that checkout through =PROLOG_RLM_DIR=.
+
+Set =PROLOG_RLM_DIR= manually only when deliberately testing another inspected local checkout.
+
+* 2. Verify the runtime
+
+#+begin_src sh
+swipl -q -s bin/media-gen.pl -- ready
+#+end_src
+
+Expected:
+
+#+begin_example
+media-gen ready
+#+end_example
+
+List declared expert branches:
+
+#+begin_src sh
+swipl -q -s bin/media-gen.pl -- branches
+#+end_src
+
+Every declared branch must have a fixture in the PlUnit suite.
+
+* 3. Inspect deterministic routing
+
+StarIntel-native request:
+
+#+begin_src sh
+swipl -q -s bin/media-gen.pl -- route image starintel-brand \
+  "StarIntel-chan explains Star-Expert in front of the graph"
+#+end_src
+
+A fictional-character request:
+
+#+begin_src sh
+swipl -q -s bin/media-gen.pl -- route image comic-explainer \
+  "Morty asks Rick to explain StarIntel"
+#+end_src
+
+A video-stage request:
+
+#+begin_src sh
+swipl -q -s bin/media-gen.pl -- route video image-to-video \
+  "Animate Morty staring at the graph"
+#+end_src
+
+The returned decision contains the reference class, matched canonical characters, provider/model configuration, stable expert branches, reason, and confidence.
+
+Concrete model identifiers are configuration. Expert rules choose the provider/capability route rather than treating a mutable model ID as permanent truth. Unconfigured model IDs remain visibly =unconfigured= instead of silently pinning stale provider names.
+
+* 4. Character resolution
+
+Character resolution is deterministic Prolog first.
+
+Examples:
+
+#+begin_example
+Morty
+  -> Morty Smith
+
+Rick
+  -> ambiguous by itself
+
+Rick and Morty: Rick explains the graph
+  -> Rick Sanchez
+  -> Morty Smith
+#+end_example
+
+The current built-in catalog is a small fixture-quality seed, not the final mega catalog. The large Wikidata/Wikimedia-backed catalog remains follow-up work and should be loaded/queryable from Prolog rather than requiring the retired Python application layer.
+
+The old Python OFFSET-paged catalog builder was deliberately removed instead of mechanically ported. ADAR #6 owns a scalable structured-source replacement.
+
+* 5. assets.json authority
+
+=assets.json= is canonical project asset state.
+
+The Prolog asset layer supports:
+
+#+begin_src prolog
+media_assets_load(Path, Manifest).
+media_assets_ensure(Path, Title, Manifest).
+media_asset_register(Path, Asset, Updated).
+media_assets_org(Path, OrgView).
+#+end_src
+
+Durable asset metadata is normalized to ground named Prolog dicts. Large payloads remain external; manifest facts retain stable paths, URLs, artifact refs, asset IDs, or Wikidata/Wikimedia identifiers.
+
+The generated Org asset view is inspectable convenience, not the canonical state.
+
+* 6. Generate the Org production template
+
+#+begin_src sh
+swipl -q -s bin/media-gen.pl -- template \
+  "Rick Explains StarIntel" both comic-explainer \
+  "Morty thinks StarIntel is ETL. Rick explains the evidence graph and Star-Expert. Morty understands it, then fumbles again."
+#+end_src
+
+The template preserves the human-review gate, expression/continuity notes, actual-input-asset requirement, and async continuation rule.
+
+* 7. Generic async media API
+
+The reusable provider-neutral layer lives under:
+
+#+begin_example
+prolog/media/
+#+end_example
+
+It contains no StarIntel, Emacs, or publishing assumptions.
+
+Immediate media generation is async-first:
+
+#+begin_src prolog
+image_generate_async(Request, Future).
+video_generate_async(Request, Future).
+voice_generate_async(Request, Future).
+#+end_src
+
+Remote video providers use explicit serializable job state:
+
+#+begin_src prolog
+video_submit_remote_async(Request, Future).
+video_poll_remote_async(RemoteJob, Future).
+video_cancel_remote_async(RemoteJob, Future).
+#+end_src
+
+The implementation direction is:
+
+#+begin_example
+canonical execute predicate
+  -> rlm_async Future
+  -> optional caller await
+#+end_example
+
+Code already executing inside an =rlm_graph= worker calls the trusted execute predicates directly rather than creating and blocking on nested Futures.
+
+The deterministic fake provider supports image, video, voice, remote video submission, polling, cancellation, malformed results, and failures so orchestration can be tested without credentials or cost.
+
+* 8. Durable media graph
+
+The current real =rlm_graph= workflow is:
+
+#+begin_example
+expert_plan
+  -> compile_context
+  -> compile_request
+  -> generate_keyframe
+  -> human_review
+       INTERRUPT: approval_required
+  -> resume(approved)
+  -> submit_video
+       persist remote job ID
+  -> remote_wait
+       INTERRUPT: remote_pending
+  -> release process/worker
+  -> fresh process may reopen checkpoint
+  -> resume(poll)
+  -> poll_video
+  -> finalize
+#+end_example
+
+The human review stage returns an actual graph interrupt. The graph Future completes in a paused state; no async scheduler worker sits around waiting for a person.
+
+The fake remote provider behaves the same way a real asynchronous provider boundary should behave structurally: submission returns a stable ground =remote_media_job= containing the remote ID and request identity, and polling consumes that persisted handle.
+
+The graph tracks =submit_count= through a sum reducer. The restart acceptance test proves the durable run still has =submit_count = 1= after completion, so reloading the pending remote job does not rerun the submit node.
+
+* 9. Fresh-process restart acceptance
+
+The canonical repository gate creates a real persistent graph store and launches three separate SWI-Prolog processes:
+
+#+begin_example
+process 1
+  -> run fixed media run ID
+  -> generate fake keyframe
+  -> pause for human approval
+  -> persist checkpoint
+  -> exit
+
+process 2
+  -> reopen persistent backend
+  -> inspect approval checkpoint
+  -> resume approved
+  -> submit one fake remote video job
+  -> persist remote job ID
+  -> pause remote_pending
+  -> exit
+
+process 3
+  -> reopen persistent backend
+  -> recover same remote job ID
+  -> confirm submit_count == 1
+  -> resume poll
+  -> complete video artifact
+  -> confirm submit_count == 1
+#+end_example
+
+These are actual new SWI processes, not an in-memory reset pretending to be a restart.
+
+This proves the graph/checkpoint/job-state boundary. It does **not** claim atomicity for the pathological crash window where a real paid provider accepts a side effect but the process dies before that observation is durably checkpointed. The generic solution to that effect/observation identity problem remains upstream Prolog-RLM issue #57.
+
+* 10. Emacs
+
+The media module calls SWI-Prolog directly.
+
+Inspect a route:
+
+#+begin_example
+M-x starintel-social-media-route
+#+end_example
+
+Create an Org production template:
+
+#+begin_example
+M-x starintel-social-media-template
+#+end_example
+
+Open the persistent expert shell:
+
+#+begin_example
+M-x media-gen-expert-shell
+#+end_example
+
+The shell buffer is:
+
+#+begin_example
+*media-gen expert*
+#+end_example
+
+Its prompt is:
+
+#+begin_example
+media-gen?>
+#+end_example
+
+Current shell commands include:
+
+#+begin_example
+ready
+branches
+route image comic-explainer Rick and Morty explain StarIntel
+why
+quit
+#+end_example
+
+There is no Python REPL between Emacs and Prolog.
+
+* 11. Run the gates
+
+#+begin_src sh
+nix develop --command bash scripts/check
+#+end_src
+
+The gate covers:
+
+- existing editorial Python code;
+- Prolog-RLM load;
+- media-gen load;
+- generic media-library independent load;
+- PlUnit routing/character/template/asset tests;
+- async fake-provider execution;
+- explicit fake remote-video submit/poll/cancel tests;
+- real =rlm_graph= human-review and remote-pending interrupts;
+- three-process persistent graph/job restart acceptance;
+- expert branch fixture coverage;
+- Emacs batch loading;
+- existing Org export/skill/ignore checks;
+- =git diff --check=.
+
+* 12. Paid-provider boundary
+
+Normal CI does not generate paid media.
+
+Before adding a live provider adapter:
+
+1. verify the provider's current official API;
+2. implement it behind the generic Prolog media request boundary;
+3. keep the async execute -> Future direction;
+4. pass actual input assets when the provider supports them;
+5. normalize provider errors structurally;
+6. persist stable remote provider job IDs;
+7. add deterministic fake/offline coverage first;
+8. keep paid smoke tests explicit and manual.
+
+Do not resurrect a Python provider orchestrator merely because an SDK example is written in Python.
+
+* 13. External-effect identity
+
+Long-running and paid effects must not be duplicated by Prolog backtracking, retries, repeated waits, callbacks, or process restart.
+
+The general reusable once-only effect ledger is tracked upstream in =prolog-rlm= issue #57 at the time of this slice.
+
+media-gen must not create a competing generic effect runtime. The deterministic fake provider and graph =submit_count= prove graph-level no-resubmit behavior after a persisted remote job exists. Paid provider integration still needs the upstream effect identity boundary to close the crash-between-effect-and-checkpoint window correctly.
+
+* Next vertical slices
+
+The next work should extend the same architecture rather than replacing it:
+
+1. Wikidata/Wikimedia character references fetched concurrently with =rlm_async=;
+2. richer =GenerationContext= and prompt/request compiler;
+3. live image adapters behind the generic Prolog API;
+4. live remote-video provider adapter behind the explicit job contract;
+5. Prolog-RLM #57 integration for paid once-only effects;
+6. authority-backed human approval rather than the current graph-only approval fixture;
+7. richer comint/transient dashboards and async job events;
+8. voice/audio provider abstraction and deterministic FFmpeg orchestration.
