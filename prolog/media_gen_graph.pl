@@ -28,9 +28,10 @@ media_graph_backend_open(Kind, Backend) :-
 media_graph_backend_close(Backend) :-
     rlm_graph:graph_backend_close(Backend).
 
-media_graph_run_async(Request, Backend, Future) :-
+media_graph_run_async(Request0, Backend, Future) :-
     media_graph_compile(Compiled),
-    Initial = _{request:Request},
+    canonical_request(Request0, Request),
+    Initial = media_graph_initial{request:Request},
     rlm_graph:graph_run_async(Compiled,
                               Initial,
                               [ backend(Backend),
@@ -87,11 +88,11 @@ graph_registry(
               media_gen_graph:finalize_node)
     ]).
 
-expert_plan_node(State, _, update(_{route:Decision})) :-
+expert_plan_node(State, _, update(media_patch{route:Decision})) :-
     get_dict(request, State, Request),
     media_route(Request, Decision).
 
-compile_context_node(State, _, update(_{generation_context:Context})) :-
+compile_context_node(State, _, update(media_patch{generation_context:Context})) :-
     get_dict(request, State, Request),
     get_dict(route, State, Route),
     get_dict(matched_characters, Route, Characters),
@@ -99,9 +100,9 @@ compile_context_node(State, _, update(_{generation_context:Context})) :-
                                  route:Route,
                                  characters:Characters,
                                  input_assets:[],
-                                 constraints:_{human_review:true}}.
+                                 constraints:media_constraints{human_review:true}}.
 
-compile_request_node(State, _, update(_{provider_request:ProviderRequest})) :-
+compile_request_node(State, _, update(media_patch{provider_request:ProviderRequest})) :-
     get_dict(request, State, Request),
     get_dict(route, State, Route),
     get_dict(description, Request, Prompt),
@@ -113,11 +114,12 @@ compile_request_node(State, _, update(_{provider_request:ProviderRequest})) :-
                                     provider:fake,
                                     prompt:Prompt,
                                     inputs:[],
-                                    options:_{fixture:success,
-                                              target_provider:TargetProvider,
-                                              target_model:TargetModel}}.
+                                    options:media_provider_options{
+                                                fixture:success,
+                                                target_provider:TargetProvider,
+                                                target_model:TargetModel}}.
 
-generate_keyframe_node(State, _, update(_{artifact:Artifact})) :-
+generate_keyframe_node(State, _, update(media_patch{artifact:Artifact})) :-
     get_dict(provider_request, State, ProviderRequest),
     media:media_generate_execute(ProviderRequest, Outcome),
     (   Outcome = ok(Result)
@@ -127,13 +129,30 @@ generate_keyframe_node(State, _, update(_{artifact:Artifact})) :-
                             'fake media provider failed inside graph')))
     ).
 
-human_review_node(_, _, interrupt(approval_required, _{approval:pending})).
+human_review_node(_, _,
+                  interrupt(approval_required,
+                            media_patch{approval:pending})).
 
-finalize_node(_, Context, update(_{approval:Approval})) :-
+finalize_node(_, Context, update(media_patch{approval:Approval})) :-
     get_dict(resume, Context, Resume),
     (   Resume == none
     ->  Approval = missing_resume
     ;   Approval = Resume
+    ).
+
+canonical_request(Request0, Request) :-
+    (   is_dict(Request0)
+    ->  dict_pairs(Request0, _, Pairs),
+        dict_pairs(Request, media_graph_request, Pairs)
+    ;   throw(error(type_error(media_request, Request0),
+                    context(media_graph_run_async/3,
+                            'graph request must be a dict')))
+    ),
+    (   ground(Request)
+    ->  true
+    ;   throw(error(instantiation_error,
+                    context(media_graph_run_async/3,
+                            'durable graph request must be ground')))
     ).
 
 normalize_media_kind(Kind, Kind) :-
