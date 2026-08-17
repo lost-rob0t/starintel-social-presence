@@ -33,7 +33,8 @@ media_route(Request0, Decision) :-
                matched_characters:Matches,
                branches:[ReferenceBranch|StageDecision.branches]},
              StageDecision,
-             Decision).
+             Decision),
+    !.
 
 normalize_request(Request0, Request) :-
     (   is_dict(Request0)
@@ -131,7 +132,7 @@ video_route(_, _, Decision) :-
                               stage:video,
                               branches:['video.google_default']}.
 
-reference_class(Description, Matches, mixed) :-
+reference_class(_, Matches, mixed) :-
     has_source(Matches, starintel),
     has_non_starintel(Matches),
     !.
@@ -168,12 +169,16 @@ description_mentions_starintel(Description) :-
     sub_string(Lower, _, _, _, "starintel").
 
 provider_model(image, openai, Model) :-
+    !,
     configured_model('STARINTEL_IMAGE_OPENAI_MODEL', "gpt-image-2", Model).
 provider_model(image, google, Model) :-
+    !,
     configured_model('STARINTEL_IMAGE_GOOGLE_MODEL', "gemini-3-pro-image", Model).
 provider_model(video, google, Model) :-
+    !,
     configured_model('STARINTEL_VIDEO_GOOGLE_MODEL', "veo-3.1-generate-preview", Model).
 provider_model(video, openai, Model) :-
+    !,
     configured_model('STARINTEL_VIDEO_OPENAI_MODEL', "sora-2-pro", Model).
 provider_model(Stage, Provider, _) :-
     throw(error(domain_error(media_provider, Stage-Provider),
@@ -182,7 +187,7 @@ provider_model(Stage, Provider, _) :-
 
 configured_model(Name, Default, Model) :-
     (   getenv(Name, Value), Value \== ''
-    ->  Model = Value
+    ->  text_string(Value, Model)
     ;   Model = Default
     ).
 
