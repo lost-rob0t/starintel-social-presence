@@ -65,13 +65,18 @@ graph_spec(
             field(generation_context, any, none, replace),
             field(provider_request, any, none, replace),
             field(artifact, any, none, replace),
-            field(approval, any, none, replace)
+            field(approval, any, none, replace),
+            field(remote_job, any, none, replace),
+            field(video_artifact, any, none, replace)
           ],
           [ node(expert_plan, expert_plan_handler),
             node(compile_context, compile_context_handler),
             node(compile_request, compile_request_handler),
             node(generate_keyframe, generate_keyframe_handler),
             node(human_review, human_review_handler),
+            node(submit_video, submit_video_handler),
+            node(remote_wait, remote_wait_handler),
+            node(poll_video, poll_video_handler),
             node(finalize, finalize_handler)
           ],
           [ edge(start, expert_plan),
@@ -79,7 +84,10 @@ graph_spec(
             edge(compile_context, compile_request),
             edge(compile_request, generate_keyframe),
             edge(generate_keyframe, human_review),
-            edge(human_review, finalize),
+            edge(human_review, submit_video),
+            edge(submit_video, remote_wait),
+            edge(remote_wait, poll_video),
+            edge(poll_video, finalize),
             edge(finalize, end)
           ])).
 
@@ -94,6 +102,12 @@ graph_registry(
               media_gen_graph:generate_keyframe_node),
       handler(human_review_handler,
               media_gen_graph:human_review_node),
+      handler(submit_video_handler,
+              media_gen_graph:submit_video_node),
+      handler(remote_wait_handler,
+              media_gen_graph:remote_wait_node),
+      handler(poll_video_handler,
+              media_gen_graph:poll_video_node),
       handler(finalize_handler,
               media_gen_graph:finalize_node)
     ]).
@@ -143,12 +157,61 @@ human_review_node(_, _,
                   interrupt(approval_required,
                             media_patch{approval:pending})).
 
-finalize_node(_, Context, update(media_patch{approval:Approval})) :-
-    get_dict(resume, Context, Resume),
-    (   Resume == none
-    ->  Approval = missing_resume
-    ;   Approval = Resume
+submit_video_node(State, Context,
+                  update(media_patch{approval:approved,
+                                     remote_job:RemoteJob})) :-
+    get_dict(resume, Context, approved),
+    get_dict(request, State, Request),
+    get_dict(description, Request, Prompt),
+    get_dict(flow, Request, Flow),
+    put_dict(kind, Request, video, VideoRouteRequest),
+    media_route(VideoRouteRequest, VideoRoute),
+    get_dict(provider, VideoRoute, TargetProvider),
+    get_dict(model, VideoRoute, TargetModel),
+    get_dict(artifact, State, Keyframe),
+    VideoRequest = video_request{provider:fake,
+                                 prompt:Prompt,
+                                 inputs:[Keyframe],
+                                 options:media_provider_options{
+                                             submit_fixture:success,
+                                             poll_fixture:success,
+                                             flow:Flow,
+                                             target_provider:TargetProvider,
+                                             target_model:TargetModel}},
+    media:video_submit_remote_execute(VideoRequest, Outcome),
+    (   Outcome = ok(RemoteJob),
+        is_dict(RemoteJob),
+        get_dict(status, RemoteJob, remote_pending)
+    ->  true
+    ;   throw(error(media_remote_submit_failed(Outcome),
+                    context(submit_video_node/3,
+                            'remote video submission did not return a pending job')))
     ).
+submit_video_node(_, Context, _) :-
+    get_dict(resume, Context, Resume),
+    throw(error(media_review_not_approved(Resume),
+                context(submit_video_node/3,
+                        'video submission requires explicit approval'))).
+
+remote_wait_node(_, _,
+                 interrupt(remote_pending,
+                           media_patch{})).
+
+poll_video_node(State, _,
+                update(media_patch{video_artifact:VideoArtifact})) :-
+    get_dict(remote_job, State, RemoteJob),
+    media:video_poll_remote_execute(RemoteJob, Outcome),
+    (   Outcome = ok(Result),
+        is_dict(Result),
+        get_dict(status, Result, completed),
+        get_dict(artifact, Result, VideoArtifact)
+    ->  true
+    ;   throw(error(media_remote_poll_incomplete(Outcome),
+                    context(poll_video_node/3,
+                            'remote video poll did not complete')))
+    ).
+
+finalize_node(_, _, update(media_patch{})).
 
 canonical_request(Request0, Request) :-
     (   is_dict(Request0)
