@@ -41,6 +41,13 @@ branch_request('video.override',
                  flow:'image-to-video',
                  provider_override:openai}).
 
+has_character(Matches, Canonical) :-
+    once(( member(Match, Matches),
+           get_dict(canonical, Match, Canonical) )).
+
+contains_text(Text, Needle) :-
+    once(sub_string(Text, _, _, _, Needle)).
+
 test(runtime_ready) :-
     media_gen_ready.
 
@@ -62,8 +69,7 @@ test(show_reference_image_routes_google) :-
     get_dict(provider, Decision, google),
     get_dict(reference_class, Decision, show_reference),
     get_dict(matched_characters, Decision, Matches),
-    member(Morty, Matches),
-    get_dict(canonical, Morty, "Morty Smith").
+    has_character(Matches, "Morty Smith").
 
 test(show_reference_video_routes_google) :-
     media_route(_{description:"Animate Morty staring at the graph",
@@ -80,15 +86,14 @@ test(ambiguous_rick_requires_context) :-
                   flow:auto},
                 Bare),
     get_dict(matched_characters, Bare, BareMatches),
-    \+ ( member(M, BareMatches),
-         get_dict(canonical, M, "Rick Sanchez") ),
+    \+ has_character(BareMatches, "Rick Sanchez"),
     media_route(_{description:"Rick and Morty: Rick explains the graph",
                   kind:image,
                   flow:'comic-explainer'},
                 Contextual),
     get_dict(matched_characters, Contextual, ContextualMatches),
-    member(Rick, ContextualMatches),
-    get_dict(canonical, Rick, "Rick Sanchez").
+    has_character(ContextualMatches, "Rick Sanchez"),
+    has_character(ContextualMatches, "Morty Smith").
 
 test(comic_template_preserves_review_and_fumble) :-
     media_org_template("Rick Explains StarIntel",
@@ -96,10 +101,10 @@ test(comic_template_preserves_review_and_fumble) :-
                          kind:both,
                          flow:'comic-explainer'},
                        Text),
-    sub_string(Text, _, _, _, "* Human approval gate"),
-    sub_string(Text, _, _, _, "Facial expression"),
-    sub_string(Text, _, _, _, "Fumble"),
-    sub_string(Text, _, _, _, "google").
+    contains_text(Text, "* Human approval gate"),
+    contains_text(Text, "Facial expression"),
+    contains_text(Text, "Fumble"),
+    contains_text(Text, "google").
 
 test(asset_manifest_is_canonical_json) :-
     tmp_file(media_gen_assets, JsonPath),
@@ -120,8 +125,8 @@ test(asset_manifest_is_canonical_json) :-
           media_assets_load(JsonPath, Reloaded),
           Reloaded = Updated,
           media_assets_org(JsonPath, Org),
-          sub_string(Org, _, _, _, "rick-ref"),
-          sub_string(Org, _, _, _, "assets.json")
+          contains_text(Org, "rick-ref"),
+          contains_text(Org, "assets.json")
         ),
         catch(delete_file(JsonPath), _, true)).
 
