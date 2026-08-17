@@ -22,12 +22,19 @@ swipl -q \
   -g "use_module('$root/prolog/media_gen.pl'), media_gen:media_gen_ready, halt."
 
 swipl -q \
-  -g "use_module('$root/prolog/media_gen_runtime.pl'), media_gen_runtime:media_gen_runtime_ready, use_module('$root/prolog/media/media.pl'), current_predicate(media:media_generate_async/2), halt."
+  -g "use_module('$root/prolog/media_gen_runtime.pl'), media_gen_runtime:media_gen_runtime_ready, use_module('$root/prolog/media/media.pl'), current_predicate(media:media_generate_async/2), current_predicate(media:video_submit_remote_async/2), halt."
 
 (
   cd "$root/test"
   swipl -q -s run.pl
 )
+
+restart_dir="$(mktemp -d)"
+checkpoint="$restart_dir/media-graph-checkpoint.db"
+swipl -q -s "$root/test/media_graph_restart_phase1.pl" -- "$checkpoint"
+swipl -q -s "$root/test/media_graph_restart_phase2.pl" -- "$checkpoint"
+swipl -q -s "$root/test/media_graph_restart_phase3.pl" -- "$checkpoint"
+rm -rf "$restart_dir"
 
 python3 "$root/install_skills.py" --list
 skill_tmp="$(mktemp -d)"
