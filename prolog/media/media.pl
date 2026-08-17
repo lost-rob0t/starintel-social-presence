@@ -7,7 +7,13 @@
             video_generate_async/2,
             video_generate_execute/2,
             voice_generate_async/2,
-            voice_generate_execute/2
+            voice_generate_execute/2,
+            video_submit_remote_async/2,
+            video_submit_remote_execute/2,
+            video_poll_remote_async/2,
+            video_poll_remote_execute/2,
+            video_cancel_remote_async/2,
+            video_cancel_remote_execute/2
           ]).
 
 /** <module> Provider-neutral media generation boundary
@@ -18,11 +24,19 @@ into prolog-rlm later.
 
 The public generation path is canonical async-first: execute predicate ->
 rlm_async Future. Sync callers may await the returned Future themselves.
+Code already running inside an rlm_async/rlm_graph worker calls the execute
+predicates directly rather than nesting Future waits.
 
 Provider-bound request data is canonicalized to ground terms before scheduling.
 In particular, anonymous-tag SWI dicts are converted to named dicts so their
 representation-level tag variables cannot leak into Future metadata or durable
 execution identity.
+
+Remote media jobs are explicit serializable terms. A submit operation returns a
+stable remote job handle; polling and cancellation consume that handle. The
+fake provider gives deterministic offline coverage of this lifecycle. This
+contract does not claim to solve crash atomicity for arbitrary paid effects;
+that generic once-only boundary remains an upstream prolog-rlm concern.
 */
 
 media_provider(fake, image).
@@ -32,7 +46,7 @@ media_provider(fake, voice).
 media_generate_async(Request0, Future) :-
     normalize_request(Request0, Request),
     ensure_async_runtime,
-    metadata(Request, Metadata),
+    metadata(media_generate, Request, Metadata),
     rlm_async:rlm_async_submit(media:media_generate_execute(Request),
                                Metadata,
                                Future).
@@ -67,6 +81,50 @@ voice_generate_execute(Request0, Outcome) :-
     request_with_kind(voice, Request0, Request),
     media_generate_execute(Request, Outcome).
 
+video_submit_remote_async(Request0, Future) :-
+    request_with_kind(video, Request0, Request1),
+    normalize_request(Request1, Request),
+    ensure_async_runtime,
+    metadata(video_submit_remote, Request, Metadata),
+    rlm_async:rlm_async_submit(media:video_submit_remote_execute(Request),
+                               Metadata,
+                               Future).
+
+video_submit_remote_execute(Request0, Outcome) :-
+    catch(( request_with_kind(video, Request0, Request1),
+            normalize_request(Request1, Request),
+            execute_remote_submit(Request, Outcome) ),
+          Exception,
+          provider_exception(Exception, Outcome)).
+
+video_poll_remote_async(Job0, Future) :-
+    normalize_remote_job(Job0, Job),
+    ensure_async_runtime,
+    remote_metadata(video_poll_remote, Job, Metadata),
+    rlm_async:rlm_async_submit(media:video_poll_remote_execute(Job),
+                               Metadata,
+                               Future).
+
+video_poll_remote_execute(Job0, Outcome) :-
+    catch(( normalize_remote_job(Job0, Job),
+            execute_remote_poll(Job, Outcome) ),
+          Exception,
+          provider_exception(Exception, Outcome)).
+
+video_cancel_remote_async(Job0, Future) :-
+    normalize_remote_job(Job0, Job),
+    ensure_async_runtime,
+    remote_metadata(video_cancel_remote, Job, Metadata),
+    rlm_async:rlm_async_submit(media:video_cancel_remote_execute(Job),
+                               Metadata,
+                               Future).
+
+video_cancel_remote_execute(Job0, Outcome) :-
+    catch(( normalize_remote_job(Job0, Job),
+            execute_remote_cancel(Job, Outcome) ),
+          Exception,
+          provider_exception(Exception, Outcome)).
+
 execute_provider(Request, Outcome) :-
     (   media_provider(Request.provider, Request.kind)
     ->  provider_execute(Request.provider, Request, Outcome)
@@ -77,7 +135,7 @@ execute_provider(Request, Outcome) :-
     ).
 
 provider_execute(fake, Request, Outcome) :-
-    fake_fixture(Request.options, Fixture),
+    fake_fixture(Request.options, fixture, success, Fixture),
     fake_execute(Fixture, Request, Outcome).
 
 fake_execute(failure, Request,
@@ -88,7 +146,7 @@ fake_execute(failure, Request,
     !.
 fake_execute(malformed, _, ok(malformed_fake_response)) :- !.
 fake_execute(success, Request, ok(Result)) :-
-    term_hash(Request, Fingerprint),
+    request_fingerprint(Request, Fingerprint),
     Result = media_result{provider:fake,
                           kind:Request.kind,
                           prompt:Request.prompt,
@@ -99,11 +157,71 @@ fake_execute(success, Request, ok(Result)) :-
                                                 Fingerprint),
                           status:completed}.
 
-fake_fixture(Options, Fixture) :-
+execute_remote_submit(Request, Outcome) :-
+    (   media_provider(Request.provider, video)
+    ->  remote_submit_provider(Request.provider, Request, Outcome)
+    ;   Outcome = error(media_error{kind:unsupported_remote_video_provider,
+                                    provider:Request.provider,
+                                    message:"provider does not implement remote video jobs"})
+    ).
+
+remote_submit_provider(fake, Request, Outcome) :-
+    fake_fixture(Request.options, submit_fixture, success, Fixture),
+    fake_remote_submit(Fixture, Request, Outcome).
+
+fake_remote_submit(failure, _,
+                   error(media_error{kind:remote_submit_failure,
+                                     provider:fake,
+                                     message:"deterministic fake remote submit failure"})) :-
+    !.
+fake_remote_submit(malformed, _, ok(malformed_remote_job)) :- !.
+fake_remote_submit(success, Request, ok(Job)) :-
+    request_fingerprint(Request, Fingerprint),
+    format(string(RemoteId), "fake-video-~16r", [Fingerprint]),
+    Job = remote_media_job{provider:fake,
+                           kind:video,
+                           remote_id:RemoteId,
+                           request_fingerprint:Fingerprint,
+                           request:Request,
+                           status:remote_pending}.
+
+execute_remote_poll(Job, Outcome) :-
+    remote_poll_provider(Job.provider, Job, Outcome).
+
+remote_poll_provider(fake, Job, Outcome) :-
+    get_dict(request, Job, Request),
+    fake_fixture(Request.options, poll_fixture, success, Fixture),
+    fake_remote_poll(Fixture, Job, Outcome).
+
+fake_remote_poll(pending, Job, ok(Job)) :- !.
+fake_remote_poll(failure, Job,
+                 error(media_error{kind:remote_poll_failure,
+                                   provider:Job.provider,
+                                   remote_id:Job.remote_id,
+                                   message:"deterministic fake remote poll failure"})) :-
+    !.
+fake_remote_poll(malformed, _, ok(malformed_remote_poll)) :- !.
+fake_remote_poll(success, Job, ok(Result)) :-
+    Result = remote_media_result{provider:Job.provider,
+                                 kind:video,
+                                 remote_id:Job.remote_id,
+                                 request_fingerprint:Job.request_fingerprint,
+                                 artifact:artifact_ref(Job.provider,
+                                                       video,
+                                                       Job.request_fingerprint),
+                                 status:completed}.
+
+execute_remote_cancel(Job, Outcome) :-
+    remote_cancel_provider(Job.provider, Job, Outcome).
+
+remote_cancel_provider(fake, Job, ok(Cancelled)) :-
+    put_dict(status, Job, cancelled, Cancelled).
+
+fake_fixture(Options, Key, Default, Fixture) :-
     (   is_dict(Options),
-        get_dict(fixture, Options, Fixture0)
+        get_dict(Key, Options, Fixture0)
     ->  normalize_atom(Fixture0, Fixture)
-    ;   Fixture = success
+    ;   Fixture = Default
     ).
 
 normalize_request(Request0, Request) :-
@@ -139,12 +257,40 @@ normalize_request(Request0, Request) :-
                             prompt:PromptString,
                             inputs:Inputs,
                             options:Options},
-    (   ground(Request)
+    require_ground(Request, media_request).
+
+normalize_remote_job(Job0, Job) :-
+    (   is_dict(Job0)
     ->  true
-    ;   throw(error(instantiation_error,
-                    context(media_generate_async/2,
-                            'media request must be ground after normalization')))
-    ).
+    ;   throw(error(type_error(remote_media_job, Job0),
+                    context(video_poll_remote_async/2,
+                            'remote media job must be a dict')))
+    ),
+    require_key(Job0, provider, Provider0),
+    normalize_atom(Provider0, Provider),
+    require_key(Job0, kind, Kind0),
+    normalize_atom(Kind0, Kind),
+    (   Kind == video
+    ->  true
+    ;   throw(error(domain_error(remote_media_kind, Kind),
+                    context(video_poll_remote_async/2,
+                            'remote media jobs currently support video')))
+    ),
+    require_key(Job0, remote_id, RemoteId0),
+    text_string(RemoteId0, RemoteId),
+    require_key(Job0, request_fingerprint, Fingerprint),
+    integer(Fingerprint),
+    require_key(Job0, request, Request0),
+    normalize_request(Request0, Request),
+    optional_key(Job0, status, remote_pending, Status0),
+    normalize_atom(Status0, Status),
+    Job = remote_media_job{provider:Provider,
+                           kind:video,
+                           remote_id:RemoteId,
+                           request_fingerprint:Fingerprint,
+                           request:Request,
+                           status:Status},
+    require_ground(Job, remote_media_job).
 
 request_with_kind(Kind, Request0, Request) :-
     (   is_dict(Request0)
@@ -181,12 +327,30 @@ canonical_dict(Tag, Dict0, Dict) :-
 canonical_pair(Key-Value0, Key-Value) :-
     canonical_data(Value0, Value).
 
-metadata(Request, Metadata) :-
-    term_hash(Request, Fingerprint),
-    Metadata = async_metadata{operation:media_generate,
+metadata(Operation, Request, Metadata) :-
+    request_fingerprint(Request, Fingerprint),
+    Metadata = async_metadata{operation:Operation,
                               media_kind:Request.kind,
                               provider:Request.provider,
                               request_fingerprint:Fingerprint}.
+
+remote_metadata(Operation, Job, Metadata) :-
+    Metadata = async_metadata{operation:Operation,
+                              media_kind:video,
+                              provider:Job.provider,
+                              remote_id:Job.remote_id,
+                              request_fingerprint:Job.request_fingerprint}.
+
+request_fingerprint(Request, Fingerprint) :-
+    term_hash(Request, Fingerprint).
+
+require_ground(Term, Label) :-
+    (   ground(Term)
+    ->  true
+    ;   throw(error(instantiation_error,
+                    context(media_generate_async/2,
+                            Label)))
+    ).
 
 ensure_async_runtime :-
     (   current_predicate(rlm_async:rlm_async_submit/3)
@@ -242,4 +406,4 @@ text_string(Value, String) :-
 text_string(Value, _) :-
     throw(error(type_error(text, Value),
                 context(media_generate_async/2,
-                        'prompt must be text'))).
+                        'prompt or remote identifier must be text'))).
