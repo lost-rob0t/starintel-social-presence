@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+from .assets import ensure_manifest, write_org_view
 from .catalog import CharacterCatalog
 from .catalog_build import build_catalog
 from .models import MediaKind, MediaRequest
@@ -52,6 +53,14 @@ def main(argv: list[str] | None = None) -> int:
     template_p.add_argument("--title", required=True)
     template_p.add_argument("--output", type=Path)
 
+    assets_init_p = sub.add_parser("assets-init", help="Create canonical assets.json and generated assets.org")
+    assets_init_p.add_argument("--json", type=Path, required=True)
+    assets_init_p.add_argument("--title", default="")
+
+    assets_org_p = sub.add_parser("assets-org", help="Regenerate assets.org from canonical assets.json")
+    assets_org_p.add_argument("--json", type=Path, required=True)
+    assets_org_p.add_argument("--output", type=Path)
+
     catalog_p = sub.add_parser("catalog", help="Build a large fictional-character routing catalog from Wikidata")
     catalog_p.add_argument("--output", type=Path, default=Path(".cache/fictional-characters.jsonl"))
     catalog_p.add_argument("--batch-size", type=int, default=5000)
@@ -66,6 +75,17 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "catalog":
         count = build_catalog(args.output, batch_size=args.batch_size, max_rows=args.max_rows)
         print(f"wrote {count} characters to {args.output}")
+        return 0
+
+    if args.command == "assets-init":
+        ensure_manifest(args.json, args.title)
+        output = write_org_view(args.json)
+        print(output)
+        return 0
+
+    if args.command == "assets-org":
+        output = write_org_view(args.json, args.output)
+        print(output)
         return 0
 
     request = _request(args)
@@ -88,6 +108,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.output:
             args.output.parent.mkdir(parents=True, exist_ok=True)
             args.output.write_text(text)
+            assets_json = args.output.parent / "assets.json"
+            ensure_manifest(assets_json, args.title)
+            write_org_view(assets_json, args.output.parent / "assets.org")
         else:
             print(text, end="")
         return 0
