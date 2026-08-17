@@ -4,6 +4,7 @@
           ]).
 
 :- use_module(library(lists)).
+:- use_module(library(pairs)).
 
 character_entry("StarIntel-chan", "StarIntel", starintel,
                 ["starintel-chan", "starintel chan"], []).
@@ -95,8 +96,7 @@ direct_character_match(Haystack,
     member(Alias0, [Canonical|Aliases]),
     normalize_text(Alias0, Alias),
     contains_phrase(Haystack, Alias),
-    Matched = Alias0,
-    !.
+    Matched = Alias0.
 
 active_universes(Haystack, Direct, Universes) :-
     findall(Universe,
@@ -120,8 +120,7 @@ ambiguous_character_match(Haystack, Universes,
     character_entry(Canonical, Universe, Source, _, Ambiguous),
     member(Matched, Ambiguous),
     normalize_text(Matched, Alias),
-    contains_phrase(Haystack, Alias),
-    !.
+    contains_phrase(Haystack, Alias).
 
 sort_matches(Matches0, Matches) :-
     map_list_to_pairs(match_key, Matches0, Pairs0),
