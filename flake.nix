@@ -26,7 +26,7 @@
             ];
 
             shellHook = ''
-              export PYTHONPATH="$PWD/change_fetcher/src:$PWD/auto_findings/src:$PWD/auto_research/src:$PWD/starintel_tutorial_gen/src''${PYTHONPATH:+:$PYTHONPATH}"
+              export PYTHONPATH="$PWD/change_fetcher/src:$PWD/auto_findings/src:$PWD/auto_research/src:$PWD/starintel_tutorial_gen/src:$PWD/media_gen/src''${PYTHONPATH:+:$PYTHONPATH}"
             '';
           };
         });

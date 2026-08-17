@@ -1,0 +1,208 @@
+#+title: StarIntel Social Media Generation Workflow
+#+date: 2026-08-17
+#+description: Run the expert-routed StarIntel image, comic, and video generation workflow.
+
+* What this does
+
+The media workflow turns a plain-language creative description into an inspectable production plan, chooses an image provider using character/reference knowledge, generates a reviewed still, and then generates video from the approved still.
+
+The routing rule is intentionally simple at the top level:
+
+- StarIntel-native stills prefer OpenAI GPT Image 2.
+- Recognizable show/fiction references prefer Google Gemini 3 Pro Image.
+- Production video uses Google Veo 3.1 from an approved still/reference image.
+- OpenAI video is not used by default because its current Videos API is deprecated.
+
+The expert owns the provider choice. The Org file owns the human-editable production plan. Humans still own approval and publication.
+
+* 1. Enter the development environment
+
+Copy the example environment once:
+
+#+begin_src sh
+cp .env.example .env
+#+end_src
+
+Edit =.env=. Add the API keys you actually use:
+
+#+begin_src sh
+OPENAI_API_KEY=...
+GEMINI_API_KEY=...
+#+end_src
+
+Do not source =.env= manually in random shell scripts. The repository already does this through =.envrc=.
+
+#+begin_src sh
+direnv allow
+#+end_src
+
+=.envrc= enters the Nix shell and loads the gitignored =.env=.
+
+* 2. Install the media package
+
+The repository Nix shell provides =uv=. Install the media adapter dependencies into its project environment:
+
+#+begin_src sh
+uv sync --project media_gen
+#+end_src
+
+For direct module execution during development:
+
+#+begin_src sh
+export PYTHONPATH="$PWD/media_gen/src${PYTHONPATH:+:$PYTHONPATH}"
+#+end_src
+
+* 3. Inspect what the routing expert will do
+
+Before spending money, ask the router.
+
+StarIntel-native example:
+
+#+begin_src sh
+python -m starintel_media_gen.cli route \
+  --kind image \
+  --flow starintel-brand \
+  "StarIntel-chan explains Star-Expert in front of a large graph"
+#+end_src
+
+Expected class: =starintel-only=. Expected provider: =openai=. Expected model: =gpt-image-2=.
+
+Show-reference example:
+
+#+begin_src sh
+python -m starintel_media_gen.cli route \
+  --kind image \
+  --flow comic-explainer \
+  "Morty asks Rick to explain StarIntel, understands it, then calls it ETL with Prolog"
+#+end_src
+
+Expected class: =show-reference=. Expected provider: =google=. Expected model: =gemini-3-pro-image=.
+
+Video example:
+
+#+begin_src sh
+python -m starintel_media_gen.cli route \
+  --kind video \
+  --flow image-to-video \
+  "Animate the approved Rick and Morty StarIntel comic keyframe"
+#+end_src
+
+Expected provider: =google=. Expected model: =veo-3.1-generate-preview=.
+
+* 4. Generate the Org production template
+
+The template encodes the workflow we actually use: premise, technical truth, large scene descriptions, facial expression anchors, still generation, human approval, then video.
+
+#+begin_src sh
+python -m starintel_media_gen.cli template \
+  --kind both \
+  --flow comic-explainer \
+  --title "Rick Explains StarIntel" \
+  --output youtube/video-source/rick-explains-starintel/media-plan.org \
+  "Morty thinks StarIntel is ETL. Rick explains the evidence graph and Star-Expert. Morty finally understands, then fumbles and calls it ETL with Prolog."
+#+end_src
+
+Edit the generated Org file before generation. In particular, fill in scene composition, facial features and expression changes, exact technical truth, continuity anchors, dialogue/text, image prompt, and video motion/audio.
+
+* 5. Build the mega fictional-character catalog
+
+The built-in catalog is intentionally small and high-signal. A hardcoded list of every fictional character would be both impossible and stupid to maintain.
+
+The catalog builder can populate the ignored cache from Wikidata fictional-character records and aliases:
+
+#+begin_src sh
+python -m starintel_media_gen.cli catalog \
+  --output .cache/fictional-characters.jsonl
+#+end_src
+
+For a small development sample:
+
+#+begin_src sh
+python -m starintel_media_gen.cli catalog \
+  --output .cache/fictional-characters.jsonl \
+  --max-rows 10000
+#+end_src
+
+The router automatically loads =.cache/fictional-characters.jsonl= when it exists. Additional JSON or JSONL catalogs can be supplied through =STARINTEL_CHARACTER_CATALOGS= in =.env=.
+
+* 6. Generate the still
+
+After editing the prompt in the Org plan, save the final image prompt to a text file or pass it directly.
+
+#+begin_src sh
+python -m starintel_media_gen.cli generate \
+  --kind image \
+  --flow comic-explainer \
+  --output .generated/rick-starintel.png \
+  --prompt-file prompts/rick-starintel-image.txt \
+  "Rick and Morty StarIntel explainer"
+#+end_src
+
+StarIntel-only stills route to GPT Image 2. Show-reference stills route to Gemini 3 Pro Image. Do not continue automatically; inspect the result first.
+
+* 7. Human approval gate
+
+The Org template contains an explicit approval checklist. At minimum verify character identity, facial features, expression progression, scene size/readability, dialogue legibility, StarIntel technical accuracy, and continuity anchors for animation.
+
+Only an approved still becomes a video reference.
+
+* 8. Generate the video
+
+Use the approved still as a reference image.
+
+#+begin_src sh
+python -m starintel_media_gen.cli generate \
+  --kind video \
+  --flow image-to-video \
+  --reference-image .generated/rick-starintel.png \
+  --output .generated/rick-starintel.mp4 \
+  --prompt-file prompts/rick-starintel-video.txt \
+  "Animate the approved Rick and Morty StarIntel explainer"
+#+end_src
+
+Veo accepts up to three reference images through this adapter. The still is the identity/composition anchor; the video prompt is a motion/audio specification, not permission to redesign the scene.
+
+* 9. Use it from Emacs / gptel
+
+The main StarIntel package loads =starintel-social-media=. Generate an Org template interactively with:
+
+#+begin_example
+M-x starintel-social-media-template
+#+end_example
+
+Inspect a route with:
+
+#+begin_example
+M-x starintel-social-media-route
+#+end_example
+
+Register the gptel tool with:
+
+#+begin_example
+M-x starintel-social-media-register-gptel-tool
+#+end_example
+
+The registered tool is named =starintel_media_org_template=. A gptel model can turn a description into the canonical Org production template while the deterministic expert performs provider routing.
+
+* 10. Run checks
+
+#+begin_src sh
+nix develop --command bash scripts/check
+#+end_src
+
+Media generation itself is not exercised in offline CI because it costs money and requires provider credentials. Routing, character matching, and Org template generation are tested without network access.
+
+* Provider configuration
+
+All local overrides belong in the gitignored =.env=:
+
+#+begin_src sh
+OPENAI_API_KEY=
+GEMINI_API_KEY=
+STARINTEL_IMAGE_OPENAI_MODEL=gpt-image-2
+STARINTEL_IMAGE_GOOGLE_MODEL=gemini-3-pro-image
+STARINTEL_VIDEO_GOOGLE_MODEL=veo-3.1-generate-preview
+STARINTEL_VIDEO_OPENAI_MODEL=sora-2-pro
+STARINTEL_ALLOW_LEGACY_OPENAI_VIDEO=0
+STARINTEL_CHARACTER_CATALOGS=
+#+end_src
