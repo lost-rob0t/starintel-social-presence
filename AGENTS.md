@@ -20,8 +20,8 @@ Read, in order:
 
 When work depends on another StarIntel repository, inspect that repository's current `AGENTS.md`, schema, code, and status conventions before writing an adapter.
 
-Local checkout paths belong in the gitignored `.env`.  Before treating a local
-repository as current evidence, inspect its worktree and upstream state.  A
+Local checkout paths belong in the gitignored `.env`. Before treating a local
+repository as current evidence, inspect its worktree and upstream state. A
 clean checkout may be refreshed with `git pull --ff-only`; never overwrite a
 dirty or divergent checkout.
 
@@ -40,14 +40,43 @@ dirty or divergent checkout.
 
 - Prefer small composable modules.
 - Reuse StarIntel interfaces instead of cloning them.
-- Use typed Python.
-- Add tests for meaningful behavior.
+- Add tests for meaningful behavior and use tests to challenge the implementation theory before expanding a slice.
 - Keep deterministic collection/transformation independent from LLMs.
 - Define explicit models at subsystem boundaries.
 - Configure paths/services through environment/config, not machine-specific constants.
-- Avoid framework-first architecture and giant orchestration graphs.
-- Do not introduce LangChain/LangGraph for operations that are ordinary subprocess/file parsing.
-- If a state-machine/orchestration layer is later justified, keep it above deterministic adapters.
+- Avoid framework-first architecture and ad-hoc orchestration engines.
+- Do not introduce Python LangChain/LangGraph for operations that are ordinary subprocess/file parsing.
+- When a subsystem has a justified durable workflow engine, reuse that engine rather than building another state machine.
+
+## media-gen
+
+`media-gen` is the deliberate exception to the older Python-centered media prototype.
+
+Its canonical application path is:
+
+```text
+Emacs
+  -> media-gen (SWI-Prolog)
+  -> prolog-rlm
+       -> rlm_chain
+       -> rlm_graph
+       -> rlm_async
+       -> rlm_artifact / authority as needed
+  -> media providers
+```
+
+Rules for media-gen:
+
+- Prolog-RLM is the application runtime.
+- Prolog owns media routing, expert rules, workflow state, prompt/request compilation, and media-provider orchestration.
+- `rlm_graph` is the durable media workflow engine; do not create a second graph/state-machine implementation.
+- `rlm_async` owns latency-bearing Futures; synchronous facades may await the same canonical async operation.
+- Emacs talks directly to the Prolog application. Do not put a Python CLI or Python REPL between Emacs and media-gen.
+- Generic image/video/audio provider code should remain free of StarIntel and Emacs assumptions so it can later move into `prolog-rlm`.
+- Python is allowed for media-gen only as a documented narrow escape hatch when SWI-Prolog and an existing executable cannot reasonably perform the required operation. It must not own canonical state, orchestration, expert rules, or provider routing.
+- Do not copy `rlm_chain`, `rlm_graph`, `rlm_async`, artifacts, authority, or pending-operation machinery into this repository.
+
+The other existing Python projects remain Python projects unless separately redesigned.
 
 ## Content integrity
 
@@ -91,7 +120,7 @@ Deep-research execution remains behind the Auto Research adapter boundary unless
 
 ## Python
 
-Each Python project uses a `src/` layout and exposes only the boundary it owns.
+The existing editorial Python projects use a `src/` layout and expose only the boundary they own.
 
 - `change_fetcher`: Git facts and normalized changes
 - `auto_findings`: read-only Auto Dig candidate extraction
@@ -99,6 +128,8 @@ Each Python project uses a `src/` layout and exposes only the boundary it owns.
 - `starintel_tutorial_gen`: traceable tutorial IR and renderers
 
 Tests must not require network access.
+
+Do not apply this section to media-gen; its rules are defined in the media-gen section above.
 
 ## Emacs Lisp
 
@@ -109,6 +140,7 @@ Tests must not require network access.
 - Prefer explicit region/section commands over whole-document replacement.
 - Prefer preview/diff review before destructive rewriting.
 - Use `transient` when available but do not make package loading depend on it.
+- media-gen process interaction belongs in its feature module and should use comint for the persistent expert shell.
 
 ## Org source
 
@@ -154,16 +186,19 @@ nix develop --command bash scripts/check
 
 The gate must cover:
 
-- Python tests
-- Python compile checks
-- skill installer list/dry-run
-- Emacs batch load
-- Elisp byte compilation where practical
-- black/gold Org export smoke test
-- `.env` ignore behavior
-- generated media ignore behavior
-- curated asset trackability
-- `git diff --check`
+- existing editorial Python tests and compile checks;
+- Prolog-RLM load for media-gen;
+- media-gen PlUnit tests;
+- generic media-library independent load;
+- media graph compile/interrupt/resume behavior;
+- skill installer list/dry-run;
+- Emacs batch load;
+- Elisp byte compilation where practical;
+- black/gold Org export smoke test;
+- `.env` ignore behavior;
+- generated media ignore behavior;
+- curated asset trackability;
+- `git diff --check`.
 
 Do not claim a command passed unless it was executed and observed.
 
