@@ -13,11 +13,16 @@
 /** <module> Provider-neutral media generation boundary
 
 This module deliberately contains no StarIntel, Emacs, social-platform, or
-project-layout assumptions.  It is intended to remain portable enough to move
+project-layout assumptions. It is intended to remain portable enough to move
 into prolog-rlm later.
 
 The public generation path is canonical async-first: execute predicate ->
-rlm_async Future.  Sync callers may await the returned Future themselves.
+rlm_async Future. Sync callers may await the returned Future themselves.
+
+Provider-bound request data is canonicalized to ground terms before scheduling.
+In particular, anonymous-tag SWI dicts are converted to named dicts so their
+representation-level tag variables cannot leak into Future metadata or durable
+execution identity.
 */
 
 media_provider(fake, image).
@@ -115,17 +120,17 @@ normalize_request(Request0, Request) :-
     normalize_atom(Provider0, Provider),
     require_key(Request0, prompt, Prompt),
     text_string(Prompt, PromptString),
-    optional_key(Request0, inputs, [], Inputs),
-    (   is_list(Inputs)
-    ->  true
-    ;   throw(error(type_error(list, Inputs),
+    optional_key(Request0, inputs, [], Inputs0),
+    (   is_list(Inputs0)
+    ->  maplist(canonical_data, Inputs0, Inputs)
+    ;   throw(error(type_error(list, Inputs0),
                     context(media_generate_async/2,
                             'media request inputs must be a list')))
     ),
-    optional_key(Request0, options, _{}, Options),
-    (   is_dict(Options)
-    ->  true
-    ;   throw(error(type_error(dict, Options),
+    optional_key(Request0, options, media_options{}, Options0),
+    (   is_dict(Options0)
+    ->  canonical_dict(media_options, Options0, Options)
+    ;   throw(error(type_error(dict, Options0),
                     context(media_generate_async/2,
                             'media request options must be a dict')))
     ),
@@ -133,7 +138,13 @@ normalize_request(Request0, Request) :-
                             provider:Provider,
                             prompt:PromptString,
                             inputs:Inputs,
-                            options:Options}.
+                            options:Options},
+    (   ground(Request)
+    ->  true
+    ;   throw(error(instantiation_error,
+                    context(media_generate_async/2,
+                            'media request must be ground after normalization')))
+    ).
 
 request_with_kind(Kind, Request0, Request) :-
     (   is_dict(Request0)
@@ -142,6 +153,33 @@ request_with_kind(Kind, Request0, Request) :-
                     context(media_generate_async/2,
                             'media request must be a dict')))
     ).
+
+canonical_data(Value, Value) :-
+    atomic(Value),
+    !.
+canonical_data(Value, Canonical) :-
+    is_dict(Value),
+    !,
+    canonical_dict(media_data, Value, Canonical).
+canonical_data(Value, Canonical) :-
+    is_list(Value),
+    !,
+    maplist(canonical_data, Value, Canonical).
+canonical_data(Value, Value) :-
+    ground(Value),
+    !.
+canonical_data(_, _) :-
+    throw(error(instantiation_error,
+                context(media_generate_async/2,
+                        'media input data must be ground'))).
+
+canonical_dict(Tag, Dict0, Dict) :-
+    dict_pairs(Dict0, _, Pairs0),
+    maplist(canonical_pair, Pairs0, Pairs),
+    dict_pairs(Dict, Tag, Pairs).
+
+canonical_pair(Key-Value0, Key-Value) :-
+    canonical_data(Value0, Value).
 
 metadata(Request, Metadata) :-
     term_hash(Request, Fingerprint),
