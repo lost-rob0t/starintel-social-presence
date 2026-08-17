@@ -147,7 +147,43 @@ test(fake_media_provider_is_async_and_preserves_inputs) :-
     get_dict(inputs, Result, [asset_ref(graph_reference)]),
     get_dict(provider, Result, fake).
 
-test(media_graph_interrupts_and_resumes) :-
+test(fake_remote_video_job_is_explicit_and_async) :-
+    Request = video_request{provider:fake,
+                            prompt:"Animate the approved keyframe",
+                            inputs:[artifact_ref(fake, image, 17)],
+                            options:_{submit_fixture:success,
+                                      poll_fixture:success}},
+    video_submit_remote_async(Request, SubmitFuture),
+    media_future_await(SubmitFuture, SubmitOutcome),
+    media_future_destroy(SubmitFuture),
+    SubmitOutcome = ok(Job),
+    get_dict(status, Job, remote_pending),
+    get_dict(remote_id, Job, RemoteId),
+    string(RemoteId),
+    video_poll_remote_async(Job, PollFuture),
+    media_future_await(PollFuture, PollOutcome),
+    media_future_destroy(PollFuture),
+    PollOutcome = ok(Result),
+    get_dict(status, Result, completed),
+    get_dict(remote_id, Result, RemoteId),
+    get_dict(artifact, Result, artifact_ref(fake, video, _)).
+
+test(fake_remote_video_can_cancel_before_poll) :-
+    Request = video_request{provider:fake,
+                            prompt:"Animate the approved keyframe",
+                            inputs:[artifact_ref(fake, image, 17)],
+                            options:_{}},
+    video_submit_remote_async(Request, SubmitFuture),
+    media_future_await(SubmitFuture, ok(Job)),
+    media_future_destroy(SubmitFuture),
+    video_cancel_remote_async(Job, CancelFuture),
+    media_future_await(CancelFuture, ok(Cancelled)),
+    media_future_destroy(CancelFuture),
+    get_dict(status, Cancelled, cancelled),
+    get_dict(remote_id, Cancelled, RemoteId),
+    get_dict(remote_id, Job, RemoteId).
+
+test(media_graph_interrupts_for_review_then_remote_job) :-
     media_graph_backend_open(memory, Backend),
     setup_call_cleanup(
         true,
@@ -160,13 +196,23 @@ test(media_graph_interrupts_and_resumes) :-
           PausedOutcome = ok(Paused),
           get_dict(status, Paused, paused(approval_required)),
           get_dict(run_id, Paused, RunId),
-          media_graph_resume_async(Backend, RunId, approved, ResumeFuture),
-          media_future_await(ResumeFuture, CompletedOutcome),
-          media_future_destroy(ResumeFuture),
+          media_graph_resume_async(Backend, RunId, approved, ApprovalFuture),
+          media_future_await(ApprovalFuture, ApprovalOutcome),
+          media_future_destroy(ApprovalFuture),
+          ApprovalOutcome = ok(RemotePaused),
+          get_dict(status, RemotePaused, paused(remote_pending)),
+          get_dict(state, RemotePaused, RemoteState),
+          get_dict(approval, RemoteState, approved),
+          get_dict(remote_job, RemoteState, RemoteJob),
+          get_dict(status, RemoteJob, remote_pending),
+          media_graph_resume_async(Backend, RunId, poll, PollFuture),
+          media_future_await(PollFuture, CompletedOutcome),
+          media_future_destroy(PollFuture),
           CompletedOutcome = ok(Completed),
           get_dict(status, Completed, completed),
           get_dict(state, Completed, State),
-          get_dict(approval, State, approved)
+          get_dict(approval, State, approved),
+          get_dict(video_artifact, State, artifact_ref(fake, video, _))
         ),
         media_graph_backend_close(Backend)).
 
