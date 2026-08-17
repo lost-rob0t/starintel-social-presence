@@ -101,6 +101,34 @@ test(comic_template_preserves_review_and_fumble) :-
     sub_string(Text, _, _, _, "Fumble"),
     sub_string(Text, _, _, _, "google").
 
+test(asset_manifest_is_canonical_json) :-
+    tmp_file(media_gen_assets, JsonPath),
+    setup_call_cleanup(
+        true,
+        ( media_assets_ensure(JsonPath, "Rick Explains StarIntel", Empty),
+          get_dict(schema_version, Empty, 1),
+          get_dict(assets, Empty, []),
+          Asset = _{id:"rick-ref",
+                    kind:"image",
+                    role:"character-reference",
+                    status:"approved",
+                    characters:["Rick Sanchez"],
+                    source:_{type:"file", value:"assets/images/rick.png"}},
+          media_asset_register(JsonPath, Asset, Updated),
+          get_dict(assets, Updated, [Stored]),
+          get_dict(id, Stored, "rick-ref"),
+          media_assets_load(JsonPath, Reloaded),
+          Reloaded = Updated,
+          media_assets_org(JsonPath, Org),
+          sub_string(Org, _, _, _, "rick-ref"),
+          sub_string(Org, _, _, _, "assets.json")
+        ),
+        catch(delete_file(JsonPath), _, true)).
+
+test(asset_manifest_rejects_missing_source,
+     [throws(error(domain_error(media_asset_source, _), _))]) :-
+    media_asset_validate(_{id:"broken", kind:"image"}, _).
+
 test(fake_media_provider_is_async_and_preserves_inputs) :-
     Request = image_request{provider:fake,
                             prompt:"Draw the graph",
