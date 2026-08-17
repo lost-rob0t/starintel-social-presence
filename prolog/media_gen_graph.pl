@@ -67,7 +67,8 @@ graph_spec(
             field(artifact, any, none, replace),
             field(approval, any, none, replace),
             field(remote_job, any, none, replace),
-            field(video_artifact, any, none, replace)
+            field(video_artifact, any, none, replace),
+            field(submit_count, integer, 0, sum)
           ],
           [ node(expert_plan, expert_plan_handler),
             node(compile_context, compile_context_handler),
@@ -159,7 +160,8 @@ human_review_node(_, _,
 
 submit_video_node(State, Context,
                   update(media_patch{approval:approved,
-                                     remote_job:RemoteJob})) :-
+                                     remote_job:RemoteJob,
+                                     submit_count:1})) :-
     get_dict(resume, Context, approved),
     get_dict(request, State, Request),
     get_dict(description, Request, Prompt),
