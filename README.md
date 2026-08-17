@@ -39,7 +39,7 @@ Claims about StarIntel behavior should be traceable to source repositories, comm
 ├── deep_research/          # integration boundary; no vendored engine
 ├── starintel_tutorial_gen/ # source -> plan -> Org renderers
 ├── prolog/                 # media-gen Prolog-RLM application + generic media API
-├── test/                   # PlUnit media-gen acceptance tests
+├── test/                   # PlUnit and fresh-process media-gen acceptance tests
 ├── bin/media-gen.pl        # Prolog CLI / comint expert shell entrypoint
 ├── skills/                 # canonical repository-local SKILL.md packages
 ├── blog/                   # human Org posts, drafts, assets, templates
@@ -100,12 +100,13 @@ The check script:
 
 1. runs the existing editorial Python tests and compile checks;
 2. loads pinned Prolog-RLM and the media-gen application;
-3. independently loads the generic Prolog media library;
-4. runs media-gen PlUnit acceptance tests, including expert routing and graph interrupt/resume;
-5. exercises `install_skills.py --list` and dry-run behavior;
-6. batch-loads the Emacs package and media expert shell command;
-7. exports a small Org document through the black/gold backend;
-8. runs `git diff --check` when inside a Git checkout.
+3. independently loads the generic Prolog media library, including the remote-video job API;
+4. runs media-gen PlUnit acceptance tests for expert routing, assets, async media, remote jobs, and graph interrupt/resume;
+5. launches three separate SWI-Prolog processes against one persistent graph backend to prove review pause -> remote submit -> restart -> poll -> completion without a duplicate graph submission;
+6. exercises `install_skills.py --list` and dry-run behavior;
+7. batch-loads the Emacs package and media expert shell command;
+8. exports a small Org document through the black/gold backend;
+9. runs `git diff --check` when inside a Git checkout.
 
 CI runs the same command inside `nix develop`.
 
@@ -181,7 +182,7 @@ The input `TutorialPlan` contains traced `TutorialSource` records, and every ren
 
 ## media-gen
 
-`media-gen` is a Prolog-RLM application. The earlier Python media package is no longer the canonical runtime path.
+`media-gen` is a Prolog-RLM application. The earlier Python media package has been removed from the media-gen runtime path.
 
 The current executable slice is:
 
@@ -191,14 +192,20 @@ plain description
   -> Prolog expert routing
   -> generation context
   -> provider-neutral request
-  -> generic async fake provider
-  -> rlm_graph workflow
-  -> human-review interrupt
-  -> resume
+  -> async fake keyframe generation
+  -> rlm_graph human-review interrupt
+  -> resume approved
+  -> explicit fake remote-video submission
+  -> persist remote job ID
+  -> rlm_graph remote-pending interrupt
+  -> process may exit
+  -> fresh process reopens checkpoint
+  -> resume poll
+  -> video artifact
   -> completion
 ```
 
-The fake provider is intentional. It exercises the real request, `rlm_async`, and `rlm_graph` boundaries without spending money. Live image/video adapters are added behind the same generic API after current official provider contracts are verified.
+The fake provider is intentional. It exercises the real request, `rlm_async`, explicit remote-job, and `rlm_graph` boundaries without spending money. Live image/video adapters belong behind the same generic API after current official provider contracts are verified.
 
 Try the Prolog CLI:
 
@@ -217,9 +224,11 @@ swipl -q -s bin/media-gen.pl -- template \
   "Morty thinks StarIntel is ETL, understands the graph, then fumbles again"
 ```
 
-The generic `prolog/media/media.pl` module deliberately contains no StarIntel or Emacs assumptions. Its public generation API is async-first through Prolog-RLM Futures.
+The generic `prolog/media/media.pl` module deliberately contains no StarIntel or Emacs assumptions. Its public generation API is async-first through Prolog-RLM Futures and includes explicit submit/poll/cancel operations for remote video jobs.
 
-Broader once-only identity for paid/stateful external effects remains an upstream Prolog-RLM concern tracked by its effect-identity work. media-gen does not maintain a competing generic effect ledger.
+`assets.json` is canonical project asset state and is loaded/validated/updated in Prolog. Provider/model identifiers are configuration rather than permanent expert truth; unset model IDs remain visibly `unconfigured`.
+
+The fresh-process acceptance gate proves that once a remote job has been checkpointed, restarting SWI resumes the same job and the graph's `submit_count` remains exactly one. Broader once-only identity for the crash window between a real paid side effect and its durable observation remains an upstream Prolog-RLM concern tracked by issue #57; media-gen does not maintain a competing generic effect ledger.
 
 ## Emacs workflow
 
@@ -319,4 +328,4 @@ Generated drafts must be labeled by workflow/context, and factual claims must re
 
 ## Status
 
-Phase 0 establishes the environment, contracts, deterministic readers, tutorial IR/rendering slice, Emacs package/exporter, skill installer, tests, documentation, and the first executable Prolog-RLM media-generation slice. Autonomous social posting and paid media generation in normal CI are deliberately out of scope.
+Phase 0 establishes the environment, contracts, deterministic readers, tutorial IR/rendering slice, Emacs package/exporter, skill installer, tests, documentation, and an executable Prolog-RLM media-generation slice with persistent remote-job restart coverage. Autonomous social posting and paid media generation in normal CI are deliberately out of scope.
