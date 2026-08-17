@@ -170,25 +170,25 @@ description_mentions_starintel(Description) :-
 
 provider_model(image, openai, Model) :-
     !,
-    configured_model('STARINTEL_IMAGE_OPENAI_MODEL', "gpt-image-2", Model).
+    configured_model('STARINTEL_IMAGE_OPENAI_MODEL', Model).
 provider_model(image, google, Model) :-
     !,
-    configured_model('STARINTEL_IMAGE_GOOGLE_MODEL', "gemini-3-pro-image", Model).
+    configured_model('STARINTEL_IMAGE_GOOGLE_MODEL', Model).
 provider_model(video, google, Model) :-
     !,
-    configured_model('STARINTEL_VIDEO_GOOGLE_MODEL', "veo-3.1-generate-preview", Model).
+    configured_model('STARINTEL_VIDEO_GOOGLE_MODEL', Model).
 provider_model(video, openai, Model) :-
     !,
-    configured_model('STARINTEL_VIDEO_OPENAI_MODEL', "sora-2-pro", Model).
+    configured_model('STARINTEL_VIDEO_OPENAI_MODEL', Model).
 provider_model(Stage, Provider, _) :-
     throw(error(domain_error(media_provider, Stage-Provider),
                 context(media_route/2,
                         'unsupported configured media provider'))).
 
-configured_model(Name, Default, Model) :-
+configured_model(Name, Model) :-
     (   getenv(Name, Value), Value \== ''
     ->  text_string(Value, Model)
-    ;   Model = Default
+    ;   Model = "unconfigured"
     ).
 
 normalize_kind(Kind0, Kind) :-
