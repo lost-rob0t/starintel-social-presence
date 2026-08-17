@@ -17,7 +17,9 @@
             media_future_destroy/1,
             media_graph_backend_open/2,
             media_graph_backend_close/1,
+            media_graph_checkpoint/3,
             media_graph_run_async/3,
+            media_graph_run_async/4,
             media_graph_resume_async/4
           ]).
 
@@ -42,7 +44,9 @@
               [ media_gen_graph_ready/0,
                 media_graph_backend_open/2,
                 media_graph_backend_close/1,
+                media_graph_checkpoint/3,
                 media_graph_run_async/3,
+                media_graph_run_async/4,
                 media_graph_resume_async/4
               ]).
 :- use_module('media/media', []).
