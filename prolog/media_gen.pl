@@ -3,6 +3,13 @@
             media_route/2,
             expert_branch/1,
             media_org_template/3,
+            media_assets_empty/2,
+            media_assets_load/2,
+            media_assets_ensure/3,
+            media_assets_write/2,
+            media_asset_validate/2,
+            media_asset_register/3,
+            media_assets_org/2,
             image_generate_async/2,
             video_generate_async/2,
             voice_generate_async/2,
@@ -21,6 +28,15 @@
               ]).
 :- use_module(media_gen_template,
               [ media_org_template/3
+              ]).
+:- use_module(media_gen_assets,
+              [ media_assets_empty/2,
+                media_assets_load/2,
+                media_assets_ensure/3,
+                media_assets_write/2,
+                media_asset_validate/2,
+                media_asset_register/3,
+                media_assets_org/2
               ]).
 :- use_module(media_gen_graph,
               [ media_gen_graph_ready/0,
