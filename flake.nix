@@ -21,7 +21,7 @@
               python313
               python313Packages.pytest
               uv
-              swiProlog
+              pkgs."swi-prolog"
               emacs-nox
               git
               ffmpeg
