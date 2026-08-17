@@ -125,7 +125,7 @@ With prefix argument OPEN, open the resulting HTML in a browser."
   (mapconcat
    #'identity
    (mapcar (lambda (dir) (starintel-social--path dir "src"))
-           '("change_fetcher" "auto_findings" "auto_research" "starintel_tutorial_gen" "media_gen"))
+           '("change_fetcher" "auto_findings" "auto_research" "starintel_tutorial_gen"))
    path-separator))
 
 (defun starintel-social--changes (repository revision-range)
@@ -217,6 +217,7 @@ With prefix argument OPEN, open the resulting HTML in a browser."
           ("y" "Create blog/video sources" starintel-social-topic-production)
           ("m" "Media Org template" starintel-social-media-template)
           ("r" "Media expert route" starintel-social-media-route)
+          ("s" "Media expert shell" media-gen-expert-shell)
           ("g" "Register gptel media tool" starintel-social-media-register-gptel-tool)]
          ["Edit"
           ("d" "Deslop lint" starintel-blog-deslop)
@@ -236,6 +237,7 @@ With prefix argument OPEN, open the resulting HTML in a browser."
          "starintel-social-insert-change-at-point"
          "starintel-social-media-template"
          "starintel-social-media-route"
+         "media-gen-expert-shell"
          "starintel-social-media-register-gptel-tool"
          "starintel-blog-deslop"
          "starintel-social-blog-assist-region"
