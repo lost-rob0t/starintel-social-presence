@@ -17,14 +17,14 @@ asset_schema_version(1).
 media_assets_empty(Title0, Manifest) :-
     text_string(Title0, Title),
     asset_schema_version(Version),
-    Manifest = _{schema_version:Version,
-                 title:Title,
-                 assets:[]}.
+    Manifest = media_assets{schema_version:Version,
+                            title:Title,
+                            assets:[]}.
 
 media_assets_load(Path, Manifest) :-
     setup_call_cleanup(
         open(Path, read, Stream, [encoding(utf8)]),
-        json_read_dict(Stream, Raw),
+        json_read_dict(Stream, Raw, [tag(media_assets)]),
         close(Stream)),
     validate_manifest(Raw, Manifest).
 
@@ -63,20 +63,17 @@ media_asset_validate(Asset0, Asset) :-
                             'asset must be a dict')))
     ),
     require_nonempty_text(Asset0, id, Id),
-    (   get_dict(source, Asset0, Source0),
-        is_dict(Source0),
-        get_dict(type, Source0, Type0),
-        nonempty_text(Type0),
-        get_dict(value, Source0, Value0),
-        nonempty_text(Value0)
-    ->  text_string(Type0, Type),
-        text_string(Value0, Value),
-        Source = _{type:Type, value:Value}
-    ;   throw(error(domain_error(media_asset_source, Asset0),
+    validate_source(Asset0, Source),
+    dict_pairs(Asset0, _, Pairs0),
+    canonical_pairs(Pairs0, Pairs1),
+    dict_pairs(Base, media_asset, Pairs1),
+    put_dict(_{id:Id, source:Source}, Base, Asset),
+    (   ground(Asset)
+    ->  true
+    ;   throw(error(instantiation_error,
                     context(media_asset_validate/2,
-                            'asset source must contain non-empty type and value')))
-    ),
-    put_dict(_{id:Id, source:Source}, Asset0, Asset).
+                            'durable asset metadata must be ground')))
+    ).
 
 media_assets_org(Path, Org) :-
     media_assets_load(Path, Manifest),
@@ -88,7 +85,7 @@ media_assets_org(Path, Org) :-
     ;   atomics_to_string(Rows, "\n", Table)
     ),
     format(string(Org),
-           "#+title: ~s — assets\n#+generated_from: ~w\n#+startup: overview\n\n* Canonical manifest\n=assets.json= is canonical project asset state. This Org buffer is a generated view.\nThe concrete manifest for this view is =~w=.\n\n* Assets\n| ID | Kind | Source type | Source | Role | Status | Characters |\n|----+------+-------------+--------+------+--------+------------|\n~s\n\n* Source semantics\n- =file= :: repository/local named asset path.\n- =url= :: external image/media URL.\n- =generated= :: generated output path, normally ignored unless deliberately curated.\n- =asset= :: reference to another asset ID.\n\n* Provenance :noexport:\n- Canonical data lives in the JSON manifest.\n- This Org view may be regenerated at any time.\n",
+           "#+title: ~s — assets\n#+generated_from: ~w\n#+startup: overview\n\n* Canonical manifest\n=assets.json= is canonical project asset state. This Org buffer is a generated view.\nThe concrete manifest for this view is =~w=.\n\n* Assets\n| ID | Kind | Source type | Source | Role | Status | Characters |\n|----+------+-------------+--------+------+--------+------------|\n~s\n\n* Source semantics\n- =file= :: repository/local named asset path.\n- =url= :: external image/media URL.\n- =generated= :: generated output path, normally ignored unless deliberately curated.\n- =asset= :: reference to another asset ID.\n- =wikimedia= :: structured Wikidata/Wikimedia reference metadata.\n\n* Provenance :noexport:\n- Canonical data lives in the JSON manifest.\n- This Org view may be regenerated at any time.\n",
            [Title, FileName, FileName, Table]).
 
 validate_manifest(Raw, Manifest) :-
@@ -117,7 +114,57 @@ validate_manifest(Raw, Manifest) :-
     ->  text_string(Title0, Title)
     ;   Title = ""
     ),
-    put_dict(_{title:Title, assets:Assets}, Raw, Manifest).
+    Manifest = media_assets{schema_version:Expected,
+                            title:Title,
+                            assets:Assets}.
+
+validate_source(Asset, Source) :-
+    (   get_dict(source, Asset, Source0),
+        is_dict(Source0),
+        get_dict(type, Source0, Type0),
+        nonempty_text(Type0),
+        source_has_locator(Source0)
+    ->  text_string(Type0, Type),
+        dict_pairs(Source0, _, SourcePairs0),
+        canonical_pairs(SourcePairs0, SourcePairs),
+        dict_pairs(SourceBase, media_source, SourcePairs),
+        put_dict(type, SourceBase, Type, Source)
+    ;   throw(error(domain_error(media_asset_source, Asset),
+                    context(media_asset_validate/2,
+                            'asset source must contain a non-empty type and stable locator')))
+    ).
+
+source_has_locator(Source) :-
+    member(Key, [value, path, url, wikidata_id, artifact, asset_id]),
+    get_dict(Key, Source, Value),
+    nonempty_text(Value),
+    !.
+
+canonical_pairs([], []).
+canonical_pairs([Key-Value0|Pairs0], [Key-Value|Pairs]) :-
+    canonical_value(Value0, Value),
+    canonical_pairs(Pairs0, Pairs).
+
+canonical_value(Value, Value) :-
+    atomic(Value),
+    !.
+canonical_value(Value0, Value) :-
+    is_dict(Value0),
+    !,
+    dict_pairs(Value0, _, Pairs0),
+    canonical_pairs(Pairs0, Pairs),
+    dict_pairs(Value, media_data, Pairs).
+canonical_value(Value0, Value) :-
+    is_list(Value0),
+    !,
+    maplist(canonical_value, Value0, Value).
+canonical_value(Value, Value) :-
+    ground(Value),
+    !.
+canonical_value(_, _) :-
+    throw(error(instantiation_error,
+                context(media_asset_validate/2,
+                        'asset metadata must be ground'))).
 
 replace_or_append_asset(Id, Asset, Assets0, Assets) :-
     (   select(Existing, Assets0, Rest),
@@ -126,7 +173,7 @@ replace_or_append_asset(Id, Asset, Assets0, Assets) :-
     ;   append(Assets0, [Asset], Assets)
     ).
 
-manifest_title(Manifest, Path, Title) :-
+manifest_title(Manifest, _, Title) :-
     get_dict(title, Manifest, Candidate),
     Candidate \== "",
     !,
@@ -141,13 +188,21 @@ asset_org_row(Asset, Row) :-
     asset_cell(Asset, kind, Kind),
     get_dict(source, Asset, Source),
     asset_cell(Source, type, SourceType),
-    asset_cell(Source, value, SourceValue),
+    source_display(Source, SourceValue),
     asset_cell(Asset, role, Role),
     asset_cell(Asset, status, Status),
     asset_characters_cell(Asset, Characters),
     format(string(Row),
            "| ~s | ~s | ~s | ~s | ~s | ~s | ~s |",
            [Id, Kind, SourceType, SourceValue, Role, Status, Characters]).
+
+source_display(Source, Cell) :-
+    member(Key, [value, path, url, wikidata_id, artifact, asset_id]),
+    get_dict(Key, Source, Value),
+    !,
+    cell_string(Value, Raw),
+    escape_org_cell(Raw, Cell).
+source_display(_, "").
 
 asset_cell(Dict, Key, Cell) :-
     (   get_dict(Key, Dict, Value)
@@ -189,7 +244,7 @@ require_nonempty_text(Dict, Key, String) :-
     ).
 
 nonempty_text(Value) :-
-    text_string(Value, String),
+    catch(text_string(Value, String), _, fail),
     String \== "".
 
 text_string(Value, String) :-
