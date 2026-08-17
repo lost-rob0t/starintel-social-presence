@@ -3,7 +3,9 @@
             media_graph_compile/1,
             media_graph_backend_open/2,
             media_graph_backend_close/1,
+            media_graph_checkpoint/3,
             media_graph_run_async/3,
+            media_graph_run_async/4,
             media_graph_resume_async/4
           ]).
 
@@ -28,14 +30,22 @@ media_graph_backend_open(Kind, Backend) :-
 media_graph_backend_close(Backend) :-
     rlm_graph:graph_backend_close(Backend).
 
-media_graph_run_async(Request0, Backend, Future) :-
+media_graph_checkpoint(Backend, RunId, Snapshot) :-
+    media_gen_runtime_ready,
+    rlm_graph:graph_checkpoint(Backend, RunId, Snapshot).
+
+media_graph_run_async(Request, Backend, Future) :-
+    media_graph_run_async(Request, Backend, auto, Future).
+
+media_graph_run_async(Request0, Backend, RunId, Future) :-
     media_graph_compile(Compiled),
     canonical_request(Request0, Request),
     Initial = media_graph_initial{request:Request},
     rlm_graph:graph_run_async(Compiled,
                               Initial,
                               [ backend(Backend),
-                                time_limit(30.0)
+                                time_limit(30.0),
+                                run_id(RunId)
                               ],
                               Future).
 
@@ -145,13 +155,13 @@ canonical_request(Request0, Request) :-
     ->  dict_pairs(Request0, _, Pairs),
         dict_pairs(Request, media_graph_request, Pairs)
     ;   throw(error(type_error(media_request, Request0),
-                    context(media_graph_run_async/3,
+                    context(media_graph_run_async/4,
                             'graph request must be a dict')))
     ),
     (   ground(Request)
     ->  true
     ;   throw(error(instantiation_error,
-                    context(media_graph_run_async/3,
+                    context(media_graph_run_async/4,
                             'durable graph request must be ground')))
     ).
 
