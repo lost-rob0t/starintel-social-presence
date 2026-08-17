@@ -1,208 +1,263 @@
-#+title: StarIntel Social Media Generation Workflow
+#+title: media-gen — Prolog-RLM Media Generation Workflow
 #+date: 2026-08-17
-#+description: Run the expert-routed StarIntel image, comic, and video generation workflow.
+#+description: Run and inspect the Prolog-RLM-first media-gen vertical slice.
 
-* What this does
+* What media-gen is
 
-The media workflow turns a plain-language creative description into an inspectable production plan, chooses an image provider using character/reference knowledge, generates a reviewed still, and then generates video from the approved still.
+=media-gen= is a SWI-Prolog application built on =prolog-rlm=.
 
-The routing rule is intentionally simple at the top level:
+The canonical path is:
 
-- StarIntel-native stills prefer OpenAI GPT Image 2.
-- Recognizable show/fiction references prefer Google Gemini 3 Pro Image.
-- Production video uses Google Veo 3.1 from an approved still/reference image.
-- OpenAI video is not used by default because its current Videos API is deprecated.
+#+begin_example
+Emacs
+  -> media-gen
+  -> Prolog-RLM
+       -> rlm_graph
+       -> rlm_async
+       -> rlm_chain / artifacts / authority as required
+  -> media providers
+#+end_example
 
-The expert owns the provider choice. The Org file owns the human-editable production plan. Humans still own approval and publication.
+Python is not the media-gen application runtime.
+
+The current executable slice intentionally stops before paid live media calls. It proves the deterministic expert, character resolution, provider-neutral request boundary, asynchronous Future execution, durable graph interrupt/resume, Org production template, and Emacs/comint integration with a fake provider that uses the same generic API.
 
 * 1. Enter the development environment
 
-Copy the example environment once:
-
 #+begin_src sh
 cp .env.example .env
-#+end_src
-
-Edit =.env=. Add the API keys you actually use:
-
-#+begin_src sh
-OPENAI_API_KEY=...
-GEMINI_API_KEY=...
-#+end_src
-
-Do not source =.env= manually in random shell scripts. The repository already does this through =.envrc=.
-
-#+begin_src sh
 direnv allow
 #+end_src
 
-=.envrc= enters the Nix shell and loads the gitignored =.env=.
+The Nix shell provides SWI-Prolog and pins the inspected =prolog-rlm= revision used by this slice. It exports that checkout through =PROLOG_RLM_DIR=.
 
-* 2. Install the media package
+Set =PROLOG_RLM_DIR= manually only when deliberately testing another inspected local checkout.
 
-The repository Nix shell provides =uv=. Install the media adapter dependencies into its project environment:
-
-#+begin_src sh
-uv sync --project media_gen
-#+end_src
-
-For direct module execution during development:
+* 2. Verify the runtime
 
 #+begin_src sh
-export PYTHONPATH="$PWD/media_gen/src${PYTHONPATH:+:$PYTHONPATH}"
+swipl -q -s bin/media-gen.pl -- ready
 #+end_src
 
-* 3. Inspect what the routing expert will do
-
-Before spending money, ask the router.
-
-StarIntel-native example:
-
-#+begin_src sh
-python -m starintel_media_gen.cli route \
-  --kind image \
-  --flow starintel-brand \
-  "StarIntel-chan explains Star-Expert in front of a large graph"
-#+end_src
-
-Expected class: =starintel-only=. Expected provider: =openai=. Expected model: =gpt-image-2=.
-
-Show-reference example:
-
-#+begin_src sh
-python -m starintel_media_gen.cli route \
-  --kind image \
-  --flow comic-explainer \
-  "Morty asks Rick to explain StarIntel, understands it, then calls it ETL with Prolog"
-#+end_src
-
-Expected class: =show-reference=. Expected provider: =google=. Expected model: =gemini-3-pro-image=.
-
-Video example:
-
-#+begin_src sh
-python -m starintel_media_gen.cli route \
-  --kind video \
-  --flow image-to-video \
-  "Animate the approved Rick and Morty StarIntel comic keyframe"
-#+end_src
-
-Expected provider: =google=. Expected model: =veo-3.1-generate-preview=.
-
-* 4. Generate the Org production template
-
-The template encodes the workflow we actually use: premise, technical truth, large scene descriptions, facial expression anchors, still generation, human approval, then video.
-
-#+begin_src sh
-python -m starintel_media_gen.cli template \
-  --kind both \
-  --flow comic-explainer \
-  --title "Rick Explains StarIntel" \
-  --output youtube/video-source/rick-explains-starintel/media-plan.org \
-  "Morty thinks StarIntel is ETL. Rick explains the evidence graph and Star-Expert. Morty finally understands, then fumbles and calls it ETL with Prolog."
-#+end_src
-
-Edit the generated Org file before generation. In particular, fill in scene composition, facial features and expression changes, exact technical truth, continuity anchors, dialogue/text, image prompt, and video motion/audio.
-
-* 5. Build the mega fictional-character catalog
-
-The built-in catalog is intentionally small and high-signal. A hardcoded list of every fictional character would be both impossible and stupid to maintain.
-
-The catalog builder can populate the ignored cache from Wikidata fictional-character records and aliases:
-
-#+begin_src sh
-python -m starintel_media_gen.cli catalog \
-  --output .cache/fictional-characters.jsonl
-#+end_src
-
-For a small development sample:
-
-#+begin_src sh
-python -m starintel_media_gen.cli catalog \
-  --output .cache/fictional-characters.jsonl \
-  --max-rows 10000
-#+end_src
-
-The router automatically loads =.cache/fictional-characters.jsonl= when it exists. Additional JSON or JSONL catalogs can be supplied through =STARINTEL_CHARACTER_CATALOGS= in =.env=.
-
-* 6. Generate the still
-
-After editing the prompt in the Org plan, save the final image prompt to a text file or pass it directly.
-
-#+begin_src sh
-python -m starintel_media_gen.cli generate \
-  --kind image \
-  --flow comic-explainer \
-  --output .generated/rick-starintel.png \
-  --prompt-file prompts/rick-starintel-image.txt \
-  "Rick and Morty StarIntel explainer"
-#+end_src
-
-StarIntel-only stills route to GPT Image 2. Show-reference stills route to Gemini 3 Pro Image. Do not continue automatically; inspect the result first.
-
-* 7. Human approval gate
-
-The Org template contains an explicit approval checklist. At minimum verify character identity, facial features, expression progression, scene size/readability, dialogue legibility, StarIntel technical accuracy, and continuity anchors for animation.
-
-Only an approved still becomes a video reference.
-
-* 8. Generate the video
-
-Use the approved still as a reference image.
-
-#+begin_src sh
-python -m starintel_media_gen.cli generate \
-  --kind video \
-  --flow image-to-video \
-  --reference-image .generated/rick-starintel.png \
-  --output .generated/rick-starintel.mp4 \
-  --prompt-file prompts/rick-starintel-video.txt \
-  "Animate the approved Rick and Morty StarIntel explainer"
-#+end_src
-
-Veo accepts up to three reference images through this adapter. The still is the identity/composition anchor; the video prompt is a motion/audio specification, not permission to redesign the scene.
-
-* 9. Use it from Emacs / gptel
-
-The main StarIntel package loads =starintel-social-media=. Generate an Org template interactively with:
+Expected:
 
 #+begin_example
-M-x starintel-social-media-template
+media-gen ready
 #+end_example
 
-Inspect a route with:
+List declared expert branches:
+
+#+begin_src sh
+swipl -q -s bin/media-gen.pl -- branches
+#+end_src
+
+Every declared branch must have a fixture in the PlUnit suite.
+
+* 3. Inspect deterministic routing
+
+StarIntel-native request:
+
+#+begin_src sh
+swipl -q -s bin/media-gen.pl -- route image starintel-brand \
+  "StarIntel-chan explains Star-Expert in front of the graph"
+#+end_src
+
+A fictional-character request:
+
+#+begin_src sh
+swipl -q -s bin/media-gen.pl -- route image comic-explainer \
+  "Morty asks Rick to explain StarIntel"
+#+end_src
+
+A video-stage request:
+
+#+begin_src sh
+swipl -q -s bin/media-gen.pl -- route video image-to-video \
+  "Animate Morty staring at the graph"
+#+end_src
+
+The returned decision contains the reference class, matched canonical characters, provider/model configuration, stable expert branches, reason, and confidence.
+
+Concrete model identifiers are configuration. Expert rules choose the provider/capability route rather than treating a mutable model ID as permanent truth.
+
+* 4. Character resolution
+
+Character resolution is deterministic Prolog first.
+
+Examples:
+
+#+begin_example
+Morty
+  -> Morty Smith
+
+Rick
+  -> ambiguous by itself
+
+Rick and Morty: Rick explains the graph
+  -> Rick Sanchez
+  -> Morty Smith
+#+end_example
+
+The current built-in catalog is a small fixture-quality seed, not the final mega catalog. The large Wikidata/Wikimedia-backed catalog remains follow-up work and should be loaded/queryable from Prolog rather than requiring the retired Python application layer.
+
+* 5. Generate the Org production template
+
+#+begin_src sh
+swipl -q -s bin/media-gen.pl -- template \
+  "Rick Explains StarIntel" both comic-explainer \
+  "Morty thinks StarIntel is ETL. Rick explains the evidence graph and Star-Expert. Morty understands it, then fumbles again."
+#+end_src
+
+The template preserves the human-review gate, expression/continuity notes, actual-input-asset requirement, and async continuation rule.
+
+* 6. Generic async media API
+
+The reusable provider-neutral layer lives under:
+
+#+begin_example
+prolog/media/
+#+end_example
+
+It contains no StarIntel, Emacs, or publishing assumptions.
+
+Conceptually:
+
+#+begin_src prolog
+image_generate_async(Request, Future).
+video_generate_async(Request, Future).
+voice_generate_async(Request, Future).
+#+end_src
+
+The implementation direction is:
+
+#+begin_example
+canonical execute predicate
+  -> rlm_async Future
+  -> optional caller await
+#+end_example
+
+The deterministic fake provider supports image, video, and voice request shapes so orchestration can be tested without credentials or cost.
+
+* 7. Durable media graph
+
+The first real =rlm_graph= workflow is:
+
+#+begin_example
+expert_plan
+  -> compile_context
+  -> compile_request
+  -> generate_keyframe
+  -> human_review
+       INTERRUPT
+  -> resume
+  -> finalize
+#+end_example
+
+The human review stage returns an actual graph interrupt. The graph Future completes in a paused state; no async scheduler worker sits around waiting for a person.
+
+Resume continues the same run from its checkpoint.
+
+This is the foundation for later image approval -> voice -> remote video submit -> persistent poll -> QA -> publish-plan graphs.
+
+* 8. Emacs
+
+The media module calls SWI-Prolog directly.
+
+Inspect a route:
 
 #+begin_example
 M-x starintel-social-media-route
 #+end_example
 
-Register the gptel tool with:
+Create an Org production template:
 
 #+begin_example
-M-x starintel-social-media-register-gptel-tool
+M-x starintel-social-media-template
 #+end_example
 
-The registered tool is named =starintel_media_org_template=. A gptel model can turn a description into the canonical Org production template while the deterministic expert performs provider routing.
+Open the persistent expert shell:
 
-* 10. Run checks
+#+begin_example
+M-x media-gen-expert-shell
+#+end_example
+
+The shell buffer is:
+
+#+begin_example
+*media-gen expert*
+#+end_example
+
+Its prompt is:
+
+#+begin_example
+media-gen?>
+#+end_example
+
+Current shell commands include:
+
+#+begin_example
+ready
+branches
+route image comic-explainer Rick and Morty explain StarIntel
+why
+quit
+#+end_example
+
+There is no Python REPL between Emacs and Prolog.
+
+* 9. Run the gates
 
 #+begin_src sh
 nix develop --command bash scripts/check
 #+end_src
 
-Media generation itself is not exercised in offline CI because it costs money and requires provider credentials. Routing, character matching, and Org template generation are tested without network access.
+The gate covers:
 
-* Provider configuration
+- existing editorial Python code;
+- Prolog-RLM load;
+- media-gen load;
+- generic media-library independent load;
+- PlUnit routing/character/template tests;
+- async fake-provider execution;
+- real =rlm_graph= interrupt/resume behavior;
+- expert branch fixture coverage;
+- Emacs batch loading;
+- existing Org export/skill/ignore checks;
+- =git diff --check=.
 
-All local overrides belong in the gitignored =.env=:
+* 10. Paid-provider boundary
 
-#+begin_src sh
-OPENAI_API_KEY=
-GEMINI_API_KEY=
-STARINTEL_IMAGE_OPENAI_MODEL=gpt-image-2
-STARINTEL_IMAGE_GOOGLE_MODEL=gemini-3-pro-image
-STARINTEL_VIDEO_GOOGLE_MODEL=veo-3.1-generate-preview
-STARINTEL_VIDEO_OPENAI_MODEL=sora-2-pro
-STARINTEL_ALLOW_LEGACY_OPENAI_VIDEO=0
-STARINTEL_CHARACTER_CATALOGS=
-#+end_src
+Normal CI does not generate paid media.
+
+Before adding a live provider adapter:
+
+1. verify the provider's current official API;
+2. implement it behind the generic Prolog media request boundary;
+3. keep the async execute -> Future direction;
+4. pass actual input assets when the provider supports them;
+5. normalize provider errors structurally;
+6. add deterministic fake/offline coverage first;
+7. keep paid smoke tests explicit and manual.
+
+Do not resurrect a Python provider orchestrator merely because an SDK example is written in Python.
+
+* 11. External-effect identity
+
+Long-running and paid effects must not be duplicated by Prolog backtracking, retries, repeated waits, callbacks, or process restart.
+
+The general reusable once-only effect ledger is tracked upstream in =prolog-rlm= issue #57 at the time of this slice.
+
+media-gen must not create a competing generic effect runtime. Paid/retry-sensitive provider work should reuse the upstream mechanism when it lands, or remain bounded behind explicit deterministic semantics until that dependency is ready.
+
+* Next vertical slices
+
+The next work should extend the same architecture rather than replacing it:
+
+1. Prolog =assets.json= authority and project loading;
+2. Wikidata/Wikimedia character references fetched concurrently with =rlm_async=;
+3. richer =GenerationContext= and prompt/request compiler;
+4. live image adapters behind the generic Prolog API;
+5. persistent remote-video job lifecycle;
+6. real process-restart acceptance test;
+7. Prolog-RLM #57 integration for paid once-only effects;
+8. authority-backed human approval and richer comint/transient dashboards.
