@@ -1,0 +1,33 @@
+:PROPERTIES:
+:ID: nsaspy-project-starintel
+:END:
+#+title: StarIntel
+#+description: Local-first, document-driven intelligence platform: symbolic AI, actors, structured documents.
+#+slug: starintel
+#+filetags: :nsaspy:projects:starintel:
+
+* StarIntel
+
+A local-first, document-driven intelligence platform. StarIntel models
+knowledge explicitly, orchestrates work with actors, and verifies outcomes
+with Prolog.
+
+** Components
+
+| Component | Role | Implementation |
+|-----------------------+-------------------------------------------+----------------|
+| starintel-server | ingest, persistence, search, actor routing | Common Lisp |
+| StarIntel v0.9 model | fifty typed document kinds + provenance | JSON Schema, polyglot |
+| Quasar | operator graph workspace | TypeScript |
+| Auto Dig | autonomous OSINT investigations | Nim |
+| Auto Research | autonomous research with approval gates | Python, Org |
+| prolog-rlm | reasoning + approval verification | Prolog |
+| star-cl | document contract in Common Lisp | Common Lisp |
+
+** Design invariants
+
+- Every document carries sources, evidence, and assessment metadata.
+- Schema validation is strict and pinned (v0.9, additive compatibility).
+- Publication is gated: approval state is machine-checked, with evidence.
+- Storage is CouchDB; routing is RabbitMQ topic exchanges; supervision is
+  Sento actors; the whole stack builds reproducibly under Nix.

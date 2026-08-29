@@ -1,0 +1,74 @@
+#+title: Bootstrapping the StarIntel web platform
+#+date: [2026-08-28 Fri]
+#+author: nsaspy
+#+description: How the StarIntel website platform is being built: Org as the source of truth, deterministic export, Prolog verification, and a fail-closed publication gate.
+#+slug: bootstrapping-the-starintel-web-platform
+#+tags: starintel website org prolog publishing
+
+* Org is the source of truth
+
+Every editorial surface of the new StarIntel web platform - the blog, the
+research index, the nsaspy site - is authored in Org mode. The workflow is
+deliberately boring:
+
+#+begin_src text
+open Emacs
+write Org
+save
+run the publisher
+done
+#+end_src
+
+No CMS, no markdown drift, no content database. Org files live in the
+repositories that own them; the website consumes deterministic exports.
+
+* Deterministic export
+
+The exporter is an Emacs batch process with exactly one job per file:
+produce a body-only HTML fragment and a JSON metadata sidecar. Heading
+anchors are slugged from the heading text, so they survive content edits
+elsewhere in the document. Syntax highlighting comes from htmlize with CSS
+classes that the shared design system styles.
+
+The publisher then enriches every artifact with provenance before anything
+is written anywhere: source repository, path, commit, and a content hash.
+A published page always answers the question "where exactly did this come
+from?"
+
+* Publication is a gate, not a default
+
+Research content is different from editorial content. Auto Research produces
+documents continuously; none of it becomes public because a file exists.
+The pipeline enforces two independent conditions:
+
+1. the document's approval state must be APPROVED with recorded evidence
+   (actor, evidence reference, decided date, pinned base commit and blob);
+2. the document must appear on an explicit allowlist in the publishing
+   configuration.
+
+Both are checked before export. Both fail closed: an empty allowlist
+publishes nothing, and unknown approval states are treated as unapproved.
+The first public research corpus will be empty by default, and that is the
+correct starting state.
+
+* The website as a system
+
+The main site leads with symbolic AI because that is what StarIntel is:
+expert systems, Prolog planning and verification, actor orchestration, and
+structured v0.9 documents with provenance. The dynamic surfaces are narrow
+projections:
+
+- recent documents sample from the newest one hundred public documents,
+  through an allowlisted schema, never the raw database;
+- /radar streams aggregate event rates through a private projector that
+  fails closed on anything it does not recognize.
+
+* What verifies the whole thing
+
+A Prolog knowledge base tracks the program itself: tasks, dependencies,
+completed state, and invariants. Verification gates the merge: no GitHub
+Actions anywhere, Forgejo workflows present, CI secrets referenced but never
+embedded, public pages free of internal hostnames, every published Org file
+carrying provenance. If an invariant fails, the build fails.
+
+That is the whole trick: make the rules executable, then obey them.
