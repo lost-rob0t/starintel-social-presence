@@ -10,8 +10,18 @@ from pathlib import Path
 from .builder import BuildReport, ExternalDocConfig, build_site
 
 
+DEFAULT_EXTERNALS = (
+    '[{"name":"starintel-server","repo_dir_env":"STARINTEL_SERVER_DIR",'
+    '"entry":"README.org","title":"StarIntel Server"},'
+    '{"name":"quasar","repo_dir_env":"STARINTEL_QUASAR_DIR",'
+    '"entry":"README.md","title":"Quasar"}]'
+)
+
+
 def _externals_from_args(raw: str | None) -> list[ExternalDocConfig]:
-    """Parse externals spec: JSON list of {name, repo_dir_env, entry}."""
+    """Parse externals spec: JSON list of {name, repo_dir_env, entry, title}."""
+    if raw is None:
+        raw = DEFAULT_EXTERNALS
     if not raw:
         return []
     data = json.loads(raw)
@@ -37,7 +47,7 @@ def main(argv: list[str] | None = None) -> int:
     build.add_argument(
         "--externals",
         default=None,
-        help="JSON list of external doc configs: [{name, repo_dir_env, entry}]",
+        help="JSON list of external doc configs; pass '' for none",
     )
 
     args = parser.parse_args(argv)

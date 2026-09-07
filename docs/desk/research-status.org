@@ -1,0 +1,49 @@
+:PROPERTIES:
+:ID: docs-desk-research-status
+:END:
+#+title: Desk: research status
+#+date: [2026-09-07 Mon]
+#+description: The read-only Auto Research adapter: preserving explicit status and approval semantics without promoting review-stage work.
+#+slug: desk-research-status
+#+filetags: :docs:desk:auto-research:
+#+status: POST
+#+revision: 1
+
+=auto_research= reads the Auto Research repository's roam trees —
+=roam/research/**.org= and =roam/design/**.org= — and reports each node's
+own status without interpreting it. Auto Research owns research and design
+status, approval, and the deep-research adapter design; this desk adapter
+only surfaces state.
+
+* Record model
+
+Each node becomes a =ResearchRecord= with:
+
+| Field       | Meaning                                        |
+|-------------+------------------------------------------------|
+| path        | the Org file the node came from                |
+| kind        | =research= or =design=                          |
+| title       | node title                                     |
+| description | node description                               |
+| status      | the node's own explicit =#+status= value        |
+| approved    | =t= only when =status == "APPROVED"=            |
+
+* The promotion rule
+
+Only =APPROVED= counts as approved. Review, draft, and researching states
+are preserved verbatim and never promoted — the editorial desk will not
+present review-stage material as settled architecture, and this adapter is
+where that rule is enforced mechanically for this repository.
+
+* Why it matters for the site
+
+Pages on this site that summarize research must respect the same boundary:
+roadmap and research direction are labeled as such (see the closing section
+of [[id:blog-what-is-starintel][What Is StarIntel?]]), and unapproved design work is never presented
+as shipped behavior.
+
+#+begin_src sh
+PYTHONPATH=auto_research/src \
+python -m starintel_auto_research.cli \
+  "$STARINTEL_AUTO_RESEARCH_DIR"
+#+end_src

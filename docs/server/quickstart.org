@@ -1,0 +1,93 @@
+:PROPERTIES:
+:ID: docs-server-quickstart
+:END:
+#+title: Server quick start
+#+date: [2026-09-07 Mon]
+#+description: Standing up the Nix-built Compose stack, submitting a first document, and the honest current limits.
+#+slug: server-quickstart
+#+filetags: :docs:server:quickstart:
+#+status: POST
+#+revision: 1
+
+The supported path is the Nix-built Compose stack. Requirements: Nix with
+flakes, Docker Engine, Docker Compose v2, =curl=, =jq=, and =openssl=.
+
+* Stand up the stack
+
+#+begin_src sh
+cp .env.example .env
+install -d -m 0700 secrets
+openssl rand -base64 32 > secrets/couchdb_password
+openssl rand -base64 48 > secrets/couchdb_secret
+openssl rand -hex 24 | tr '[:lower:]' '[:upper:]' > secrets/erlang_cookie
+openssl rand -base64 32 > secrets/rabbitmq_password
+openssl rand -base64 32 > secrets/valkey_password
+chmod 0600 secrets/*
+
+nix run .#load-images
+docker compose up --detach --wait
+curl --fail http://127.0.0.1:5000/health
+#+end_src
+
+Default local endpoints:
+
+| Service             | Address                |
+|---------------------+------------------------|
+| StarIntel HTTP API  | http://127.0.0.1:5000  |
+| CouchDB             | http://127.0.0.1:5984  |
+| RabbitMQ AMQP       | 127.0.0.1:5672         |
+| RabbitMQ management | http://127.0.0.1:15672 |
+| Valkey              | 127.0.0.1:6379         |
+
+* Submit a document
+
+The body must contain a =dtype=. The route chooses the RabbitMQ routing key
+but does not currently inject or validate the body dtype:
+
+#+begin_src sh
+curl --fail \
+  --header 'Content-Type: application/json' \
+  --request POST \
+  --data '{
+    "_id": "example-note",
+    "dataset": "demo",
+    "dtype": "note",
+    "sources": ["manual"],
+    "version": "0.8.0",
+    "dateAdded": 0,
+    "dateUpdated": 0,
+    "content": "first document"
+  }' \
+  http://127.0.0.1:5000/new/document/note
+#+end_src
+
+The API acknowledges *queue publication*, not CouchDB persistence. Read the
+document back after the ingest consumer has processed it:
+
+#+begin_src sh
+curl --fail http://127.0.0.1:5000/document/example-note | jq
+#+end_src
+
+* Build and test
+
+#+begin_src sh
+nix build
+nix run .#star-unit-tests
+nix run .#star-integration-tests   # with CouchDB and RabbitMQ available
+./scripts/stack-test.sh            # full image, health, FTS, restart, persistence
+#+end_src
+
+* Honest limits
+
+The server's own documentation marks three states: active, present but not
+active, and stub/experimental. Notable documented limits at the time this
+page was written: HTTP ingestion does not enforce the strict StarIntel 0.9
+schema, parts of the actor code still use legacy flat 0.8 constructors, and
+several routes are stubs. Treat these as documented facts, not guarantees,
+and re-verify against the [[id:external-starintel-server][canonical server documentation]] before
+relying on them.
+
+* Related
+
+- [[id:docs-server-overview][Server overview]] — the component stack
+- [[id:docs-server-ingest][Ingest and dataflow recursion]] — the pipeline these commands feed

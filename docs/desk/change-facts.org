@@ -1,0 +1,50 @@
+:PROPERTIES:
+:ID: docs-desk-change-facts
+:END:
+#+title: Desk: change facts
+#+date: [2026-09-07 Mon]
+#+description: The change_fetcher adapter: normalized Git facts as the deterministic spine of the editorial desk.
+#+slug: desk-change-facts
+#+filetags: :docs:desk:tooling:
+#+status: POST
+#+revision: 1
+
+=change_fetcher= is the editorial desk's Git fact collector. It walks a
+repository's history and emits a JSON array of normalized change records:
+repository identity and path, commit SHA, timestamp, author, subject,
+changed files, and comparison range. No model summary is required to retain
+these facts, so none is added.
+
+* Interface
+
+#+begin_src sh
+PYTHONPATH=change_fetcher/src \
+python -m starintel_change_fetcher.cli \
+  "$STARINTEL_SERVER_DIR" \
+  --range HEAD~20..HEAD \
+  --limit 20
+#+end_src
+
+Arguments: a repository path (required), =--range= (default
+=HEAD~10..HEAD=), and =--limit= (default 100). Output is JSON on stdout,
+indented, no daemon and no database.
+
+* Design constraints
+
+- *Deterministic.* Same repository and range produce the same records.
+- *LLM-free collection path.* Downstream tools can distinguish observed
+  Git fact from generated draft only if the fact layer never mixes them.
+- *Composition.* stdout JSON composes with =jq=, the Emacs change browser,
+  and test harnesses.
+
+* Where it is used
+
+- The Emacs feature browser (=M-x starintel-social-features=) lists recent
+  changes from configured local StarIntel checkouts.
+- Topic creation attaches the selected change's source references to a new
+  editorial topic.
+- Devlogs such as [[id:blog-change-facts][Git Facts Without LLMs]] are written against this
+  output, so every claim in them is checkable.
+
+The unit tests run against a real local Git repository created in a
+temporary directory — no network, no checked-in fixtures.

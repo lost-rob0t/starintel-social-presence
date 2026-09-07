@@ -28,6 +28,10 @@ class ExternalDocConfig:
     entry: str = "README.md"
     title: str = ""
 
+    @property
+    def display_name(self) -> str:
+        return self.title
+
     def repo_dir(self) -> Path | None:
         value = None
         import os
@@ -319,25 +323,50 @@ def _prepare_external_docs(
     build_dir: Path,
     existing_docs: list[SourceDoc],
 ) -> list[SourceDoc]:
-    """Aggregate docs pages from configured external star* repositories."""
+    """Aggregate docs pages from configured external star* repositories.
+
+    Each page gets a stable synthetic :ID: (external-<name>) in a
+    build-local copy of the source, so roam-style id links can target it
+    without mutating the upstream checkout.
+    """
     docs: list[SourceDoc] = []
     ext_dir = build_dir / "external-org"
+    ext_dir.mkdir(parents=True, exist_ok=True)
     for config in externals:
         repo_dir = config.repo_dir()
-        if repo_dir is None:
-            continue
-        entry = repo_dir / config.entry
-        if not entry.is_file():
-            continue
-        if entry.suffix == ".org":
-            org_source = entry
+        entry = repo_dir / config.entry if repo_dir else None
+        synthetic_id = f"external-{config.name}"
+        org_source = ext_dir / f"{config.name}.org"
+        if entry and entry.is_file():
+            if entry.suffix == ".org":
+                body = entry.read_text(encoding="utf-8")
+            else:
+                body = export_mod.markdown_to_org(entry, ext_dir).read_text(
+                    encoding="utf-8"
+                )
+            revision = export_mod.external_repo_revision(repo_dir)
+            description = f"Aggregated from {config.name} ({config.entry})."
         else:
-            org_source = export_mod.markdown_to_org(entry, ext_dir)
-        revision = export_mod.external_repo_revision(repo_dir)
+            body = (
+                f"* Not available in this build\n\n"
+                f"Aggregation skipped: the {config.name} checkout is not "
+                "configured in this environment. This page exists so links "
+                "to it resolve; it will carry the repository's README once "
+                "the checkout is configured.\n"
+            )
+            revision = ""
+            description = (
+                f"Placeholder: {config.name} ({config.entry}) is not "
+                "configured in this build environment."
+            )
+        header = f":PROPERTIES:\n:ID: {synthetic_id}\n:END:\n"
+        if not re.search(r"^#\+title:", body, re.MULTILINE | re.IGNORECASE):
+            header += f"#+title: {config.display_name or config.name}\n"
+        org_source.write_text(header + body, encoding="utf-8")
         url = f"/docs/external/{config.name}.html"
         args = org_mod.parse_source_doc(org_source, "docs", url)
         args.setdefault("description", "")
-        title = config.title or (
+        title = config.display_name or (
             args["title"] if args["title"] != org_source.stem else config.name
         )
         doc = SourceDoc(
@@ -345,11 +374,10 @@ def _prepare_external_docs(
             section="docs",
             title=title,
             slug=config.name,
-            description=args["description"]
-            or f"Aggregated from {config.name} ({config.entry}).",
+            description=args["description"] or description,
             status="POST",
             revision=revision,
-            doc_id=f"external:{config.name}",
+            doc_id=synthetic_id,
             url=url,
         )
         docs.append(doc)

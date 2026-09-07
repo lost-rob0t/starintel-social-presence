@@ -1,0 +1,55 @@
+:PROPERTIES:
+:ID: docs-documents-provenance
+:END:
+#+title: Provenance and evidence
+#+date: [2026-09-07 Mon]
+#+description: Why sources, claims, evidence, and relations are separable document kinds, and what that buys an investigation.
+#+slug: provenance-evidence
+#+filetags: :docs:documents:provenance:
+#+status: POST
+#+revision: 1
+
+The v0.9 document model exists to keep one property intact end to end: the
+trail from a raw source to every derived conclusion stays inspectable.
+
+* The rule
+
+A graph edge should not magically become a fact just because it looks
+convincing on screen. The model therefore separates:
+
+- source records — raw material exactly as collected
+- canonical entities — resolved people, orgs, accounts, hosts
+- claims / assertions — atomic statements, kept separable
+- evidence — links between claims and sources
+- relations — typed edges, visibly sourced or visibly inferred
+- activities — what an actor did, with which inputs and outputs
+
+Similarity is not identity. Adjacency is not association. Inference is not
+source evidence.
+
+* What this buys
+
+1. *Disagreement survives.* Two sources can conflict without one silently
+   overwriting the other.
+2. *Fuzzy stays fuzzy.* A similarity match is a claim about similarity, not
+   an identity merge.
+3. *Inference stays visible.* An inferred relationship carries its
+   derivation, so a retracted input can invalidate the result instead of
+   leaving it looking current.
+4. *Approval is checkable.* Publication gates read approval state with
+   evidence — actor, reference, pinned commit — not prose assurances.
+
+* Provenance in the editorial desk
+
+The same discipline applies to this website. Even the simplest records the
+desk produces — normalized Git change records from
+[[id:docs-desk-change-facts][change_fetcher]] — carry repository, commit, timestamp, author,
+subject, changed files, and comparison range. Pages aggregated from external
+repositories pin the [[id:docs-documents-schema][document model's]] source revision in their badge.
+And byline policy marks every page as [[id:blog-what-is-starintel][human]] or LLM-written, because an
+LLM draft is not evidence either.
+
+* Related
+
+- [[id:docs-documents-schema][The v0.9 document model]] — kinds, families, invariants
+- [[id:docs-server-ingest][Ingest and dataflow recursion]] — how provenance travels through the pipeline
