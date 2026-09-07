@@ -48,8 +48,10 @@ TOC, article body, and footnotes; this only strips the HTML shell."
 (defun starintel-site-export-manifest (manifest-file)
   "Export each {src,out} pair in the JSON MANIFEST-FILE.
 Org-roam style [[id:...]] links resolve through org-id across all
-manifest sources."
+manifest sources. The org-id locations cache stays in a temporary
+file so batch runs never depend on (or pollute) a user profile."
   (let* ((json-array-type 'list)
+         (org-id-locations-file (make-temp-file "starintel-org-id-locations"))
          (entries (json-read-file manifest-file))
          (srcs (mapcar (lambda (e) (expand-file-name (alist-get 'src e))) entries)))
     (org-id-update-id-locations srcs t)
