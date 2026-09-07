@@ -110,6 +110,22 @@ It may call deterministic Python CLIs and optional editorial adapters, but ordin
 
 `elisp/blog-deslop/` owns deterministic editorial lint. Findings are inspectable before any rewrite.
 
+`elisp/starintel-site-export.el` owns batch Org->HTML *fragments* for the site: table of contents, body, and footnotes with no page shell. It never styles pages; the shared theme lives in `site-assets/starintel.css`.
+
+`elisp/starintel-roam-graph.el` syncs an org-roam database for the repository content.
+
+## Site publisher boundary
+
+`site_builder` turns Org sources into the static site. Division of ownership:
+
+- Emacs exports article body fragments; the Python builder owns page shells, navigation, badges, card layouts, docs sidebar, taxonomy, timeline, and the graph workspace.
+- Graph truth is org-roam's. The repository is an org-roam vault in the editor (`.dir-locals.el`, repo-local `.cache/org-roam.db`); the builder consumes that same database and only runs a batch sync when it is stale. It never re-parses Org links into a parallel graph model.
+- Drafts (`#+status: DRAFT`) render for preview only: `noindex`, excluded from listings, sitemap, and graph.
+- External repository docs are aggregated from configured `star*` checkouts and published with the source checkout's pinned revision; they are skipped, not invented, when a checkout is absent.
+- Syntax highlighting is deterministic (Pygments over exported `src` blocks); no client-side highlighter, no CDN assets.
+
+`scripts/visual-check` renders the built site in a real browser across desktop/laptop/tablet/mobile/narrow viewports, capturing screenshots, console errors, failed assets, and horizontal overflow into `.visual-tests/` (gitignored).
+
 ## Content model
 
 Org remains the canonical editable source.

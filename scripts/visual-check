@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Visual verification: build the site, serve it, capture screenshots with a
+# real browser, and report console errors / failed assets / overflow.
+#
+#   scripts/visual-check              # full build + checks + screenshots
+#   scripts/visual-check --no-build   # reuse ./site as-is
+#
+# Screenshots and report land in .visual-tests/ (gitignored).
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$root"
+
+export STARINTEL_SOCIAL_ROOT="$root"
+export PYTHONPATH="$root/site_builder/src:$PYTHONPATH"
+
+if [[ "${1:-}" != "--no-build" ]]; then
+  bash "$root/scripts/build-site"
+fi
+
+python3 - <<'EOF'
+from pathlib import Path
+
+from starintel_site_builder.visual import find_chromium, run_visual_checks
+
+site = Path("site")
+if not (site / "index.html").is_file():
+    raise SystemExit("site/ does not contain a build; run scripts/build-site first")
+
+results = run_visual_checks(
+    site_dir=site,
+    out_dir=Path(".visual-tests"),
+    executable_path=find_chromium(),
+)
+bad = [r for r in results if not r.ok]
+print(f"visual checks: {len(results) - len(bad)}/{len(results)} clean")
+for r in bad:
+    print(f"FAIL {r.page} [{r.viewport}] {r.url}")
+    for err in r.console_errors:
+        print(f"  console: {err}")
+    for err in r.failed_requests:
+        print(f"  request: {err}")
+    if r.horizontal_overflow:
+        print("  horizontal overflow")
+    if r.missing_primary_content:
+        print("  missing primary content")
+raise SystemExit(1 if bad else 0)
+EOF

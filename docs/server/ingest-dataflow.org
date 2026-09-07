@@ -1,0 +1,72 @@
+:PROPERTIES:
+:ID: docs-server-ingest
+:END:
+#+title: Ingest and dataflow recursion
+#+date: [2026-09-03 Thu]
+#+description: How a document moves through the StarIntel Server pipeline, and how actors expand the graph through messages.
+#+slug: ingest-dataflow
+#+filetags: :docs:server:actors:
+#+status: POST
+#+revision: 1
+
+A document normally moves through this pipeline:
+
+#+begin_example
+HTTP/client/actor
+      |
+      v
+documents.ingest.<dtype>
+      |
+      v
+CouchDB insert + _id/_rev enrichment
+      |
+      v
+documents.new.<dtype>
+      |
+      +--> local actor via TELL
+      +--> remote actor via RabbitMQ topic route
+      +--> derived documents and relations
+                 |
+                 +--> documents.ingest.<dtype>  (durable recursion)
+                 `--> documents.new.<dtype>     (event-only fan-out)
+#+end_example
+
+* Durable recursion versus event fan-out
+
+The two exchanges exist because derived documents have different durability
+requirements.
+
+1. *Durable recursion.* A derived document that must survive restarts is
+   published to ~documents.ingest.<dtype>~ again. It goes through the same
+   CouchDB insert, receives an ~_id~ and ~_rev~, and can itself trigger
+   more actors. The graph expands through messages, not recursive function
+   calls.
+2. *Event-only fan-out.* Transient notifications — "this document just
+   changed" — go to ~documents.new.<dtype>~. Subscribers react, but the
+   event itself is not a document.
+
+Actors can emit more StarIntel documents, relations, targets, and actor
+events. Those outputs trigger more actors. Supervision belongs to the Sento
+actor layer, so a crashing consumer is restarted without losing the durable
+documents it already acknowledged.
+
+* Quick start shape
+
+The server ships a Nix-built Compose stack. The quick start looks like
+this (abbreviated; see the server repository for the current commands):
+
+#+begin_src sh
+cp .env.example .env
+install -d -m 0700 secrets
+openssl rand -base64 32 > secrets/couchdb_password
+openssl rand -base64 48 > secrets/couchdb_secret
+nix run .#stack-up
+#+end_src
+
+Requirements: Nix with flakes, Docker Engine, Docker Compose v2, ~curl~,
+~jq~, and ~openssl~.
+
+* Related
+
+- [[id:docs-server-overview][Server overview]] — the component stack this pipeline runs on.
+- [[id:docs-documents-schema][The v0.9 document model]] — what these documents contain.

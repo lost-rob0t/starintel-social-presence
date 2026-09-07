@@ -1,0 +1,75 @@
+:PROPERTIES:
+:ID: docs-documents-schema
+:END:
+#+title: The v0.9 document model
+#+date: [2026-09-03 Thu]
+#+description: Typed StarIntel documents, provenance metadata, and the design invariants that make records auditable.
+#+slug: document-model-v9
+#+filetags: :docs:documents:schema:
+#+status: POST
+#+revision: 1
+
+StarIntel models knowledge as typed documents rather than freeform rows.
+The v0.9 schema defines fifty typed document kinds, each carrying sources,
+evidence, and assessment metadata.
+
+* Design invariants
+
+- Every document carries sources, evidence, and assessment metadata.
+- Schema validation is strict and pinned (v0.9, additive compatibility).
+- Publication is gated: approval state is machine-checked, with evidence.
+- Storage is CouchDB; routing is RabbitMQ topic exchanges; supervision is
+  Sento actors; the whole stack builds reproducibly under Nix.
+
+* Document kind families
+
+The fifty kinds group into families. The exact enumeration lives in the
+executable schema owned by Auto Dig; this table maps the families to their
+role in an investigation:
+
+| Family        | Role                                        |
+|---------------+---------------------------------------------|
+| sources       | raw material exactly as collected           |
+| entities      | canonical people, orgs, accounts, hosts     |
+| claims        | atomic assertions, kept separable           |
+| evidence      | links between claims and sources            |
+| relations     | typed edges, visibly inferred or sourced    |
+| activities    | what an actor did, with which inputs        |
+| assessments   | analyst judgments, with provenance          |
+
+* Why claims stay separable
+
+A graph edge should not become a fact because it looks convincing on
+screen. Keeping claims, evidence, relations, and activities as distinct
+kinds means:
+
+1. two sources can disagree without one silently overwriting the other
+2. a fuzzy match stays visibly fuzzy
+3. an inferred relationship stays visibly inferred
+4. a retracted input can invalidate derived results instead of leaving
+   them looking current
+
+* Provenance in practice
+
+Even the simplest adapter output keeps its provenance. The change records
+produced by the editorial desk's Git adapter carry the repository, commit,
+timestamp, author, subject, changed files, and comparison range — raw
+facts, serializable, testable without a model:
+
+#+begin_src json
+{
+  "repository": "starintel-server",
+  "commit": "0df7c4f",
+  "timestamp": "2026-08-29T06:55:26Z",
+  "author": "N545PY",
+  "subject": "feat: nsaspy site org sources, launch post",
+  "changed_files": ["nsaspy/about.org", "scripts/validate-web-org.py"],
+  "range": "HEAD~20..HEAD"
+}
+#+end_src
+
+* Related
+
+- [[id:nsaspy-project-starintel][StarIntel project page]] — the platform summary.
+- [[id:docs-server-ingest][Ingest and dataflow recursion]] — how documents move through the runtime.
+- [[id:blog-what-is-starintel][What Is StarIntel?]] — the narrative overview.

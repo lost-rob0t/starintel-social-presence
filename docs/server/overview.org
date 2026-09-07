@@ -1,0 +1,75 @@
+:PROPERTIES:
+:ID: docs-server-overview
+:END:
+#+title: StarIntel Server overview
+#+date: [2026-09-03 Thu]
+#+description: The Common Lisp runtime for storing, routing, querying, and recursively enriching StarIntel documents.
+#+slug: starintel-server-overview
+#+filetags: :docs:server:
+#+status: POST
+#+revision: 1
+
+StarIntel Server is the Common Lisp runtime for storing, routing, querying,
+and recursively enriching StarIntel documents. It is a backend service
+layer: not the Quasar browser UI, and not replaced by ~quasar-ui~.
+
+* The stack
+
+The runtime combines:
+
+- CouchDB for durable documents, views, and full-text search
+- RabbitMQ topic exchanges for document and actor traffic
+- Sento actors for local concurrency, supervision boundaries, timers, and
+  message passing
+- A Ningle/Clack/Hunchentoot HTTP API
+- The ~star-cl~ document library and StarIntel specification adapters
+- Nix-built binaries, tests, and container images
+
+This is an experimental operator system, not a hardened public SaaS
+service. The HTTP API currently has no authentication or authorization, so
+it must sit behind an authenticated reverse proxy and away from the public
+internet.
+
+* Position in the stack
+
+#+begin_example
+quasar-ui
+  browser UI / graph renderer / standalone subset
+        |
+        | typed commands, projections, capability discovery
+        v
+quasar
+  canonical Common Lisp control plane/runtime
+        |
+        | StarIntel service APIs and adapters
+        v
+starintel-server
+  persistent ingest / storage / search / routing / RabbitMQ
+        |
+        +-----------------------------+
+        |                             |
+        v                             v
+star-bbpd                       other actor services
+  external recon actors          collectors / analyzers / tools
+#+end_example
+
+Responsibilities are intentionally separated:
+
+| Layer            | Owns                                                            |
+|------------------+-----------------------------------------------------------------|
+| ~quasar-ui~     | browser presentation, PWA behavior, Cytoscape rendering         |
+| ~quasar~         | canonical command/control boundary, supervision, reconnect      |
+| ~starintel-server~ | document ingest, CouchDB persistence/querying, RabbitMQ routing |
+| ~star-bbpd~      | external recon actors: Subfinder, Nmap, Httpx, Katana, DNS      |
+
+A connected Quasar UI may expose controls and results for server and
+external services, but that does not make those capabilities browser
+implementations. Standalone ~quasar-ui~ remains valid without this server
+and must not be documented as feature-equivalent to a connected
+deployment.
+
+* Where to go next
+
+- [[id:docs-server-ingest][Ingest and dataflow recursion]] — the document pipeline in detail.
+- [[id:blog-what-is-starintel][What Is StarIntel?]] — the platform-level picture.
+- The canonical [[https://github.com/lost-rob0t][repository]] holds the current implementation.

@@ -32,6 +32,9 @@
 - [x] black/gold HTML export
 - [x] deterministic deslop lint
 - [x] optional region rewrite adapter
+- [x] static site publishing (blog/docs/portfolio/graph, drafts, revisions)
+- [x] org-roam graph generation consumed from the editor's roam database
+- [x] browser visual verification suite (`scripts/visual-check`)
 - [ ] richer preview server
 - [ ] ediff-first assisted replacement workflow
 - [ ] unsupported-claim checker backed by imported fact packets

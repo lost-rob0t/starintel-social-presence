@@ -1,0 +1,99 @@
+:PROPERTIES:
+:ID: blog-change-facts
+:END:
+#+title: Git Facts Without LLMs
+#+date: [2026-09-04 Fri]
+#+author: nsaspy
+#+description: The change_fetcher devlog: normalized commit facts as a deterministic spine that LLM tooling may read but never replaces.
+#+slug: git-facts-without-llms
+#+tags: starintel tooling git python editorial
+#+status: POST
+#+revision: 1
+
+The editorial desk starts from a rule: /an LLM draft is not evidence/. So
+before any assisted writing existed, the desk needed a deterministic spine
+that collects Git facts and normalizes them into something both humans and
+models can read. That spine is ~change_fetcher~.
+
+* The contract
+
+The tool walks a repository's history and emits a JSON array of normalized
+change records. Each record keeps:
+
+- repository identity and path
+- the full commit SHA
+- timestamp
+- author
+- subject line
+- changed files
+- the comparison range
+
+No model summary is required to retain these facts, so none is added. The
+record shape is deliberately boring, because boring survives refactors:
+
+#+begin_src json
+[
+  {
+    "repository": "starintel-social-presence",
+    "commit": "6176084",
+    "timestamp": "2026-09-05T00:00:00Z",
+    "author": "nsaspy",
+    "subject": "Use example blocks for presentation text",
+    "changed_files": ["youtube/video-source/what-is-starintel/present.org"],
+    "range": "HEAD~20..HEAD"
+  }
+]
+#+end_src
+
+* Running it
+
+The CLI takes a repository and a revision range:
+
+#+begin_src sh
+PYTHONPATH=change_fetcher/src \
+python -m starintel_change_fetcher.cli \
+  "$STARINTEL_SERVER_DIR" \
+  --range HEAD~20..HEAD \
+  --limit 20
+#+end_src
+
+Output goes to stdout as JSON. It composes with ~jq~, with the Emacs change
+browser, or with a test harness — no daemon, no database, no lock-in.
+
+* Why the collection path stays LLM-free
+
+Three reasons, in order of importance:
+
+1. *Reproducibility.* The same repository and range must always produce the
+   same records. A model in the loop breaks that property.
+2. *Trust boundaries.* Downstream tools can distinguish "observed Git fact"
+   from "generated draft" only if the fact layer never mixes them.
+3. *Cost and latency.* Fact collection runs constantly — in tests, in CI,
+   in the discovery commands. It has to be fast and free.
+
+LLMs still help later: the Emacs desk has an optional, region-oriented
+rewrite adapter. But it writes suggestions to a preview buffer and the
+editor decides. The spine never depends on it.
+
+* What the facts are for
+
+In the editorial desk, normalized changes feed:
+
+- the Emacs feature browser (~M-x starintel-social-features~)
+- topic creation, where a selected change becomes an editorial topic with
+  its source references attached
+- devlogs like this one: every claim above is checkable against the
+  repository it describes
+
+* Deterministic tests
+
+The adapter has unit tests that run against a real local Git repository
+created in a temporary directory — no network, no fixtures checked in, no
+recorded transcripts. The same tests run in CI through the Nix shell.
+
+* Next steps
+
+The roadmap lists deterministic clustering across repositories and a story
+candidate queue as the next slices. Both stay on the same side of the
+boundary: deterministic transforms over normalized records, with any model
+suggestions quarantined behind explicit human review.

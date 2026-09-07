@@ -1,0 +1,182 @@
+:PROPERTIES:
+:ID: blog-what-is-starintel
+:END:
+#+title: What Is StarIntel?
+#+date: [2026-09-02 Wed]
+#+author: nsaspy
+#+description: The definition, the data model, and the runtime: collect, normalize, connect, search, analyze, export — then show your work.
+#+slug: what-is-starintel
+#+tags: starintel overview architecture
+#+status: POST
+#+revision: 2
+
+#+begin_quote
+A local-first intelligence platform for collecting, normalizing, connecting,
+searching, analyzing, and exporting structured information through
+actor-based components.
+#+end_quote
+
+That sentence is the whole project. Everything below is implementation, and
+most of it is still being built in the open. This article is the reference
+answer to the question in its title; when the system changes, the revision
+badge at the top of this page changes with it.
+
+* The mission
+
+The mission is to turn scattered information into something you can
+genuinely investigate without losing the source trail along the way.
+
+The system is designed so that the original source, the normalized record,
+the relationship, the analysis run, and the final view stay connected.
+Machines do the repetitive work. The person running the investigation can
+still inspect it, interrupt it, change it, query it, and export it.
+
+** What StarIntel is not
+
+It is not one more isolated OSINT utility. It is the layer that lets
+collectors, search, graph analysis, logic engines, enrichment tools, and
+exports operate on the same structured document model.
+
+** The one-paragraph pipeline
+
+#+begin_example
+sources -> collectors -> typed documents -> actors -> analysis
+        -> relations / claims -> search -> Quasar -> exports
+#+end_example
+
+The output of one stage is typed input for the next stage. That loop is
+where StarIntel stops being a pile of tools.
+
+* Source-first data
+
+One of the biggest design rules: a graph edge should not magically become a
+fact just because it looks convincing on screen[fn:1].
+
+The research direction separates:
+
+- source records
+- canonical entities
+- atomic claims / assertions
+- evidence
+- relations
+- automated activities and derivations
+
+That leaves room for disagreement. Two sources can conflict. A fuzzy match
+can stay a fuzzy match. An inferred relationship stays visibly inferred
+instead of pretending it came directly from a source.
+
+#+begin_quote
+Similarity is not identity. Adjacency is not association. Inference is not
+source evidence.
+#+end_quote
+
+* The document model
+
+StarIntel models knowledge as typed documents instead of freeform rows. The
+v0.9 schema defines fifty typed document kinds, and every document carries
+sources, evidence, and assessment metadata[fn:2]. Schema validation is
+strict and pinned: v0.9 with additive compatibility.
+
+A normalized change record — the simplest document an adapter in the
+editorial desk emits — looks like this:
+
+#+begin_src json
+{
+  "repository": "starintel-social-presence",
+  "commit": "0df7c4f",
+  "timestamp": "2026-08-29T06:55:26Z",
+  "author": "N545PY",
+  "subject": "feat: nsaspy site org sources, launch post",
+  "changed_files": [
+    "nsaspy/about.org",
+    "scripts/validate-web-org.py"
+  ],
+  "range": "HEAD~20..HEAD"
+}
+#+end_src
+
+No summary, no sentiment, no inference: raw Git facts that stay usable
+without a model.
+
+** Where the schema is written down
+
+The document contract lives in the Auto Dig repository, which owns the
+executable StarIntel document schema and the canonical records. Adapters —
+like the read-only candidate extractor in the editorial desk — consume it;
+they never redefine it. See the platform overview on the [[id:nsaspy-project-starintel][StarIntel
+project page]].
+
+* Actors everywhere
+
+The runtime is actor-oriented. Instead of one giant pipeline, work is broken
+into supervised, specialized components.
+
+** Why supervision matters
+
+These jobs fail in real life:
+
+1. networks die mid-collection
+2. providers rate-limit a collector
+3. a parser crashes on malformed input
+4. queues back up behind a slow enrichment worker
+
+A supervised runtime can restart or isolate pieces instead of taking the
+entire investigation down. The server implementation combines CouchDB for
+durable documents, RabbitMQ topic exchanges for document and actor traffic,
+and Sento actors for local concurrency and supervision boundaries. The
+[[id:docs-server-overview][server overview page]] documents the current pipeline in detail.
+
+** Dataflow recursion
+
+Actors can emit more documents, relations, targets, and actor events. Those
+outputs trigger more actors. The graph expands through messages rather than
+recursive function calls — durable recursion through the ingest exchange,
+not clever code.
+
+* Quasar: the investigation workbench
+
+Quasar is the visual side of the platform. At its core it is a typed graph
+editor: create and connect objects, inspect them, save and restore graph
+state, run actions against selections, and undo graph-operation batches.
+
+The workspace research goes further: the same identifiers projected into a
+graph, a table, a map, a timeline, a document viewer, and a job trace. The
+graph is not the database of truth — it is a view over the investigation,
+which means the UI can change without destroying the provenance model
+underneath it.
+
+* Automation without the black box
+
+Configured automation should execute end to end — but every run leaves a
+trail: what triggered it, which actor ran, which version, which parameters,
+which records went in, what came out, and what failed or retried.
+
+The same discipline applies to the logic layer. Reasoning is bounded and
+supervised, and a derived result is attached to the rule package, the exact
+input assertions, the engine version, and proof information. If an input is
+later retracted, the derived result does not sit there looking current[fn:1].
+
+* Where this is going
+
+Some of the strongest current research directions: a capability catalog
+generated from actor manifests, declarative playbooks, resumable analysis
+jobs, connector checkpoints, configurable correlation rules, and
+policy-aware exports. The common theme is composability: small capabilities
+with typed contracts instead of one enormous application.
+
+This is roadmap and research direction, not a claim that every item has
+shipped. The architecture is still evolving, and that is the point of
+building it in the open.
+
+* Try the rest of this site
+
+- The [[id:nsaspy-project-starintel][StarIntel project page]] summarizes the stack component by component.
+- The [[id:docs-server-overview][StarIntel Server overview]] documents the current backend pipeline.
+- The [[https://github.com/lost-rob0t][GitHub org]] and [[https://git.starintel.actor][Forge instance]] hold the actual repositories.
+
+* Footnotes
+[fn:2] The fifty-kind figure comes from the StarIntel v0.9 document model;
+the schema is pinned in the Auto Dig repository.
+
+[fn:1] Source-first provenance rules are stated in the StarIntel research
+notes and enforced by the platform's verification tooling.

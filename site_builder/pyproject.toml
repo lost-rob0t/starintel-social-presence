@@ -1,0 +1,11 @@
+[project]
+name = "starintel-site-builder"
+version = "0.1.0"
+description = "Deterministic site publisher for the StarIntel social-presence repository"
+requires-python = ">=3.11"
+dependencies = [
+    "Pygments>=2.17",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
