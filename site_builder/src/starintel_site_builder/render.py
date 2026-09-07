@@ -103,8 +103,15 @@ def breadcrumbs(parts: list[tuple[str, str | None]]) -> str:
     return f'<nav class="breadcrumbs" aria-label="Breadcrumb">{joined}</nav>'
 
 
+def _byline_chip(doc: SourceDoc) -> str:
+    if doc.human:
+        name = f' <span class="meta-text">{esc(doc.author)}</span>' if doc.author else ""
+        return f'<span class="badge badge--human">human</span>{name}'
+    return '<span class="badge badge--llm" title="LLM-written content">Mara · LLM</span>'
+
+
 def meta_row(doc: SourceDoc) -> str:
-    badges = []
+    badges = [_byline_chip(doc)]
     if doc.is_draft:
         badges.append('<span class="badge badge--draft">Draft</span>')
     else:
@@ -113,9 +120,9 @@ def meta_row(doc: SourceDoc) -> str:
         badges.append(f'<span class="badge badge--rev">rev {esc(doc.revision)}</span>')
     if doc.date:
         badges.append(f'<time class="meta-text" datetime="{esc(doc.date)}">{esc(doc.date)}</time>')
-    if doc.author:
-        badges.append(f'<span class="meta-text">{esc(doc.author)}</span>')
     for tag in doc.tags:
+        if tag.lower() == "human":
+            continue
         badges.append(
             f'<a class="badge badge--tag" href="/tags/{esc(tag.lower())}.html">#{esc(tag)}</a>'
         )
@@ -127,15 +134,21 @@ def post_card(doc: SourceDoc, kicker: str = "") -> str:
     tags = "".join(
         f'<a class="badge badge--tag" href="/tags/{esc(t.lower())}.html">#{esc(t)}</a>'
         for t in doc.tags[:4]
+        if t.lower() != "human"
     )
     draft_mark = '<span class="badge badge--draft">Draft</span>' if doc.is_draft else ""
+    byline = (
+        '<span class="badge badge--human">human</span>'
+        if doc.human
+        else '<span class="badge badge--llm">Mara · LLM</span>'
+    )
     date_html = f"<time>{esc(doc.date)}</time>" if doc.date else ""
     return (
         f'<article class="card">'
         f"{kicker_html}"
         f'<h3 class="card__title"><a href="{esc(doc.url)}">{esc(doc.title)}</a></h3>'
         f'<p class="card__desc">{esc(doc.description)}</p>'
-        f'<div class="card__meta">{date_html}{draft_mark}{tags}</div>'
+        f'<div class="card__meta">{byline}{date_html}{draft_mark}{tags}</div>'
         f"</article>"
     )
 

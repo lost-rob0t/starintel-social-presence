@@ -92,6 +92,19 @@ DOC_NESTED = """:PROPERTIES:
 Links to [[id:test-doc-a][fixture docs]].
 """
 
+POST_HUMAN = """:PROPERTIES:
+:ID: test-post-human
+:END:
+#+title: Human Written Post
+#+date: [2026-01-12 Mon]
+#+author: nsaspy
+#+description: A fixture post the editor wrote themselves.
+#+slug: human-written-post
+#+tags: testing human
+
+Written by the editor, not the model.
+"""
+
 DOC_LONELY = """:PROPERTIES:
 :ID: test-doc-lonely
 :END:
@@ -119,6 +132,7 @@ def write_repo(root: Path) -> None:
     (root / "blog" / "drafts" / "2026-01-11-draft-notes.org").write_text(DRAFT, encoding="utf-8")
     (root / "docs" / "fixture-docs.org").write_text(DOC_A, encoding="utf-8")
     (root / "docs" / "sub" / "nested.org").write_text(DOC_NESTED, encoding="utf-8")
+    (root / "blog" / "posts" / "2026-01-12-human-written-post.org").write_text(POST_HUMAN, encoding="utf-8")
     (root / "docs" / "lonely.org").write_text(DOC_LONELY, encoding="utf-8")
     # Use the repository's real exporter for full-build tests.
     repo_elisp = Path(__file__).resolve().parents[2] / "elisp" / "starintel-site-export.el"
@@ -151,6 +165,7 @@ def write_roam_db(root: Path, db_path: Path) -> None:
     q = lambda p: json_quote(str(root / p))
     nodes = [
         ("test-post-a", "blog/posts/2026-01-02-first-test-post.org", "First Test Post"),
+        ("test-post-human", "blog/posts/2026-01-12-human-written-post.org", "Human Written Post"),
         ("test-post-b", "blog/posts/2026-01-10-second-test-post.org", "Second Test Post"),
         ("test-doc-a", "docs/fixture-docs.org", "Fixture Docs"),
         ("test-doc-nested", "docs/sub/nested.org", "Nested Docs Page"),

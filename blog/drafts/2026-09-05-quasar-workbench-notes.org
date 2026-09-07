@@ -3,7 +3,6 @@
 :END:
 #+title: Quasar Workbench Notes
 #+date: [2026-09-05 Sat]
-#+author: nsaspy
 #+description: Draft notes on the Quasar investigation workspace research — graph, table, map, and timeline as projections over shared identifiers. Not for publication yet.
 #+slug: quasar-workbench-notes
 #+tags: quasar research drafting

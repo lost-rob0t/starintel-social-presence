@@ -65,17 +65,19 @@ def parse_source_doc(path: Path, section: str, url: str) -> dict:
     status = (keywords.get("STATUS") or "POST").strip().upper()
     if status not in {"POST", "DRAFT"}:
         status = "POST"
+    tags = split_tags(keywords.get("TAGS"), keywords.get("FILETAGS"))
     return {
         "title": title,
         "slug": slug,
         "description": keywords.get("DESCRIPTION", ""),
         "author": keywords.get("AUTHOR", ""),
         "date": _first_date(keywords.get("DATE", "")),
-        "tags": split_tags(keywords.get("TAGS"), keywords.get("FILETAGS")),
+        "tags": tags,
         "status": status,
         "revision": keywords.get("REVISION", ""),
         "doc_id": parse_id_property(text) or f"file:{slug}",
         "url": url,
+        "human": "human" in tags,
     }
 
 

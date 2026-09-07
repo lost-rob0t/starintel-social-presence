@@ -103,12 +103,21 @@ class TestFullBuild:
         assert "draft-notes" not in sitemap
         assert "/blog/first-test-post.html" in sitemap
 
+    def test_byline_marks_llm_vs_human(self, built_site) -> None:
+        out, report = built_site
+        llm_page = (out / "blog" / "first-test-post.html").read_text(encoding="utf-8")
+        assert "badge--llm" in llm_page and "Mara" in llm_page
+        human_page = (out / "blog" / "human-written-post.html").read_text(encoding="utf-8")
+        assert "badge--human" in human_page and "nsaspy" in human_page
+        index = (out / "index.html").read_text(encoding="utf-8")
+        assert "badge--llm" in index and "badge--human" in index
+
     def test_report_counts(self, built_site) -> None:
         out, report = built_site
-        assert report.posts == 2
+        assert report.posts == 3
         assert report.drafts == 1
         assert report.docs == 3
-        assert report.graph_nodes == 5
+        assert report.graph_nodes == 6
         assert report.graph_edges == 3
         assert report.pages > 10
 

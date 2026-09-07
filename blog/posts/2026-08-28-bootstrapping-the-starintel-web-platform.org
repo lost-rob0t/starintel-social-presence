@@ -3,7 +3,7 @@
 #+author: nsaspy
 #+description: How the StarIntel website platform is being built: Org as the source of truth, deterministic export, Prolog verification, and a fail-closed publication gate.
 #+slug: bootstrapping-the-starintel-web-platform
-#+tags: starintel website org prolog publishing
+#+tags: starintel website org prolog publishing human
 
 * Org is the source of truth
 

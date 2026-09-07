@@ -3,7 +3,6 @@
 :END:
 #+title: What Is StarIntel?
 #+date: [2026-09-02 Wed]
-#+author: nsaspy
 #+description: The definition, the data model, and the runtime: collect, normalize, connect, search, analyze, export — then show your work.
 #+slug: what-is-starintel
 #+tags: starintel overview architecture

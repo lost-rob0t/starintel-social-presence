@@ -3,7 +3,6 @@
 :END:
 #+title: Git Facts Without LLMs
 #+date: [2026-09-04 Fri]
-#+author: nsaspy
 #+description: The change_fetcher devlog: normalized commit facts as a deterministic spine that LLM tooling may read but never replaces.
 #+slug: git-facts-without-llms
 #+tags: starintel tooling git python editorial

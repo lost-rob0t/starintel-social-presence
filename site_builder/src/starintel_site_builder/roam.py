@@ -17,7 +17,7 @@ from pathlib import Path
 _DEFAULT_STRAIGHT_REPOS = Path.home() / ".config/emacs/.local/straight/repos"
 
 # org-roam's declared dependencies that live as separate straight repos.
-_ROAM_DEPS = ["compat", "dash.el", "emacsql"]
+_ROAM_DEPS = ["compat", "dash.el", "emacsql", "cond-let", "llama"]
 _BUILD_DEPS = ["magit-section"]
 
 DB_RELATIVE = ".cache/org-roam.db"

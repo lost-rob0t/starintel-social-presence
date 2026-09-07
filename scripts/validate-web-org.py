@@ -54,6 +54,16 @@ def parse_keywords(path: Path) -> dict[str, str]:
     return keywords
 
 
+def is_human(path: Path, keywords: dict[str, str]) -> bool:
+    """A page is the editor's own writing when tagged 'human' (#+tags or
+    #+filetags). Untagged pages are LLM context by default."""
+    for key in ("TAGS", "FILETAGS"):
+        value = keywords.get(key, "")
+        if re.search(r"(?:^|[\s:])human(?::|$)", value.strip()):
+            return True
+    return False
+
+
 def validate(path: Path) -> list[str]:
     problems: list[str] = []
     keywords = parse_keywords(path)
@@ -65,8 +75,14 @@ def validate(path: Path) -> list[str]:
     if "blog/posts" in str(rel):
         if not keywords.get("DATE"):
             problems.append(f"{rel}: blog post missing #+date")
-        if not keywords.get("AUTHOR"):
-            problems.append(f"{rel}: blog post missing #+author")
+        human = is_human(path, keywords)
+        if human and not keywords.get("AUTHOR"):
+            problems.append(f"{rel}: human-tagged post missing #+author")
+        if not human and keywords.get("AUTHOR"):
+            problems.append(
+                f"{rel}: untagged (LLM) post must not claim #+author; "
+                "the site attributes it to Mara"
+            )
     if DAILY_RE.match(path.stem):
         if not keywords.get("DATE"):
             problems.append(f"{rel}: daily missing #+date")

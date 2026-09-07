@@ -22,7 +22,7 @@ def test_graph_from_roam_db(fake_repo: Path) -> None:
 
     by_title = {n.title: n for n in model.nodes}
     assert "First Test Post" in by_title
-    assert len(model.nodes) == 5  # drafts excluded
+    assert len(model.nodes) == 6  # drafts excluded
     # edges: post-a -> doc-a, post-b -> post-a, doc-nested -> doc-a
     assert len(model.edges) == 3
 

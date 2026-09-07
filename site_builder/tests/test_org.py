@@ -46,11 +46,16 @@ def test_links_extraction() -> None:
 
 def test_badge_labels(tmp_path: Path) -> None:
     doc = SourceDoc(path=tmp_path / "a.org", section="blog", title="t", slug="t", revision="3")
-    assert doc.badge_labels() == ["POST", "rev 3"]
+    assert doc.badge_labels() == ["Mara", "POST", "rev 3"]
     draft = SourceDoc(
         path=tmp_path / "b.org", section="blog", title="t", slug="t", status="DRAFT"
     )
-    assert draft.is_draft and draft.badge_labels()[0] == "DRAFT"
+    assert draft.is_draft and draft.badge_labels()[1] == "DRAFT"
+    human = SourceDoc(
+        path=tmp_path / "c.org", section="blog", title="t", slug="t", human=True
+    )
+    assert human.byline == "human"
+    assert not doc.human and doc.byline == "Mara"
 
 
 def test_scan_via_parse_source_doc(tmp_path: Path) -> None:

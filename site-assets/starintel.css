@@ -196,6 +196,17 @@ h1, h2, h3, h4, h5, h6 {
   border-color: var(--gold);
 }
 .badge--rev { color: var(--gold-bright); border-color: var(--gold-dim); }
+.badge--human {
+  color: #090909;
+  background: var(--ok);
+  border-color: var(--ok);
+}
+.badge--llm {
+  color: var(--muted);
+  border-color: var(--line-strong);
+  background: var(--panel-2);
+  font-weight: 600;
+}
 .badge--tag {
   color: var(--gold-bright);
   background: transparent;

@@ -22,17 +22,21 @@ class SourceDoc:
     revision: str = ""  # explicit revision label, e.g. "2"
     doc_id: str = ""  # org-roam :ID: property
     url: str = ""  # site-relative URL of the rendered page
+    human: bool = False  # tagged :human: -> the editor's own writing
 
     @property
     def is_draft(self) -> bool:
         return self.status.upper() == "DRAFT"
 
+    @property
+    def byline(self) -> str:
+        return "human" if self.human else "Mara"
+
     def badge_labels(self) -> list[str]:
-        labels = [self.status.upper()]
+        labels = ["human" if self.human else "Mara"]
+        labels.append(self.status.upper())
         if self.revision:
             labels.append(f"rev {self.revision}")
-        elif self.date:
-            labels.append(f"rev 1")
         return labels
 
 
