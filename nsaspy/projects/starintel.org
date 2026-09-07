@@ -4,7 +4,7 @@
 #+title: StarIntel
 #+description: Local-first, document-driven intelligence platform: symbolic AI, actors, structured documents.
 #+slug: starintel
-#+filetags: :nsaspy:projects:starintel:
+#+filetags: :nsaspy:projects:starintel:human:
 
 * StarIntel
 

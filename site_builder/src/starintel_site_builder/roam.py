@@ -36,7 +36,12 @@ def _candidate_straight_repos() -> list[Path]:
 
 
 def resolve_org_roam_load_path() -> list[Path]:
-    """Locate org-roam and its dependencies in a local straight install."""
+    """Locate org-roam for batch Emacs.
+
+    Prefers the editor's straight install (same org-roam the vault uses);
+    falls back to the interpreter's own load path when Emacs already ships
+    org-roam (e.g. the Nix dev shell's emacsWithPackages wrapper).
+    """
     for repos in _candidate_straight_repos():
         if not repos.is_dir():
             continue
@@ -54,6 +59,16 @@ def resolve_org_roam_load_path() -> list[Path]:
             break
         return load_path
     return []
+
+
+def _emacs_has_org_roam() -> bool:
+    """True when plain `emacs -Q` can already require org-roam."""
+    probe = subprocess.run(
+        ["emacs", "--batch", "-Q", "-l", "org-roam",
+         "--eval", "(princ \"ok\")"],
+        capture_output=True, text=True, timeout=120,
+    )
+    return probe.returncode == 0 and "ok" in probe.stdout
 
 
 def _db_is_current(db_path: Path, content_roots: list[Path]) -> bool:
@@ -86,19 +101,24 @@ def sync_roam_db(repo_root: Path, db_path: Path | None = None) -> Path:
         return target
 
     load_path = resolve_org_roam_load_path()
-    if not load_path:
+    if load_path:
+        forms = "(progn " + " ".join(
+            f"(add-to-list 'load-path {json.dumps(str(p))})" for p in load_path
+        ) + ")"
+        load_args = [f"--eval={forms}"]
+    elif _emacs_has_org_roam():
+        load_args = []
+    else:
         raise RuntimeError(
-            "org-roam not found; set STARINTEL_STRAIGHT_REPOS to the straight repos directory"
+            "org-roam not found: neither the editor's straight install nor "
+            "the Emacs binary itself provides it"
         )
     target.parent.mkdir(parents=True, exist_ok=True)
-    forms = "(progn " + " ".join(
-        f"(add-to-list 'load-path {json.dumps(str(p))})" for p in load_path
-    ) + ")"
     cmd = [
         "emacs",
         "--batch",
         "-Q",
-        *[f"--eval={forms}"],
+        *load_args,
         "-l",
         str(repo_root / "elisp" / "starintel-roam-graph.el"),
         "--eval",

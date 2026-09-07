@@ -11,6 +11,8 @@
       devShells = forAllSystems (system:
         let
           pkgs = import nixpkgs { inherit system; };
+          emacs-site = (pkgs.emacsPackagesFor pkgs.emacs-nox).emacsWithPackages
+            (epkgs: with epkgs; [ org-roam ]);
         in {
           default = pkgs.mkShell {
             packages = with pkgs; [
@@ -19,7 +21,7 @@
               python313Packages.pygments
               python313Packages.playwright
               uv
-              emacs-nox
+              emacs-site
               git
               ffmpeg
               pandoc
