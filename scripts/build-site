@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Build the static site into ./site using the configured environment.
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$root"
+
+# Optional external repository docs: JSON spec with repo_dir_env entries.
+default_externals='[{"name":"starintel-server","repo_dir_env":"STARINTEL_SERVER_DIR","entry":"README.org"},{"name":"quasar","repo_dir_env":"STARINTEL_QUASAR_DIR","entry":"README.md"}]'
+externals="${STARINTEL_SITE_EXTERNALS:-$default_externals}"
+
+export PYTHONPATH="$root/site_builder/src:$PYTHONPATH"
+python3 -m starintel_site_builder.cli build \
+  --root "$root" \
+  --out "$root/site" \
+  --build-dir "$root/.build" \
+  --externals "$externals"

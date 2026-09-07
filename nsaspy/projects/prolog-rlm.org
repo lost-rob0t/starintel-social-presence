@@ -1,0 +1,32 @@
+:PROPERTIES:
+:ID: nsaspy-project-prolog-rlm
+:END:
+#+title: prolog-rlm
+#+description: Prolog reasoning and research-approval machinery that gates StarIntel publication.
+#+slug: prolog-rlm
+#+filetags: :nsaspy:projects:prolog:rlm:human:
+
+* prolog-rlm
+
+Prolog is the control plane for StarIntel's reasoning about itself: task
+knowledge bases with dependency graphs, restartable state, invariant
+verification suites, and the research-approval machinery
+(~prolog-rlm.research-approval.v1~) that gates what the platform is allowed
+to publish.
+
+** What it does
+
+- *Planning*: on-disk task KBs; ~ready/1~, ~blocked/2~, ~next_task/1~ derive
+  executable order from declared dependencies and persisted progress.
+- *Verification*: invariant suites that fail non-zero - no GitHub Actions in
+  CI, public radar schemas allowlisted, published Org carrying provenance,
+  v0.9 documents validating.
+- *Approval*: lifecycle status (DRAFT, RESEARCHING, REVIEW, DONE) and
+  approval state are independent dimensions; approval requires an actor,
+  evidence, and pinned base commit/blob.
+
+** Why Prolog
+
+Because publication rules, invariants, and dependency ordering are logic.
+Encoding them in a general-purpose language invites drift; encoding them in
+Prolog makes the rules executable, inspectable, and falsifiable.

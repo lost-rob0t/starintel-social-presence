@@ -1,0 +1,31 @@
+name: social-presence-ci
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  org-metadata:
+    name: web org metadata validation
+    runs-on: ubuntu-latest
+    container: docker.io/library/python:3.13-slim
+    steps:
+      - name: checkout
+        run: |
+          apt-get update -qq && apt-get install -y -qq git > /dev/null
+          git clone --no-checkout "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" repo
+          cd repo
+          git fetch --depth=1 origin "$GITHUB_SHA"
+          git checkout --force "$GITHUB_SHA"
+          cd ..
+          mkdir -p "$GITHUB_WORKSPACE"
+          cp -a repo/. "$GITHUB_WORKSPACE"/
+      - name: validate web-facing org metadata
+        run: python3 scripts/validate-web-org.py
+      - name: forgejo hygiene
+        run: |
+          test -d .forgejo/workflows
+          if grep -rn "uses:" .forgejo/workflows/; then
+            echo "'uses:' steps are not allowed"; exit 1
+          fi
+          echo "hygiene ok"

@@ -187,6 +187,7 @@ With prefix argument OPEN, open the resulting HTML in a browser."
 (require 'starintel-blog-gen)
 (require 'starintel-social-discovery)
 (require 'starintel-social-dslide)
+(require 'starintel-social-roam)
 (defalias 'starintel-social-deslop #'starintel-blog-deslop)
 
 (defun starintel-social-blog-assist-region (beg end)

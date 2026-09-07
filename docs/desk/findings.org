@@ -1,0 +1,53 @@
+:PROPERTIES:
+:ID: docs-desk-findings
+:END:
+#+title: Desk: Auto Dig findings
+#+date: [2026-09-07 Mon]
+#+description: The read-only findings adapter: surfacing canonical Auto Dig records as inspectable editorial candidates.
+#+slug: desk-findings
+#+filetags: :docs:desk:auto-dig:
+#+status: POST
+#+revision: 1
+
+=auto_findings= is a read-only adapter over the canonical Auto Dig
+document store. Auto Dig owns the executable StarIntel document schema and
+stores normalized records under =db/<dtype>/<id>.ndjson=; this adapter
+reads those records and surfaces candidates for editorial review. It does
+not invent associations and it does not write back.
+
+* Candidate model
+
+Each record becomes a =FindingCandidate= with:
+
+| Field           | Meaning                                        |
+|-----------------+------------------------------------------------|
+| document_id     | the record's StarIntel =_id=                    |
+| dtype / dataset | typed record identity                          |
+| title, summary  | the record's own description, verbatim         |
+| source_path     | the canonical record file the candidate came from |
+| source_count    | how many sources the record declares           |
+| source_locators | URIs/URLs/locators pulled from the source list |
+
+The locator extractor accepts =uri=, =url=, or =locator= keys on each
+source object and keeps only non-empty strings, so a candidate always
+points back to where its evidence lives.
+
+* The rule that matters
+
+A candidate is an editorial lead, not a new intelligence claim. Surfacing a
+record here does not endorse it, and graph adjacency between records in the
+Auto Dig store is never reinterpreted here as proof of association — the
+provenance rules in [[id:docs-documents-provenance][provenance and evidence]] apply to this adapter
+exactly as they do to the platform.
+
+* Running it
+
+#+begin_src sh
+PYTHONPATH=auto_findings/src \
+python -m starintel_auto_findings.cli \
+  "$STARINTEL_AUTO_DIG_DIR" \
+  --limit 20
+#+end_src
+
+In Emacs, =M-x starintel-social-findings= opens the same candidates with
+their exact record paths and source URLs inspectable at point.

@@ -1,0 +1,28 @@
+:PROPERTIES:
+:ID: nsaspy-about
+:END:
+#+title: About
+#+description: nsaspy - builder of StarIntel, a symbolic AI intelligence platform.
+#+slug: about
+#+filetags: :nsaspy:about:human:
+
+I build *StarIntel*: a local-first, document-driven intelligence platform.
+The thesis is simple: language models are useful components, but reasoning,
+planning, and verification belong to symbolic systems.
+
+StarIntel combines:
+
+- *Expert systems* - Prolog knowledge bases that plan work and verify
+  invariants before anything ships.
+- *Actors* - supervised message-passing services (Common Lisp, Sento,
+  RabbitMQ topic exchanges) with recursive dataflow.
+- *Structured documents* - the StarIntel v0.9 model: fifty typed document
+  kinds, each carrying sources, evidence, assessment, and verification
+  metadata.
+- *Autonomous workers* - Auto Dig investigates; Auto Research writes;
+  both publish nothing that has not passed explicit human approval gates.
+
+Everything is Nix-built, schema-pinned, and provenance-tracked. When a model
+is the right tool - extraction, drafting, enrichment - it runs inside the
+same typed pipelines as everything else, and its output is never the final
+authority.

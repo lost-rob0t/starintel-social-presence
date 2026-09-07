@@ -37,8 +37,12 @@ Claims about StarIntel behavior should be traceable to source repositories, comm
 ├── auto_research/          # read-only Auto Research status adapter
 ├── deep_research/          # integration boundary; no vendored engine
 ├── starintel_tutorial_gen/ # source -> plan -> Org renderers
+├── site_builder/           # deterministic static site publisher
+├── site-assets/            # shared black/gold theme + graph workspace JS
 ├── skills/                 # canonical repository-local SKILL.md packages
 ├── blog/                   # human Org posts, drafts, assets, templates
+├── docs/                   # documentation sources (nested Org tree)
+├── nsaspy/                 # portfolio/about/project Org sources
 ├── youtube/video-source/   # script.org + present.org + curated assets
 ├── elisp/                  # Emacs entry point and editorial modules
 └── scripts/                # repository validation helpers
@@ -227,9 +231,33 @@ Posts remain ordinary Org files. The currently consumed metadata is:
 #+description:
 #+slug:
 #+tags:
+#+status:      # POST or DRAFT
+#+revision:    # shown in the page's revision badge
 ```
 
 Export uses a dedicated derived HTML backend with a responsive black/gold theme. Source Org stays clean; styling is not copied into each article.
+
+## Static site publishing
+
+The repository builds a complete static site from Org sources:
+
+```bash
+nix develop --command bash scripts/build-site   # outputs ./site
+nix develop --command bash scripts/visual-check # build + browser verification
+```
+
+The site covers:
+
+- blog index, article pages with TOC/footnotes/pager/backlinks, tag taxonomy, and an archive timeline;
+- `docs/` with nested sidebar navigation, plus pages aggregated from configured external `star*` checkouts (`starintel-server`, `quasar`) with the source revision pinned in a badge;
+- `nsaspy/` as the portfolio (hero landing, project pages, about/resume/daily);
+- an org-roam graph workspace built from the editor's own roam database.
+
+The repository is a real org-roam vault: `.dir-locals.el` points org-roam at the repository with a repo-local database (`.cache/org-roam.db`), so backlinks, node insert, and org-roam-ui work in the editor, and the site builder consumes the same database. `[[id:...]]` links become both in-page HTML links and graph edges.
+
+DRAFT behavior: `#+status: DRAFT` renders the page for preview with a DRAFT badge and `noindex`, but excludes it from the index, tags, archive, sitemap, and graph. Publication remains explicit.
+
+Visual verification is part of the definition of done: `scripts/visual-check` builds the site, serves it, renders every page in headless Chromium at 1440x900, 1280x800, 768x1024, 390x844, and 320px, and fails on console errors, failed assets, horizontal overflow, or missing content. Screenshots land in `.visual-tests/` (gitignored) for human review.
 
 ## dslide / video source
 

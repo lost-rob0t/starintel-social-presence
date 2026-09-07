@@ -1,0 +1,50 @@
+:PROPERTIES:
+:ID: docs-server-actors
+:END:
+#+title: Actors and supervision
+#+date: [2026-09-07 Mon]
+#+description: How Sento actors, local TELL delivery, and RabbitMQ topic routes divide the runtime's work.
+#+slug: server-actors
+#+filetags: :docs:server:actors:
+#+status: POST
+#+revision: 1
+
+StarIntel Server's concurrency model combines three layers:
+
+- *Sento actors* for local concurrency, supervision boundaries, timers, and
+  message passing.
+- *RabbitMQ topic exchanges* for document and actor traffic across process
+  boundaries.
+- *CouchDB* as the durable store every actor's output eventually lands in.
+
+* Local versus remote delivery
+
+When a document event fires, the runtime can deliver work two ways:
+
+1. *Local actor via TELL* — in-process message passing under Sento
+   supervision. Fast, same failure domain.
+2. *Remote actor via RabbitMQ topic route* — crosses the exchange so another
+   service (or another host's collector) consumes it under its own
+   supervision.
+
+Both paths exist so a crashing consumer is isolated rather than fatal.
+Derived documents re-enter through the ingest exchange — see
+[[id:docs-server-ingest][ingest and dataflow recursion]] for why that recursion is durable.
+
+* Why supervision matters
+
+The jobs are real-world flaky: networks die, providers rate-limit, parsers
+crash on malformed input, queues back up. A supervised runtime restarts or
+isolates pieces instead of taking the investigation down. This is the
+platform-level argument from [[id:blog-what-is-starintel][What Is StarIntel?]] — actors everywhere, one
+document model — implemented on the server as Sento boundaries plus exchange
+routing.
+
+* Authoritative reference
+
+The server repository documents actor creation, registration, targeting,
+scheduling, and operation in its own actor and messaging documentation, and
+the full route contract in its messaging page. This page is a summary for
+orientation; the [[id:external-starintel-server][aggregated server documentation]] and the upstream
+repository remain the authority. Where a capability is stub or experimental
+there, it must be described that way here.

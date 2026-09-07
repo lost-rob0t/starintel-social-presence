@@ -1,0 +1,70 @@
+:PROPERTIES:
+:ID: nsaspy-resume
+:END:
+#+title: Resume
+#+description: nsaspy - systems and intelligence tooling engineer. Common Lisp, Nim, Prolog, Python, Elisp.
+#+slug: resume
+#+filetags: :nsaspy:resume:human:
+
+* nsaspy
+
+Systems and intelligence tooling engineer. I build StarIntel, a local-first,
+document-driven intelligence platform that combines symbolic AI - expert
+systems, Prolog planning and verification, actor-based orchestration - with
+statistical models where they earn their place.
+
+- Email: nsaspy@airmail.cc
+- Forge: [[https://github.com/lost-rob0t][github.com/lost-rob0t]]
+- Matrix/Matrix-adjacent surfaces: see contact page updates
+
+* Selected work
+
+** StarIntel platform (2023-present)
+
+Architect and sole maintainer of the StarIntel stack:
+
+- *starintel-server* - Common Lisp API gateway, ingest, persistence, search,
+  and actor routing over CouchDB, RabbitMQ, and Sento actors. Nix-built
+  binaries, tests, and container images.
+- *StarIntel document model v0.9* - fifty typed document kinds with
+  provenance, evidence, assessment, and verification metadata; JSON Schema
+  with expansion registries; implementations in Python, Nim, JavaScript, and
+  Common Lisp.
+- *Quasar* - graph-first operator workspace (browser UI, Cytoscape rendering,
+  offline-first workspaces).
+- *Auto Dig* - autonomous OSINT investigation runtime producing canonical
+  v0.9 documents and relations at scale (Nim).
+- *Auto Research* - autonomous research pipeline whose outputs pass through
+  explicit human approval gates with recorded evidence.
+- *prolog-rlm* - Prolog research-approval and reasoning machinery used to
+  gate publication and verify invariants.
+- *star-cl* - the StarIntel document contract ported to Common Lisp.
+
+** Infrastructure and delivery
+
+- Nix flakes for reproducible builds across the stack; container image
+  pipelines; a deterministic GitHub/Forgejo synchronization service in Go.
+- Self-hosted Forgejo Actions CI for the platform's changed-document
+  validation and build pipelines.
+
+* Skills
+
+| Area | Evidence in production use |
+|---------------------+----------------------------------------------------|
+| Common Lisp | starintel-server (Ningle/Clack/Hunchentoot, Sento) |
+| Nim | Auto Dig runtime, starintel-doc.nim |
+| Prolog | planning KBs, verification suites, prolog-rlm |
+| Python | document model tooling, validation pipelines |
+| Emacs Lisp | editorial workstation, exporters, org publishing |
+| TypeScript/JS | quasar-ui, starintel_doc.js, web tooling |
+| Nix | flake-based builds and CI across repositories |
+| Go | forge-sync deterministic mirror service |
+| Databases/queues | CouchDB (views, FTS), RabbitMQ (topic exchanges) |
+| Actor systems | Sento supervision trees, message-passing dataflow |
+
+* Principles
+
+- Provenance first: every fact carries its source, evidence, and retrieval date.
+- Fail closed: unknown states are not published.
+- Symbolic control, statistical assistance: models propose, logic disposes.
+- Reproducibility: Nix, pinned schemas, deterministic exports.

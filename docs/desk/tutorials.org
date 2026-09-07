@@ -1,0 +1,47 @@
+:PROPERTIES:
+:ID: docs-desk-tutorials
+:END:
+#+title: Desk: tutorial pipeline
+#+date: [2026-09-07 Mon]
+#+description: From traced facts to blog posts, scripts, and dslide decks through one deterministic intermediate representation.
+#+slug: desk-tutorial-pipeline
+#+filetags: :docs:desk:tutorials:
+#+status: POST
+#+revision: 1
+
+The tutorial studio turns verified facts into publishable teaching
+material through one deterministic pipeline:
+
+#+begin_example
+real facts -> TutorialSource -> TutorialPlan -> blog.org / script.org / present.org
+#+end_example
+
+* Traceability
+
+=TutorialSource= contains traceable facts with stable source IDs and
+locators. =TutorialPlan= orders those facts into steps without erasing
+provenance. Every rendered step retains its source references, so a later
+editor can inspect where each claim came from — the same rule
+[[id:docs-documents-provenance][provenance and evidence]] applies everywhere else.
+
+* Rendering
+
+One plan renders all three surfaces:
+
+#+begin_src sh
+PYTHONPATH=starintel_tutorial_gen/src \
+python -m starintel_tutorial_gen.cli plan.json --format present \
+  --output youtube/video-source/<slug>/present.org
+#+end_src
+
+=--format present= writes the canonical dslide deck source directly: a
+presentation request is only satisfied by an actual =present.org= file, not
+by an outline or a description of a deck. Spoken copy lives in
+=script.org=; rendered media stays out of Git.
+
+* What stays out
+
+The pipeline does not fabricate demonstrations, benchmarks, or quotes, and
+it does not turn a commit into a completed feature claim — feature views
+report Git facts and leave verification to the editor. Roadmap items stay
+labeled as direction, not delivery.

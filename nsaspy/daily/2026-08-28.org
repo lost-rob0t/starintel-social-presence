@@ -1,0 +1,26 @@
+:PROPERTIES:
+:ID: nsaspy-daily-2026-08-28
+:END:
+#+title: 2026-08-28
+#+date: [2026-08-28 Fri]
+#+description: Website platform bootstrap: monorepo, design system, Org publishing pipeline.
+#+slug: 2026-08-28
+#+filetags: :nsaspy:daily:starintel:website:human:
+
+* Website platform bootstrap
+
+Kicked off the unified StarIntel web platform in earnest:
+
+- Monorepo scaffolded: apps (main, blog, nsaspy, admin) over shared packages
+  (ui, seo, content, research, starintel-doc, config).
+- Design system: deep surfaces, gold signal accents, the
+  ~(symbolics(λx.xx))~ wordmark - visual DNA shared with Quasar, not copied.
+- StarIntel v0.9 validation wired with the pinned JSON Schema; fifty-five
+  corpus documents validated cleanly as a first smoke test.
+- Org publishing pipeline: deterministic Emacs batch export with stable
+  heading anchors, provenance-enriched manifests, and a fail-closed approval
+  gate for research. Nothing publishes without an explicit allowlist entry.
+- Radar and recent-documents services sketched: the browser only ever sees
+  allowlisted, aggregate, public-safe projections.
+
+The Prolog task KB tracks the program; verification will gate the merge.

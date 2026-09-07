@@ -3,20 +3,23 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export STARINTEL_SOCIAL_ROOT="$root"
-export PYTHONPATH="$root/change_fetcher/src:$root/auto_findings/src:$root/auto_research/src:$root/starintel_tutorial_gen/src${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONPATH="$root/change_fetcher/src:$root/auto_findings/src:$root/auto_research/src:$root/starintel_tutorial_gen/src:$root/site_builder/src${PYTHONPATH:+:$PYTHONPATH}"
 
 python3 -m compileall -q \
   "$root/change_fetcher/src" \
   "$root/auto_findings/src" \
   "$root/auto_research/src" \
   "$root/starintel_tutorial_gen/src" \
-  "$root/install_skills.py"
+  "$root/site_builder/src" \
+  "$root/install_skills.py" \
+  "$root/scripts/validate-web-org.py"
 
 pytest -q \
   "$root/change_fetcher/tests" \
   "$root/auto_findings/tests" \
   "$root/auto_research/tests" \
-  "$root/starintel_tutorial_gen/tests"
+  "$root/starintel_tutorial_gen/tests" \
+  "$root/site_builder/tests"
 
 python3 "$root/install_skills.py" --list
 skill_tmp="$(mktemp -d)"
@@ -34,6 +37,23 @@ emacs --batch -Q \
             (error "discovery commands failed to load"))'
 
 emacs --batch -Q -l "$root/scripts/export-smoke.el"
+
+# Web-facing Org metadata must validate (blog posts + nsaspy site sources).
+python3 "$root/scripts/validate-web-org.py"
+
+# Site build smoke: deterministic full build without external repositories.
+site_tmp="$(mktemp -d)"
+trap 'rm -rf "$site_tmp"' EXIT
+python3 -m starintel_site_builder.cli build \
+  --root "$root" --out "$site_tmp/site" --build-dir "$root/.build-check"
+test -f "$site_tmp/site/index.html"
+test -f "$site_tmp/site/graph.json"
+test -f "$site_tmp/site/assets/starintel.css"
+grep -q "noindex" "$site_tmp/site/drafts/quasar-workbench-notes.html"
+if grep -q "Draft Notes" "$site_tmp/site/index.html"; then
+  echo "draft leaked into index" >&2
+  exit 1
+fi
 
 if git -C "$root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   git -C "$root" diff --check

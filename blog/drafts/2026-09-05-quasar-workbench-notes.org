@@ -1,0 +1,34 @@
+:PROPERTIES:
+:ID: draft-quasar-workbench-notes
+:END:
+#+title: Quasar Workbench Notes
+#+date: [2026-09-05 Sat]
+#+description: Draft notes on the Quasar investigation workspace research — graph, table, map, and timeline as projections over shared identifiers. Not for publication yet.
+#+slug: quasar-workbench-notes
+#+tags: quasar research drafting
+#+status: DRAFT
+
+* Status
+
+This is a draft. It is rendered only so the editorial desk can preview it;
+it does not appear in the blog index, tags, archive, or graph.
+
+* The workspace idea
+
+The Quasar research treats the graph as one projection of an investigation,
+not the investigation itself. The same identifiers can surface as:
+
+- a graph, for structure questions
+- a table, for scan and sort questions
+- a map, for geo questions
+- a timeline, for sequencing questions
+- a document viewer, for the exact passage behind a claim
+
+* Open questions
+
+- Where does selection state live when a projection changes?
+- How do saved queries round-trip between projections?
+- What does undo mean across an actor boundary?
+
+These questions are unverified research notes; do not cite this page as a
+statement of shipped behavior.

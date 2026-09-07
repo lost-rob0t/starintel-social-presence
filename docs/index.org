@@ -1,0 +1,52 @@
+:PROPERTIES:
+:ID: docs-index
+:END:
+#+title: Documentation
+#+description: Operational documentation for StarIntel components, the editorial desk's own adapters, and aggregated external repositories.
+#+slug: docs-index
+#+filetags: :docs:index:
+#+status: POST
+#+revision: 2
+
+This section documents how StarIntel components work today, as far as the
+editorial desk can verify them. Documentation pages carry a revision badge
+and, for aggregated pages, the source repository and revision they came
+from.
+
+* Server
+
+- [[id:docs-server-overview][StarIntel Server overview]] — the Common Lisp runtime: CouchDB,
+  RabbitMQ, Sento actors, and the HTTP API.
+- [[id:docs-server-ingest][Ingest and dataflow recursion]] — how a document moves through the
+  pipeline and how actors expand the graph.
+- [[id:docs-server-actors][Actors and supervision]] — TELL versus topic routes, isolation.
+- [[id:docs-server-quickstart][Server quick start]] — Compose stack, secrets, first document.
+
+* Documents
+
+- [[id:docs-documents-schema][The v0.9 document model]] — typed documents and design invariants.
+- [[id:docs-documents-provenance][Provenance and evidence]] — why claims stay separable from sources.
+
+* The editorial desk
+
+Documentation for this repository's own deterministic adapters:
+
+- [[id:docs-desk-change-facts][Change facts]] — normalized Git records via =change_fetcher=.
+- [[id:docs-desk-findings][Auto Dig findings]] — read-only candidate extraction.
+- [[id:docs-desk-research-status][Research status]] — Auto Research states, promotion rules.
+- [[id:docs-desk-tutorials][Tutorial pipeline]] — one plan, three renderers.
+
+* External repositories
+
+Aggregated, read-only, revision-pinned:
+
+- [[id:external-starintel-server][StarIntel Server]] — upstream server README.
+- [[id:external-quasar][quasar]] — upstream Quasar README.
+
+* Scope and authority
+
+StarIntel Server remains the runtime authority for its own behavior; these
+pages summarize its documented design and link to the canonical sources.
+When the server documentation changes, aggregated pages on this site carry
+the revision they were taken from, and the editorial desk re-verifies
+hand-written pages before bumping their revision.
