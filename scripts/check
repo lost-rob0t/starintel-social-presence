@@ -47,7 +47,7 @@ trap 'rm -rf "$site_tmp"' EXIT
 python3 -m starintel_site_builder.cli build \
   --root "$root" --out "$site_tmp/site" --build-dir "$root/.build-check"
 test -f "$site_tmp/site/index.html"
-test -f "$site_tmp/site/graph.json"
+test -f "$site_tmp/site/assets/graph.json"
 test -f "$site_tmp/site/assets/starintel.css"
 grep -q "noindex" "$site_tmp/site/drafts/quasar-workbench-notes.html"
 if grep -q "Draft Notes" "$site_tmp/site/index.html"; then

@@ -202,6 +202,45 @@ def json_quote(value: str) -> str:
     return json.dumps(value)
 
 
+EXT_README = """# Ext Repo
+
+External fixture repository.
+"""
+
+EXT_DOC = """# Ext Guide
+
+A guide living in the external repo's docs/ tree.
+"""
+
+EXT_DOC2 = """* Conflict winner
+
+This file comes from docs/ and must win over doc/.
+"""
+
+
+def write_ext_repo(root: Path) -> None:
+    """A fake public star* repo with doc/ and docs/ trees that overlap."""
+    (root / "ext-repo").mkdir(parents=True)
+    (root / "ext-repo" / "README.md").write_text(EXT_README, encoding="utf-8")
+    (root / "ext-repo" / "doc").mkdir()
+    (root / "ext-repo" / "doc" / "guide.org").write_text(
+        "* Conflict loser\n\nFrom doc/.\n", encoding="utf-8"
+    )
+    (root / "ext-repo" / "doc" / "unique.org").write_text(
+        "* Only in doc\n", encoding="utf-8"
+    )
+    (root / "ext-repo" / "docs").mkdir()
+    (root / "ext-repo" / "docs" / "guide.org").write_text(EXT_DOC2, encoding="utf-8")
+
+
+@pytest.fixture
+def ext_repo(tmp_path: Path, monkeypatch) -> Path:
+    root = tmp_path / "ext"
+    write_ext_repo(root)
+    monkeypatch.setenv("TEST_EXT_REPO_DIR", str(root / "ext-repo"))
+    return root
+
+
 @pytest.fixture
 def fake_repo(tmp_path: Path) -> Path:
     root = tmp_path / "repo"

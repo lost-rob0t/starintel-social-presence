@@ -19,6 +19,53 @@ SECTION_LABELS = {
     "portfolio": "Portfolio",
 }
 
+VHOSTS = ("www", "blog", "docs", "nsaspy")
+
+
+@dataclass
+class SiteBases:
+    """Per-vhost public base URLs. Empty string = single-tree relative mode."""
+
+    www: str = ""
+    blog: str = ""
+    docs: str = ""
+    nsaspy: str = ""
+
+    @property
+    def split(self) -> bool:
+        return any((self.www, self.blog, self.docs, self.nsaspy))
+
+    def for_vhost(self, vhost: str) -> str:
+        return getattr(self, vhost, "").rstrip("/")
+
+    def to_json(self) -> dict:
+        return {"www": self.www, "blog": self.blog, "docs": self.docs, "nsaspy": self.nsaspy}
+
+
+_BASES = SiteBases()
+_PAGE_VHOST = "www"
+
+
+def set_bases(bases: SiteBases) -> None:
+    global _BASES  # noqa: PLW0603
+    _BASES = bases
+
+
+def set_page_vhost(vhost: str) -> None:
+    global _PAGE_VHOST  # noqa: PLW0603
+    _PAGE_VHOST = vhost or "www"
+
+
+def vbase(vhost: str) -> str:
+    return _BASES.for_vhost(vhost)
+
+
+def asset_url(name: str) -> str:
+    if not _BASES.split:
+        return f"/assets/{name}"
+    host = vbase(_PAGE_VHOST) or vbase("www")
+    return f"{host}/assets/{name}"
+
 
 def esc(text: str) -> str:
     return html.escape(text, quote=True)
@@ -37,27 +84,31 @@ def _head(title: str, description: str, draft: bool = False) -> str:
         f'<title>{esc(title)} — StarIntel</title>'
         f'<meta name="description" content="{esc(description)}">{robots}'
         f'<link rel="icon" href="data:,">'
-        f'<link rel="stylesheet" href="/assets/starintel.css">'
+        f'<link rel="stylesheet" href="{asset_url("starintel.css")}">'
         f"</head>"
     )
 
 
+_NAV_LINKS = [
+    ("blog", "blog", "/index.html", "Blog"),
+    ("docs", "docs", "/index.html", "Docs"),
+    ("portfolio", "nsaspy", "/index.html", "Portfolio"),
+    ("graph", "www", "/graph.html", "Graph"),
+    ("archive", "www", "/archive.html", "Archive"),
+    ("tags", "www", "/tags/index.html", "Tags"),
+]
+
+
 def _header(active: str) -> str:
-    links = [
-        ("blog", "/index.html", "Blog"),
-        ("docs", "/docs/index.html", "Docs"),
-        ("portfolio", "/portfolio/index.html", "Portfolio"),
-        ("graph", "/graph.html", "Graph"),
-        ("archive", "/archive.html", "Archive"),
-        ("tags", "/tags/index.html", "Tags"),
-    ]
     items = "".join(
-        f'<a href="{href}"{" aria-current=\"page\"" if key == active else ""}>{label}</a>'
-        for key, href, label in links
+        f'<a href="{vbase(vh) or ""}{href}"'
+        f'{" aria-current=\"page\"" if key == active else ""}>{label}</a>'
+        for key, vh, href, label in _NAV_LINKS
     )
+    home = f"{vbase('www')}/index.html" if vbase("www") else "/index.html"
     return (
         f'<header class="site-header"><div class="site-header__inner">'
-        f'<a class="brand" href="/index.html"><span class="brand__mark">★</span> '
+        f'<a class="brand" href="{home}"><span class="brand__mark">★</span> '
         f'StarIntel <span class="brand__sub">editorial desk</span></a>'
         f'<nav class="site-nav" aria-label="Primary">{items}</nav>'
         f"</div></header>"
@@ -65,11 +116,13 @@ def _header(active: str) -> str:
 
 
 def _footer() -> str:
+    graph = f"{vbase('www')}/graph.html" if vbase("www") else "/graph.html"
+    archive = f"{vbase('www')}/archive.html" if vbase("www") else "/archive.html"
     return (
         '<footer class="site-footer"><div class="site-footer__inner">'
         "<span>StarIntel — built from Org sources, published deliberately.</span>"
-        '<span><a href="/graph.html">org-roam graph</a> · '
-        '<a href="/archive.html">timeline</a> · '
+        f'<span><a href="{graph}">org-roam graph</a> · '
+        f'<a href="{archive}">timeline</a> · '
         '<a href="https://starintel.actor">starintel.actor</a></span>'
         "</div></footer>"
     )
@@ -91,6 +144,10 @@ def page_shell(
     )
 
 
+def home_url() -> str:
+    return f"{vbase('www')}/index.html" if vbase("www") else "/index.html"
+
+
 def breadcrumbs(parts: list[tuple[str, str | None]]) -> str:
     """parts: list of (label, url|None). Last part renders as current."""
     chunks = []
@@ -104,6 +161,8 @@ def breadcrumbs(parts: list[tuple[str, str | None]]) -> str:
 
 
 def _byline_chip(doc: SourceDoc) -> str:
+    if doc.origin.startswith("repo:"):
+        return f'<span class="badge badge--src">{esc(doc.origin[5:])}</span>'
     if doc.human:
         name = f' <span class="meta-text">{esc(doc.author)}</span>' if doc.author else ""
         return f'<span class="badge badge--human">human</span>{name}'
@@ -120,19 +179,21 @@ def meta_row(doc: SourceDoc) -> str:
         badges.append(f'<span class="badge badge--rev">rev {esc(doc.revision)}</span>')
     if doc.date:
         badges.append(f'<time class="meta-text" datetime="{esc(doc.date)}">{esc(doc.date)}</time>')
+    tags_base = vbase("www")
     for tag in doc.tags:
         if tag.lower() == "human":
             continue
         badges.append(
-            f'<a class="badge badge--tag" href="/tags/{esc(tag.lower())}.html">#{esc(tag)}</a>'
+            f'<a class="badge badge--tag" href="{tags_base}/tags/{esc(tag.lower())}.html">#{esc(tag)}</a>'
         )
     return f'<div class="meta-row">{"".join(badges)}</div>'
 
 
 def post_card(doc: SourceDoc, kicker: str = "") -> str:
     kicker_html = f'<span class="card__kicker">{esc(kicker)}</span>' if kicker else ""
+    tags_base = vbase("www")
     tags = "".join(
-        f'<a class="badge badge--tag" href="/tags/{esc(t.lower())}.html">#{esc(t)}</a>'
+        f'<a class="badge badge--tag" href="{tags_base}/tags/{esc(t.lower())}.html">#{esc(t)}</a>'
         for t in doc.tags[:4]
         if t.lower() != "human"
     )
@@ -247,7 +308,7 @@ def blog_index(model: SiteModel) -> str:
     cards = [post_card(p, kicker="writing") for p in model.posts]
     body = (
         '<div class="shell">'
-        + breadcrumbs([("Home", "/index.html"), ("Blog", None)])
+        + breadcrumbs([("Home", home_url()), ("Blog", None)])
         + '<h1 class="page-title">Writing</h1>'
         + '<p class="page-lead">Technical posts and devlogs from the StarIntel editorial desk. '
         "Every claim traces back to the repositories it came from.</p>"
@@ -273,15 +334,15 @@ def home_page(model: SiteModel, docs_model: SiteModel) -> str:
         "built from verified StarIntel development state — Org sources in, "
         "black-and-gold HTML out, graph included.</p>"
         + '<div class="hero__actions">'
-        '<a class="btn btn--gold" href="/index.html">Read the blog</a>'
-        '<a class="btn" href="/docs/index.html">Browse docs</a>'
-        '<a class="btn" href="/graph.html">Open the graph</a>'
-        "</div></section>"
-        + section_head("Latest writing", "/archive.html", "Full timeline")
+        + f'<a class="btn btn--gold" href="{vbase("blog")}/index.html">Read the blog</a>'
+        + f'<a class="btn" href="{vbase("docs")}/index.html">Browse docs</a>'
+        + f'<a class="btn" href="{vbase("www")}/graph.html">Open the graph</a>'
+        + "</div></section>"
+        + section_head("Latest writing", f"{vbase('www')}/archive.html", "Full timeline")
         + card_list(latest)
-        + section_head("Documentation", "/docs/index.html")
+        + section_head("Documentation", f"{vbase('docs')}/index.html")
         + card_list(doc_cards)
-        + section_head("Projects", "/portfolio/index.html")
+        + section_head("Projects", f"{vbase('nsaspy')}/index.html")
         + card_list(project_cards)
         + "</div>"
     )
@@ -297,7 +358,7 @@ def tag_index(tags: dict[str, list[SourceDoc]]) -> str:
     )
     body = (
         '<div class="shell">'
-        + breadcrumbs([("Home", "/index.html"), ("Tags", None)])
+        + breadcrumbs([("Home", home_url()), ("Tags", None)])
         + '<h1 class="page-title">Tags</h1>'
         + '<p class="page-lead">Every published tag across writing, docs, and projects.</p>'
         + f'<div class="tag-cloud">{cloud}</div>'
@@ -310,7 +371,7 @@ def tag_page(tag: str, docs: list[SourceDoc]) -> str:
     cards = [post_card(d) for d in docs]
     body = (
         '<div class="shell">'
-        + breadcrumbs([("Home", "/index.html"), ("Tags", "/tags/index.html"), (f"#{tag}", None)])
+        + breadcrumbs([("Home", home_url()), ("Tags", f"{vbase('www')}/tags/index.html"), (f"#{tag}", None)])
         + f'<h1 class="page-title">#{esc(tag)}</h1>'
         + f'<p class="page-lead">{len(docs)} page(s) tagged #{esc(tag)}.</p>'
         + card_list(cards)
@@ -346,7 +407,7 @@ def archive_page(posts: list[SourceDoc]) -> str:
         )
     body = (
         '<div class="shell">'
-        + breadcrumbs([("Home", "/index.html"), ("Archive", None)])
+        + breadcrumbs([("Home", home_url()), ("Archive", None)])
         + '<h1 class="page-title">Timeline</h1>'
         + '<p class="page-lead">Every published post, newest first.</p>'
         + f'<div class="archive">{"".join(sections)}</div>'
@@ -371,15 +432,16 @@ def portfolio_landing(model: SiteModel, extra_pages: list[SourceDoc]) -> str:
     other_cards = [post_card(p) for p in extra_pages]
     body = (
         '<div class="shell shell--wide">'
-        + breadcrumbs([("Home", "/index.html"), ("Portfolio", None)])
+        + breadcrumbs([("Home", home_url()), ("Portfolio", None)])
         + '<section class="hero">'
         + '<div class="hero__eyebrow">Portfolio</div>'
         + "<h1>Things I build.</h1>"
         + '<p class="hero__lead">StarIntel and the systems around it: local-first '
         "intelligence, symbolic reasoning, and the editorial desk that writes "
         "about them.</p>"
-        + '<div class="hero__actions"><a class="btn btn--gold" href="/portfolio/about.html">About me</a>'
-        '<a class="btn" href="/index.html">Read the writing</a></div>'
+        + '<div class="hero__actions">'
+        + f'<a class="btn btn--gold" href="{vbase("nsaspy")}/about.html">About me</a> '
+        + f'<a class="btn" href="{vbase("blog")}/index.html">Read the writing</a></div>'
         + "</section>"
         + section_head("Projects")
         + card_list(project_cards)
@@ -403,9 +465,17 @@ def docs_sidebar(docs: list[SourceDoc], current: SourceDoc | None) -> str:
     """Nested navigation grouped by first-level directory."""
     groups: dict[str, list[SourceDoc]] = defaultdict(list)
     for doc in docs:
-        group = "external" if doc.url.startswith("/docs/external/") else doc.path.parent.name
+        if doc.origin.startswith("repo:"):
+            group = doc.origin[5:]
+        elif doc.url.split("://", 1)[-1].startswith("/docs/external/"):
+            group = "external"
+        else:
+            group = doc.path.parent.name
         groups[group].append(doc)
-    roots = [d for d in docs if d.path.parent.name == "docs" and d.url != "/docs/index.html"]
+    roots = [
+        d for d in docs
+        if d.path.parent.name == "docs" and not d.url.endswith("/docs/index.html")
+    ]
     html_parts = ['<div class="docs-sidebar" role="navigation">']
     if roots:
         html_parts.append('<div class="docs-sidebar__title">Documentation</div><ul>')
@@ -445,7 +515,7 @@ def docs_landing(model: SiteModel) -> str:
     cards = [post_card(d, kicker="docs") for d in model.docs]
     body = (
         '<div class="shell shell--wide">'
-        + breadcrumbs([("Home", "/index.html"), ("Docs", None)])
+        + breadcrumbs([("Home", home_url()), ("Docs", None)])
         + '<h1 class="page-title">Documentation</h1>'
         + '<p class="page-lead">Operational documentation for StarIntel components. '
         "Aggregated pages keep their source repository and revision visible.</p>"
@@ -467,8 +537,8 @@ def docs_page(
         + '<div class="docs-content">'
         + breadcrumbs(
             [
-                ("Home", "/index.html"),
-                ("Docs", "/docs/index.html"),
+                ("Home", home_url()),
+                ("Docs", f"{vbase('docs')}/index.html"),
                 (doc.title, None),
             ]
         )
@@ -505,7 +575,7 @@ def graph_page(model: GraphModel) -> str:
         + '<span class="graph-toolbar__stats" id="graph-stats"></span>'
         + "</div>"
         + '<div class="graph-canvas-wrap">'
-        + '<canvas id="graph-canvas" data-src="/graph.json"></canvas>'
+        + f'<canvas id="graph-canvas" data-src="{asset_url("graph.json")}"></canvas>'
         + '<div class="graph-legend">'
         + '<span><i style="background:#f5cf58"></i> blog</span>'
         + '<span><i style="background:#8fb573"></i> docs</span>'
@@ -520,11 +590,14 @@ def graph_page(model: GraphModel) -> str:
         "StarIntel org-roam graph workspace",
         body,
         active="graph",
-    ) + '<script src="/assets/graph.js"></script>'
+    ) + f'<script src="{asset_url("graph.js")}"></script>'
 
 
 def sitemap(urls: list[str]) -> str:
-    items = "".join(f"<url><loc>https://starintel.actor{esc(u)}</loc></url>" for u in urls)
+    def loc(u: str) -> str:
+        return u if "://" in u else f"https://starintel.actor{u}"
+
+    items = "".join(f"<url><loc>{esc(loc(u))}</loc></url>" for u in urls)
     return (
         '<?xml version="1.0" encoding="UTF-8"?>'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
