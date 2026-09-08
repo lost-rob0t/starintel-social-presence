@@ -1,0 +1,187 @@
+:PROPERTIES:
+:ID: blog-from-tools-to-actors
+:END:
+#+title: From Tools to Actors: Building the Next Layer of StarIntel
+#+date: [2026-09-08 Tue]
+#+description: What four weeks of StarIntel Git history actually shows: collection scripts becoming supervised actors, contract-first server APIs, and agent skills layered over the same infrastructure.
+#+slug: from-tools-to-actors
+#+tags: starintel actors agentzero skills architecture
+#+status: POST
+#+revision: 1
+
+StarIntel started as a pile of tools: collectors, scrapers, document
+builders, a server with an HTTP API, research automation. Each tool worked.
+None of them knew about the others.
+
+Four weeks of Git history across the StarIntel repositories shows a
+deliberate change in shape: those tools are being rebuilt as *actors*,
+supervised, message-passing workers that emit typed StarIntel documents.
+On top of that layer, a second one is growing: *skills* that teach agents
+how to operate the whole thing. This post walks through the change the way
+the commits show it, with links to the actual work, split honestly into
+merged and in-progress.
+
+* Tools alone do not compose
+
+A standalone scraper is easy to write and painful to keep. It owns its
+own queuing and retry logic, invents its own output format, and has
+private opinions about what happens when it dies halfway through. Add a
+second scraper and you now have two slightly different conventions. Add a
+tenth and you have a distributed systems problem wearing a scripting
+costume.
+
+The specific failures look like this:
+
+1. no shared supervision, so a crashed collector stays crashed
+2. no shared document model, so every tool reinvents the record shape
+3. no durable transport, so results land wherever the script prints them
+4. no discovery, so nothing can ask "what collectors exist?"
+
+The last month of work attacks these four problems directly.
+
+* The actor layer
+
+A private collection-actors repository in the org states its own role in
+the first line of its README: "Python actor-based collection and
+enrichment workers used until StarLang actors are production-ready."
+Practical actors now, a native actor runtime later.
+
+Merged on the repository's main line:
+
+- *A cracked.st collector*, a threat-intelligence crawl pipeline:
+  frontier, rate-limited fetchers, MyBB parser, IOC extractor, SQLite and
+  JSONL sinks. Asyncio actor mailboxes with supervision and bounded
+  queues; content hashing and dedup; crawl provenance; same-origin
+  crawling only.
+- *An org-member actor plugin* for The Org forum, delivered as a plugin
+  with its own CLI and tests.
+- *Collection actors for X, Reddit, and Bluesky*, merged this week.
+
+In active branches right now, visible in Git but not merged: a YouTube
+comments actor with *ingest receipts*, a UserHunt username-search actor
+backed by Sherlock, a star-yt cross-finding actor, a RabbitMQ publisher
+adapter with a durable topic exchange, and a set of *Common Lisp actors
+on Sento* for Kiwi Farms scraping, which exercises the same actor idea
+against the server's native runtime. Those live on branches, not in main,
+and this article keeps that distinction everywhere.
+
+** The flow: documents, not prints
+
+Actors do not "save results". They emit StarIntel documents, typed
+records with sources and provenance, onto durable infrastructure.
+star-bbpd, the external recon actor service, spent the last week making
+that transport boring and reliable: reusable actor Compose deployment with
+a Proxmox promotion app ([[https://git.starintel.actor/nsaspy/star-bbpd/pulls/5][bbpd PR #5]]) and staged/production OCI image
+outputs ([[https://git.starintel.actor/nsaspy/star-bbpd/pulls/3][PR #3]]). Proof that the pipeline runs daily is quiet: a
+reporting state repository in the org records verified deliveries and
+refreshes repo snapshots on a daily cadence, commits written by the
+machinery rather than by a person.
+
+On the consuming side, the server is learning to address actors
+properly. Merged on =starintel-server= master: contract-generic target
+creation ([[https://github.com/lost-rob0t/starintel-server/pull/127][PR #127]]), a target-dispatch fix that emits v0.9-valid
+=data.*-shaped= documents from both routes ([[https://github.com/lost-rob0t/starintel-server/pull/145][PR #145]]), and an OAuth
+authorization-code provider with the Bixby gateway add-on rebuilt on top
+of it ([[https://github.com/lost-rob0t/starintel-server/pull/118][PR #118]]). Canonical STAR URI actor identity for target dispatch
+(STAR-SERVER-041) is in development on a branch: designed, reviewed in
+the research graph, not merged.
+
+* Agent Zero skills
+
+In parallel, a different kind of component is accumulating: skills.
+
+The editorial desk repository carries a set of StarIntel skills with an
+Agent Zero install target: =auto-dig-finding-review=,
+=auto-research-review=, =starintel-change-summary=,
+=starintel-local-repositories=, and others. They are not plugins and not
+workers. They are operational knowledge: how to review an Auto Dig finding
+candidate without over-claiming it, how to read Auto Research status
+without promoting review-stage work, how to summarize Git changes without
+inventing features, how to keep local checkouts fresh without destroying
+local work.
+
+Here is the distinction, stated exactly:
+
+- *Actors* are runtime components. They run, consume messages, emit
+  documents, crash, and get restarted.
+- *Skills* teach an agent how to correctly use StarIntel infrastructure:
+  repositories, APIs, workflows, actors. They encode the operating manual
+  the ecosystem used to keep in people's heads.
+
+Agent Zero is therefore not a replacement for the actor system. It is
+becoming one way agents can *understand and operate* the system. The
+[[https://github.com/lost-rob0t/a0-symbolics][a0-symbolics]] repository, a public Nix-built Agent Zero distribution,
+is under heavy daily development (its own Prolog-RLM integration pin,
+transport retry handling, and webui fixes landed this week), and
+infrastructure for a native Agent Zero worker exists on an infrastructure
+branch. Skills and actors are being built to meet each other, and neither
+pretends to be the other.
+
+* The system is describing itself
+
+Underneath both layers sits a quieter change: StarIntel is becoming
+machine-readable about itself.
+
+- The server publishes *contract discovery* endpoints,
+  =client-manifest.json= and =openapi.json=, and a new repository,
+  [[https://git.starintel.actor/starintel-labs/starintel-client][starintel-client]], is being built as a *discovery-driven* API client
+  that refuses to hard-code legacy routes. Its roadmap marks the next step
+  as blocked by the server's registry document operations. Contract-first,
+  honestly applied, means the client waits for the server to publish the
+  contract before it grows new operations.
+- Server docstrings are Org-mode markup in source, rendered into the API
+  docs by a pipeline, with a CI gate that just crossed *835 exported
+  symbols documented* ([[https://github.com/lost-rob0t/starintel-server/pull/132][PR #132]] also rebuilt the Emacs client as an
+  async contract layer against those contracts).
+- The v0.9 runtime implementation was formally *approved* through the
+  repository's own conformance process, and Auto Research, the Org-roam
+  research graph, tracks design decisions like the STAR URI identity work
+  with explicit status and approval gates.
+- Auto Dig keeps doing what it does at industrial volume: continuous
+  autonomous investigation runs, sharded and receipted, committed daily.
+
+The documentation aggregation now used by this very site is part of the
+same pattern: documentation is read from the repositories where it lives,
+with the source revision pinned, so docs pages and the code they describe
+cannot silently drift apart.
+
+* Publishing the development process
+
+A general setup note, because it explains how this article exists: the
+blog, docs, and portfolio surfaces are now built from the repositories
+themselves by a deterministic publisher. Org sources go in; static output
+comes out, with per-surface sites, revision badges, and an org-roam graph
+built from the same database the editor uses. This article is the first
+post generated by that pipeline from repository history rather than
+written from memory. The deployment side of that pipeline is still in
+review, and it is not what this post is about.
+
+* What comes next
+
+Visible in active issues and branches, listed as work in progress and
+nothing more:
+
+1. the ingest-receipts and publisher adapters (RabbitMQ and HTTP) in
+   pro-actors, which make actor output durable and auditable end to end
+2. the server registry migration that starintel-client's roadmap is
+   waiting on
+3. canonical STAR URI actor identity for target dispatch
+4. Docker-first website actors in the server repository
+5. StarLang actors, the point where the "until StarLang actors are
+   production-ready" disclaimer in the pro-actors README gets deleted
+6. the Agent Zero worker and Symbolics migration tracked in the
+   infrastructure work
+
+The through-line is composability. Collectors become actors, APIs become
+contracts, operating knowledge becomes skills, documentation becomes
+generated and pinned. None of it is finished. The commit history is the
+most honest place to watch it become real.
+
+#+begin_quote
+Provenance: this article was generated by an LLM (Mara) from current
+StarIntel repository history (commit logs, merged PRs, branch state, and
+repository documentation as of 2026-09-08) and went through the
+editorial desk's normal validation, review, and CI gates. Every technical
+claim links to the repository evidence it came from; work-in-progress
+items are labeled as such.
+#+end_quote
