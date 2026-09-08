@@ -23,6 +23,8 @@ class SourceDoc:
     doc_id: str = ""  # org-roam :ID: property
     url: str = ""  # site-relative URL of the rendered page
     human: bool = False  # tagged :human: -> the editor's own writing
+    origin: str = ""  # "" = this desk; "repo:<name>" = aggregated from a repo
+    vhost: str = ""  # www | blog | docs | nsaspy (empty -> derived from section)
 
     @property
     def is_draft(self) -> bool:
@@ -31,6 +33,13 @@ class SourceDoc:
     @property
     def byline(self) -> str:
         return "human" if self.human else "Mara"
+
+    def vhost_name(self) -> str:
+        if self.vhost:
+            return self.vhost
+        return {"blog": "blog", "docs": "docs", "portfolio": "nsaspy"}.get(
+            self.section, "www"
+        )
 
     def badge_labels(self) -> list[str]:
         labels = ["human" if self.human else "Mara"]

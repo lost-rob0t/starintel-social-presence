@@ -68,7 +68,7 @@ class TestFullBuild:
         assert (out / "docs" / "sub" / "nested.html").is_file()
         assert (out / "portfolio" / "about.html").is_file() or True  # nsaspy absent in fixture
         assert (out / "graph.html").is_file()
-        assert (out / "graph.json").is_file()
+        assert (out / "assets" / "graph.json").is_file()
         assert (out / "assets" / "starintel.css").is_file()
         assert (out / "sitemap.xml").is_file()
 
@@ -80,7 +80,7 @@ class TestFullBuild:
         assert "Draft Notes" not in index
         assert "Draft Notes" not in archive
         assert "Draft Notes" not in tags
-        graph = (out / "graph.json").read_text(encoding="utf-8")
+        graph = (out / "assets" / "graph.json").read_text(encoding="utf-8")
         assert "Draft Notes" not in graph
 
     def test_draft_page_marked_noindex(self, built_site) -> None:
@@ -132,3 +132,94 @@ def test_markdown_to_org(tmp_path: Path) -> None:
     text = org.read_text(encoding="utf-8")
     assert "Hello" in text
     assert "emphasis" in text
+
+
+class TestVhostSplit:
+    @pytest.fixture()
+    def split(self, tmp_path, fake_repo):
+        from starintel_site_builder.render import SiteBases
+
+        out = tmp_path / "split"
+        bases = SiteBases(
+            www="https://starintel.actor",
+            blog="https://blog.starintel.actor",
+            docs="https://docs.starintel.actor",
+            nsaspy="https://nsaspy.starintel.actor",
+        )
+        report = build_site(
+            repo_root=fake_repo, out_dir=out,
+            build_dir=fake_repo / ".build", externals=[], bases=bases,
+        )
+        return out, bases, report
+
+    def test_per_vhost_layout(self, split) -> None:
+        out, _bases, _report = split
+        for vhost, rel in (
+            ("www", "index.html"),
+            ("www", "graph.html"),
+            ("www", "archive.html"),
+            ("blog", "first-test-post.html"),
+            ("blog", "drafts/draft-notes.html"),
+            ("docs", "index.html"),
+            ("docs", "fixture-docs.html"),
+            ("nsaspy", "index.html"),
+        ):
+            assert (out / vhost / rel).is_file(), f"{vhost}/{rel} missing"
+
+    def test_no_section_prefix_on_own_vhost(self, split) -> None:
+        out, _bases, _report = split
+        assert (out / "blog" / "blog").exists() is False
+
+    def test_cross_vhost_links_absolute(self, split) -> None:
+        out, bases, _report = split
+        docs_index = (out / "docs" / "index.html").read_text(encoding="utf-8")
+        assert f'href="{bases.blog}/index.html"' in docs_index
+        post = (out / "blog" / "first-test-post.html").read_text(encoding="utf-8")
+        assert f'{bases.blog}/assets/starintel.css' in post
+        assert f'{bases.www}/graph.html"' in post
+
+    def test_each_vhost_self_hosts_assets(self, split) -> None:
+        out, _bases, _report = split
+        for vhost in ("www", "blog", "docs", "nsaspy"):
+            assert (out / vhost / "assets" / "starintel.css").is_file()
+
+    def test_sitemap_absolute(self, split) -> None:
+        out, bases, _report = split
+        sitemap = (out / "www" / "sitemap.xml").read_text(encoding="utf-8")
+        assert f"{bases.blog}/first-test-post.html" in sitemap
+
+
+class TestDocsSources:
+    @pytest.fixture()
+    def built(self, tmp_path, fake_repo, ext_repo):
+        from starintel_site_builder.builder import ExternalDocConfig
+
+        out = tmp_path / "site"
+        report = build_site(
+            repo_root=fake_repo, out_dir=out,
+            build_dir=fake_repo / ".build",
+            externals=[ExternalDocConfig(
+                name="ext-repo",
+                repo_dir_env="TEST_EXT_REPO_DIR",
+                entry="README.md",
+                title="Ext Repo",
+                include_docs=True,
+            )],
+        )
+        return out, report
+
+    def test_readme_landing(self, built) -> None:
+        out, _report = built
+        page = (out / "docs" / "external" / "ext-repo.html").read_text(encoding="utf-8")
+        assert "Ext Repo" in page
+        assert "badge--src" in page  # origin chip, not Mara/human
+
+    def test_docs_tree_namespaced(self, built) -> None:
+        out, _report = built
+        assert (out / "docs" / "ext-repo" / "unique.html").is_file()
+        guide = (out / "docs" / "ext-repo" / "guide.html").read_text(encoding="utf-8")
+        assert "Conflict winner" in guide  # docs/ beat doc/ — no clobber
+
+    def test_report_counts_external_pages(self, built) -> None:
+        _out, report = built
+        assert report.external == 3  # landing + guide + unique
