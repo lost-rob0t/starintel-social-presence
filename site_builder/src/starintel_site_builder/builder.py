@@ -196,13 +196,13 @@ def build_site(
         pages_written += 1
 
     # Landing / taxonomy / timeline / graph pages live on the www vhost.
-    def www_write(rel: str, content: str) -> None:
+    def www_write(rel: str, build: callable) -> None:
         nonlocal pages_written
         render.set_page_vhost("www")
-        _write_out(out_dir, bases, "www", rel, content)
+        _write_out(out_dir, bases, "www", rel, build())
         pages_written += 1
 
-    www_write("index.html", render.home_page(
+    www_write("index.html", lambda: render.home_page(
         SiteModel(posts=posts, portfolio=portfolio), SiteModel(docs=docs)
     ))
 
@@ -237,13 +237,14 @@ def build_site(
     pages_written += 1
 
     tags = _collect_tags(model.all_published())
-    www_write("tags/index.html", render.tag_index(tags))
+    www_write("tags/index.html", lambda: render.tag_index(tags))
     for tag, tagged in tags.items():
-        www_write(f"tags/{tag.lower()}.html", render.tag_page(tag, tagged))
+        www_write(f"tags/{tag.lower()}.html",
+                  lambda t=tag, docs=tagged: render.tag_page(t, docs))
 
-    www_write("archive.html", render.archive_page(posts))
+    www_write("archive.html", lambda: render.archive_page(posts))
 
-    www_write("graph.html", render.graph_page(graph_model))
+    www_write("graph.html", lambda: render.graph_page(graph_model))
     _write_out(out_dir, bases, "www", "assets/graph.json",
                json.dumps(graph_model.to_json(), indent=1))
 

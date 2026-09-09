@@ -3,10 +3,21 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-  outputs = { nixpkgs, ... }:
+  outputs = { self, nixpkgs, ... }:
     let
       systems = [ "x86_64-linux" "aarch64-linux" ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
+
+      # Per-vhost public base URLs used when building releasable site
+      # packages. Empty in the dev shell; the site package build fixes the
+      # staging hostnames so cross-vhost links and assets are absolute.
+      siteBaseMap = {
+        www = "https://www-staging.starintel.actor";
+        blog = "https://blog-staging.starintel.actor";
+        docs = "https://docs-staging.starintel.actor";
+        nsaspy = "https://nsaspy-staging.starintel.actor";
+      };
+      baseMapJson = builtins.toJSON siteBaseMap;
     in {
       devShells = forAllSystems (system:
         let
@@ -35,5 +46,56 @@
             '';
           };
         });
+
+      packages = forAllSystems (system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+          emacs-site = (pkgs.emacsPackagesFor pkgs.emacs-nox).emacsWithPackages
+            (epkgs: with epkgs; [ org-roam ]);
+          python-site = pkgs.python313.withPackages (ps: [ ps.pygments ]);
+          site = pkgs.stdenv.mkDerivation {
+            pname = "starintel-social-presence-site";
+            version = "unstable-${self.shortRev or "dirty"}";
+
+            src = self;
+
+            nativeBuildInputs = [
+              emacs-site
+              python-site
+              pkgs.pandoc
+              pkgs.git
+            ];
+
+            env.STARINTEL_SITE_BASE_MAP = baseMapJson;
+
+            buildPhase = ''
+              export HOME=$TMPDIR/home
+              mkdir -p "$HOME"
+              export PYTHONPATH="$PWD/site_builder/src"
+              export STARINTEL_SOCIAL_ROOT="$PWD"
+              python3 -m starintel_site_builder.cli build \
+                --root "$PWD" \
+                --out "$out" \
+                --build-dir "$TMPDIR/.build" \
+                --base-map "$STARINTEL_SITE_BASE_MAP"
+            '';
+
+            passthru.vhosts = [ "www" "blog" "docs" "nsaspy" ];
+
+            dontStrip = true;
+          };
+          vhostPackage = name:
+            pkgs.runCommand "starintel-site-${name}" { } ''
+              mkdir -p $out
+              ln -s ${site}/${name}/* $out/
+            '';
+        in {
+          site = site;
+        } // builtins.listToAttrs (map
+          (name: {
+            name = name;
+            value = vhostPackage name;
+          })
+          site.passthru.vhosts));
     };
 }
