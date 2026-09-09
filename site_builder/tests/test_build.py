@@ -223,3 +223,18 @@ class TestDocsSources:
     def test_report_counts_external_pages(self, built) -> None:
         _out, report = built
         assert report.external == 3  # landing + guide + unique
+
+
+def test_highlight_strips_code_wrapper() -> None:
+    fragment = '<pre class="src src-json"><code>{&quot;a&quot;: 1}</code></pre>'
+    result = highlight_fragment(fragment)
+    assert "&lt;code&gt;" not in result
+    assert "<code>" not in result.replace("<pre", "").replace("</pre", "")
+    assert '<span class="highlight">' in result
+
+
+def test_highlight_unknown_lang_escapes_cleanly() -> None:
+    fragment = '<pre class="src src-text"><code>open Emacs\nwrite Org</code></pre>'
+    result = highlight_fragment(fragment)
+    assert "&lt;code&gt;" not in result
+    assert "open Emacs" in result

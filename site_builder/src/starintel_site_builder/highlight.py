@@ -54,6 +54,9 @@ def _unescape(text: str) -> str:
     return text
 
 
+_CODE_WRAPPER_RE = re.compile(r"^\s*<code[^>]*>(.*)</code>\s*$", re.DOTALL)
+
+
 def _highlight(code: str, lang: str) -> str | None:
     lang = _LANG_ALIASES.get(lang, lang)
     try:
@@ -69,9 +72,15 @@ def highlight_fragment(fragment: str) -> str:
     def replace(match: re.Match) -> str:
         lang = match.group(1)
         code = _unescape(match.group(2))
+        # ox-html wraps src contents in <code> inside <pre>; the wrapper is
+        # markup, not content, and must never reach the lexer.
+        wrapper = _CODE_WRAPPER_RE.match(code)
+        if wrapper:
+            code = wrapper.group(1)
         marked = _highlight(code, lang)
         if marked is None:
-            return match.group(0)
+            inner = html_module.escape(code)
+            return f'<pre class="src src-{lang}">{inner}</pre>'
         return f'<pre class="src src-{lang}"><span class="highlight">{marked}</span></pre>'
 
     return _PRE_RE.sub(replace, fragment)
