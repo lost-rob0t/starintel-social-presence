@@ -93,9 +93,9 @@ _NAV_LINKS = [
     ("blog", "blog", "/index.html", "Blog"),
     ("docs", "docs", "/index.html", "Docs"),
     ("portfolio", "nsaspy", "/index.html", "Portfolio"),
-    ("graph", "www", "/graph.html", "Graph"),
-    ("archive", "www", "/archive.html", "Archive"),
-    ("tags", "www", "/tags/index.html", "Tags"),
+    ("graph", "blog", "/graph.html", "Graph"),
+    ("archive", "blog", "/archive.html", "Archive"),
+    ("tags", "blog", "/tags/index.html", "Tags"),
 ]
 
 
@@ -116,8 +116,8 @@ def _header(active: str) -> str:
 
 
 def _footer() -> str:
-    graph = f"{vbase('www')}/graph.html" if vbase("www") else "/graph.html"
-    archive = f"{vbase('www')}/archive.html" if vbase("www") else "/archive.html"
+    graph = f"{vbase('blog')}/graph.html" if vbase("blog") else "/graph.html"
+    archive = f"{vbase('blog')}/archive.html" if vbase("blog") else "/archive.html"
     return (
         '<footer class="site-footer"><div class="site-footer__inner">'
         "<span>StarIntel — built from Org sources, published deliberately.</span>"

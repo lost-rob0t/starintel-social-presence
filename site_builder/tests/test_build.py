@@ -155,9 +155,10 @@ class TestVhostSplit:
     def test_per_vhost_layout(self, split) -> None:
         out, _bases, _report = split
         for vhost, rel in (
-            ("www", "index.html"),
-            ("www", "graph.html"),
-            ("www", "archive.html"),
+            ("blog", "index.html"),
+            ("blog", "graph.html"),
+            ("blog", "archive.html"),
+            ("blog", "tags/index.html"),
             ("blog", "first-test-post.html"),
             ("blog", "drafts/draft-notes.html"),
             ("docs", "index.html"),
@@ -176,16 +177,18 @@ class TestVhostSplit:
         assert f'href="{bases.blog}/index.html"' in docs_index
         post = (out / "blog" / "first-test-post.html").read_text(encoding="utf-8")
         assert f'{bases.blog}/assets/starintel.css' in post
-        assert f'{bases.www}/graph.html"' in post
+        assert f'{bases.blog}/graph.html"' in post
+        # Home links to the main site, which deploys from starintel-labs/website.
+        assert f'{bases.www}/index.html' in post
 
     def test_each_vhost_self_hosts_assets(self, split) -> None:
         out, _bases, _report = split
-        for vhost in ("www", "blog", "docs", "nsaspy"):
+        for vhost in ("blog", "docs", "nsaspy"):
             assert (out / vhost / "assets" / "starintel.css").is_file()
 
     def test_sitemap_absolute(self, split) -> None:
         out, bases, _report = split
-        sitemap = (out / "www" / "sitemap.xml").read_text(encoding="utf-8")
+        sitemap = (out / "blog" / "sitemap.xml").read_text(encoding="utf-8")
         assert f"{bases.blog}/first-test-post.html" in sitemap
 
 
