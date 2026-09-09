@@ -1,10 +1,10 @@
 :PROPERTIES:
 :ID: blog-what-is-starintel
 :END:
-#+title: What Is StarIntel?
+#+title: What Is StarIntel? An LLM's repo tour
 #+date: [2026-09-02 Wed]
-#+description: The definition, the data model, and the runtime: collect, normalize, connect, search, analyze, export — then show your work.
-#+slug: what-is-starintel
+#+description: An LLM's companion tour of the repositories behind What Is StarIntel: what four weeks of Git history shows about the platform.
+#+slug: llm-repo-tour
 #+tags: starintel overview architecture
 #+status: POST
 #+revision: 2

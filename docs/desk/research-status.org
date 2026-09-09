@@ -39,7 +39,7 @@ where that rule is enforced mechanically for this repository.
 
 Pages on this site that summarize research must respect the same boundary:
 roadmap and research direction are labeled as such (see the closing section
-of [[id:blog-what-is-starintel][What Is StarIntel?]]), and unapproved design work is never presented
+of [[id:intro-what-is-starintel][What Is StarIntel]]), and unapproved design work is never presented
 as shipped behavior.
 
 #+begin_src sh

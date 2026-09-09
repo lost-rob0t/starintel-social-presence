@@ -72,4 +72,4 @@ facts, serializable, testable without a model:
 
 - [[id:nsaspy-project-starintel][StarIntel project page]] — the platform summary.
 - [[id:docs-server-ingest][Ingest and dataflow recursion]] — how documents move through the runtime.
-- [[id:blog-what-is-starintel][What Is StarIntel?]] — the narrative overview.
+- [[id:intro-what-is-starintel][What Is StarIntel]] — the narrative overview.

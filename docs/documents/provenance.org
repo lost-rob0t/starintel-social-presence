@@ -46,7 +46,7 @@ desk produces — normalized Git change records from
 [[id:docs-desk-change-facts][change_fetcher]] — carry repository, commit, timestamp, author,
 subject, changed files, and comparison range. Pages aggregated from external
 repositories pin the [[id:docs-documents-schema][document model's]] source revision in their badge.
-And byline policy marks every page as [[id:blog-what-is-starintel][human]] or LLM-written, because an
+And byline policy marks every page as human ([[file:../../blog/posts/2026-08-28-bootstrapping-the-starintel-web-platform.org][like the launch post]]) or LLM-written, because an
 LLM draft is not evidence either.
 
 * Related
