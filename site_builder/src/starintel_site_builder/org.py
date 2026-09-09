@@ -28,13 +28,21 @@ def parse_keywords(text: str) -> dict[str, str]:
 
 
 def parse_filetags(value: str) -> tuple[str, ...]:
-    return tuple(dict.fromkeys(_FILETAGS_RE.findall(value)))
+    trimmed = value.strip().strip(":")
+    if not trimmed:
+        return ()
+    return tuple(dict.fromkeys(tag for tag in trimmed.split(":") if tag))
 
 
 def split_tags(raw: str | None, filetags: str | None) -> tuple[str, ...]:
     tags: list[str] = []
     if raw:
-        tags.extend(part.strip() for part in re.split(r"[,\s]+", raw) if part.strip())
+        raw = raw.strip()
+        if raw.startswith(":") and raw.endswith(":") and len(raw) > 1:
+            # Org filetag colon syntax is also accepted in #+tags.
+            tags.extend(parse_filetags(raw))
+        else:
+            tags.extend(part.strip() for part in re.split(r"[,\s]+", raw) if part.strip())
     if filetags:
         tags.extend(parse_filetags(filetags))
     return tuple(dict.fromkeys(tags))

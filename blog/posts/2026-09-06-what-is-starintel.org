@@ -1,0 +1,444 @@
+:PROPERTIES:
+:ID: intro-what-is-starintel
+:END:
+#+title: What Is StarIntel
+#+date: 2026-09-06
+#+author: nsaspy
+#+description: nsaspy's own introduction to StarIntel: the spec, the actor model, the stack, targets, manifests, and Quasar.
+#+slug: what-is-starintel
+#+tags: :starintel:features:human:
+#+status: POST
+#+revision: 1
+#+CREATED: [2026-09-06 Sun 19:18]
+#+LAST_MODIFIED: [2026-09-06 Sun 19:23]
+
+* Star Intel A brief introduction
+
+StarIntel is an open-source OSINT data platform. It allows you to ingest any type of unstructured data into structured =Documents=. A document is defined by the StarIntel =spec=, which has ~50-ish types as of writing.
+
+It uses the actor model for providing data, recursively enriching data. Everything in StarIntel is written to be distributed code, scaling, and more.
+
+** What is the Actor model
+
+The actor model states that the smallest bit of communication node is an actor.[fn:4]
+
+Actors may contain local state, but never shared state.
+So, by design, everything in StarIntel operates around message-oriented middleware.
+This is sometimes referred to as ~MOM~.
+Messages are structured. Event logging and event sourcing are also supported.
+
+What is currently not supported is replaying events to rebuild the database in case of a terrible accident or something like that.
+
+So we have event-sourcing *lite*. This is a planned feature a future StarIntel server will support.
+
+*** StarIntel Actors
+
+In StarIntel, actors do have local state.
+They are known as ~agents~. Agents are special actors that use internal messaging to set and get state.
+
+See the Sento API reference for more details.
+
+** StarIntel Stack
+
+*** Language
+
+Most of StarIntel is written in =Common Lisp=.[fn:5]
+
+Why Common Lisp and not Python or Go? This is because I am the only developer working on it.
+Code generation is highly important to me, along with the simplicity of Lisp. There are plenty of existing libraries one can use to do web development.
+
+*** Common Lisp Libs Used
+
+**** Sento
+
+Sento is the library providing actors. It was written by [[https://github.com/mdbergmann/][mdbergmann]][fn:1].
+It uses Bordeaux Threads and a worker pool for concurrency.[fn:6]
+
+The library provides:
+
+1. Actor mailbox
+2. Routers for load balancing among many actors
+3. Remoting
+4. Much more left out for brevity. Please check it out and give it a star; it needs more attention.
+
+**** star-cl
+
+This is the Common Lisp implementation of the StarIntel spec. The current schema version as of writing is ~v0.9~. This =spec= version provides provenance, sourcing, and many more data fields than the hand-written ~v0.8.0~ and fully human-written ~v0.7.2~. In the modern versions, we moved away from normalization again and allowed embedding metadata within the documents again. Why? We use CouchDB, and that was a dumb choice I made to handle redundant data.
+
+In a future version, we will move MUCH more to a data lake pattern. Persistence is handled by actors as well; no actor knows of the database.
+
+Link to source: [[https://git.starintel.actor/nsaspy/star-cl][star-cl]]
+
+**** cl-couch
+
+This is the CouchDB client. It provides basic support for basic CouchDB operations.
+
+It could be better; it's 90% human-derived code.
+
+Link to source: [[https://git.starintel.actor/nsaspy/cl-couch][cl-couch]]
+
+**** rabbitmqc/cl-rabbit
+
+We use RabbitMQ as the current event bus for document events.
+
+We use [[https://github.com/lokedhs/cl-rabbit][cl-rabbit]]. It provides C bindings to rabbitmq-c.
+
+***** Mailbox setup
+
+Documents, depending on the state they are in, are routed to certain topic keys.[fn:7]
+
++ ~document.ingest.<type>~ For ingesting brand-new documents. They are then emitted to the new queues. After being placed into CouchDB, the documents will possess a ~_rev~ key for CouchDB's MVCC system.[fn:2]
++ ~document.new.<type>~ is where enrichment actors
++ ~document.update.<type>~ When an actor updates a document
+
+***** Consumers
+
+Consumers are simpler forms of actors that just perform a function against queue items and consume the items. This is how the CouchDB writer is implemented as of now.
+
+***** Producers
+
+These are actors that have local state (in Sento: agents).
+
+They write to RabbitMQ and are used for submitting to the queue. They are integrated into the actor systems.
+
+** Features of StarIntel Server
+
+StarIntel Server has UNLIMITED configuration potential, as we use Emacs-style init.lisp config files.
+
++  Hooks for actor startup: Implemented
++  Different event hooks and :around :advice are not currently implemented
+
+*** Matchers
+
+These are pattern-matching actors that can perform a function when the condition is true.
+
+They are used for URL extraction, which emits =url= documents with a relation document.
+
+** StarIntel document model
+
+The StarIntel schema supports graphs, a document model, and more.
+
+In the reference implementation, relations are implemented as objects.
+
+They are also known as edges; documents are nodes.
+
+Some types to look at:
+
++ =User=: representing accounts at some service or local accounts
++ =SocialMPost=: Social media posts like Mastodon, Reddit, and x.com
++ =Host=: Represents a networked computer. Mostly used for BBP data/actors
++ =Url=: represents a URL
++ =Target=: Actor input
+
+** Targets
+
+Targets are how we tell actors what to fetch, scrape, or *target*.
+
+They look like this:
+
+#+begin_src json
+{
+  "_id": "417e73285d14d35de7d4130e8ac6ea4c030b6fdd7616106b2503f236115da41f",
+  "dataset": "demo",
+  "dtype": "target",
+  "schema-version": "0.9.0",
+  "version": 1,
+
+  "data": {
+    "actor": "fediwatch",
+    "target": "Gargron@mastodon.social",
+    "delay": 0,
+    "recurring": false,
+    "options": {
+      "typ": "User"
+    }
+  }
+}
+#+end_src
+
+Options are usually a key/value pair or sometimes a JSON object.
+Refer to =actor manifests= as to what options are supported.
+
+The important fields specific to a =Target= are:
+
+*** =actor=
+
+The actor that should receive and process the target.
+
+*** =target=
+
+The thing the actor should operate on. This may be a URL, username, domain, document ID, or another value understood by the actor.
+
+*** =delay=
+
+How long to wait before processing the target. It is also used with recurring targets.
+
+*** =recurring=
+
+Whether the target should be sent to the actor again after its delay.
+
+*** =options=
+
+Actor-specific options. What options are available depends on the actor and should be described by its =actor manifest=.
+
+The other fields, such as =_id=, =dataset=, =dtype=, =schema-version=, and =version=, are normal StarIntel document metadata.
+
+*** Investigation Target
+
+These are another type of =Target=.
+
+They are used to guide =large language models= and operators to answer a research question.
+
+Example:
+
+#+begin_src json
+{
+  "_id": "starintel:investigation-target:palantir-org-id-resolution",
+  "dataset": "palantir-deep-dive-2026-07-25",
+  "dtype": "investigation-target",
+  "schema_version": "0.9.0",
+  "version": 1,
+  "title": "Resolve duplicate Palantir organization IDs",
+  "summary": "The normalized corpus contains both a regulatory/company Palantir record and a WEF-facing Palantir organization record; resolve canonical identity before cross-dataset location propagation.",
+  "data": {
+    "research_question": "Do the two Palantir organization IDs represent the same legal/operating entity, and which ID should be canonical?",
+    "query": "Palantir Technologies Inc canonical organization duplicate WEF",
+    "objectives": [
+      "Compare identifiers and source semantics",
+      "Select canonical ID",
+      "Rewire references without losing dataset provenance"
+    ],
+    "in_scope": [
+      "Existing normalized Palantir organization records",
+      "SEC CIK 0001321655",
+      "WEF Palantir organization profile"
+    ],
+    "out_of_scope": [
+      "Private locations",
+      "Subsidiary conflation"
+    ],
+    "preferred_sources": [
+      "SEC",
+      "World Economic Forum",
+      "Palantir"
+    ],
+    "seed_ids": [
+      "starintel:org:palantir-technologies-inc",
+      "starintel:org:palantir-technologies"
+    ],
+    "status": "queued",
+    "depth": 0,
+    "max_depth": 2,
+    "target_type": "entity-resolution"
+  }
+}
+#+end_src
+
+An =Investigation Target= contains the normal StarIntel document metadata, but its =data= describes a research task.
+
+The important fields are:
+
+**** =research_question=
+
+The main question the investigation is trying to answer.
+
+**** =query=
+
+A search-friendly form of the research question. Agents and operators can use this as a starting point when searching external sources.
+
+**** =objectives=
+
+A list of specific goals the investigation should try to complete.
+
+**** =in_scope=
+
+Subjects, records, entities, or sources that are explicitly part of the investigation.
+
+**** =out_of_scope=
+
+Things that should not be investigated as part of this target.
+
+**** =preferred_sources=
+
+Sources that should be preferred when gathering evidence.
+
+**** =seed_ids=
+
+Existing StarIntel documents that provide starting points for the investigation.
+
+**** =status=
+
+The current state of the investigation, such as =queued=.
+
+**** =depth=
+
+How deep the current investigation is in a recursive research process.
+
+**** =max_depth=
+
+The maximum depth the investigation is allowed to reach.
+
+**** =target_type=
+
+The type of research being performed, such as =entity-resolution=.
+
+Investigation targets may also contain fields such as =priority=, =score=, =hypotheses=, =selection_reason=, and =breadth= when more control over automated research is needed.
+
+** Manifests
+
+Manifests come in a few flavors.
+
+Dataset manifests define composite data containers and their source datasets.
+
+Sometimes they define the source files as well.
+
+Actor manifests define what the actor can do and what input document types and target options they support.
+
+Actors can accept =Targets= or =Documents=.
+
+*** Dataset Manifests
+
+These are a new ~v0.9~ addition.
+
+An example manifest looks like this:
+
+#+begin_src json
+{
+  "_id": "starintel:dataset-manifest:test",
+  "dataset": "test",
+  "dtype": "dataset-manifest",
+  "schema_version": "0.9.0",
+  "version": 1,
+  "date_added": "2026-07-25T20:00:00.000Z",
+  "date_updated": "2026-07-25T20:00:00.000Z",
+  "sources": [],
+  "evidence": [],
+  "data": {
+    "manifest_type": "dataset",
+    "name": "test",
+    "files": [
+      {
+        "path": "records.jsonl"
+      }
+    ]
+  }
+}
+#+end_src
+
+They are mostly used to combine datasets and add metadata to a dataset.
+
+*** Actor Manifest
+
+Again, these are another ~v0.9.0~ addition.
+
+Example actor manifest:
+
+#+begin_src json
+
+#+end_src
+
+These are used to advertise the capabilities of actors and make them viewable within =Quasar=.
+
+They serve another use: defining what inputs actors can accept and what their mailbox pattern is.
+
+*** Actor Manifest
+
+Again, these are another ~v0.9.0~ addition.
+
+Example actor manifest:
+
+#+begin_src json
+{
+  "_id": "5f67a1d6...",
+  "type": "actor-manifest",
+  "actor": "org-member",
+  "consumer-path": [
+    "actors.org-member.new.target"
+  ],
+  "target-options": [
+    "no_search",
+    "no_teams",
+    "deep",
+    "json"
+  ],
+  "date-added": 1788732000,
+  "date-updated": 1788732000
+}
+#+end_src
+
+These are used to advertise the capabilities of actors and make them viewable within =Quasar=.
+
+They serve another use: defining what inputs actors can accept and what their mailbox pattern is.
+
+** Quasar
+
+Quasar[fn:3] is the new graph/operator interface to starintel.
+
+It is entirly vibe coded, as with anything that starintel has produced in ~2026~.
+
+it is undergroing extensive work
+
+Features:
+
++ Graph editing
++ Viewing Graphs
++ Running actors against selected Nodes
++ Viewing different graph layouts
++ Importing data
++ Pouchdb and couchdb sync[fn:8]
++ Pouchdb Provides a In-Browser datastore making it local first
++ Tek-9 Persistence, =Tek-9= is a custom database that supports graphs, document model and more.
++ Agents and AI based research/osint.
++ Submiting documents to the starintel server api.
++ Submiting Targets for actor runs.
+
+It is under active work. Open issues on its issue tracker:
+[[https://github.com/lost-rob0t/quasar/issues][Quasar issue tracker]]
+
+* Summery Of what we talked about
+
+** Starintel Document model
+
+Starintel is organized around a =spec= also known as a =scema= also called a =ORM=
+
+** Actor model
+
+We use =actors= as services for starintel internals and data collection, enrichment
+
+** Targets
+
+=Targets= are actor input
+
+Investigation Targets are specialized =Targets= for awsnering research questions and define scopes
+
+** Actors
+
+Also known as bots when they are used for scraping data.
+
+Also called =scrapers=
+
+They mostly collect data outside of =star-server= core.
+
+** Quasar
+
+The workbench where you preform most =starintel= work.
+
+It provides AI agents to assint in OSINT, purely optional.
+
+* Footnotes
+
+[fn:8] See [[https://pouchdb.com/guides/][PouchDB Guide]] for an introduction to PouchDB, browser-local storage, and CouchDB synchronization.
+
+[fn:7] See [[https://www.rabbitmq.com/docs/exchanges][RabbitMQ: Exchanges]] for topic exchanges and dot-separated routing-key matching.
+
+[fn:6] See [[https://github.com/sionescu/bordeaux-threads][Bordeaux Threads]] for the Common Lisp portable threading API used by Sento.
+
+[fn:5] See [[https://www.lispworks.com/documentation/HyperSpec/Front/index.htm][Common Lisp HyperSpec]] for the online reference derived from the ANSI Common Lisp standard.
+
+[fn:4] Carl Hewitt, Peter Bishop, and Richard Steiger, [[https://www.ijcai.org/Proceedings/73/Papers/027B.pdf][A Universal Modular ACTOR Formalism for Artificial Intelligence]], IJCAI 1973.
+
+[fn:3] [[https://github.com/lost-rob0t/quasar][Quasar source repository]]
+
+[fn:2] See [[https://docs.couchdb.org/en/stable/intro/api.html#revisions][CouchDB: Revisions and MVCC]] for how ~_rev~ values are used for optimistic concurrency and document revision tracking.
+
+[fn:1] https://github.com/mdbergmann/cl-gserver The Sento library

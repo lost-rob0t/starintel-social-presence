@@ -71,5 +71,5 @@ deployment.
 * Where to go next
 
 - [[id:docs-server-ingest][Ingest and dataflow recursion]] — the document pipeline in detail.
-- [[id:blog-what-is-starintel][What Is StarIntel?]] — the platform-level picture.
+- [[id:intro-what-is-starintel][What Is StarIntel]] — the platform-level picture.
 - The canonical [[https://github.com/lost-rob0t][repository]] holds the current implementation.

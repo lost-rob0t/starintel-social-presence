@@ -36,7 +36,7 @@ Derived documents re-enter through the ingest exchange — see
 The jobs are real-world flaky: networks die, providers rate-limit, parsers
 crash on malformed input, queues back up. A supervised runtime restarts or
 isolates pieces instead of taking the investigation down. This is the
-platform-level argument from [[id:blog-what-is-starintel][What Is StarIntel?]] — actors everywhere, one
+platform-level argument from [[id:intro-what-is-starintel][What Is StarIntel]] — actors everywhere, one
 document model — implemented on the server as Sento boundaries plus exchange
 routing.
 
