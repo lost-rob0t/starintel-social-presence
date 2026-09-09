@@ -59,6 +59,14 @@ if git -C "$root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   git -C "$root" diff --check
 fi
 
+# Releasable site package: the flake output infra consumes for the
+# staging vhosts must keep building.
+nix build .#site -q -o "$site_tmp/site-package" 2>/dev/null || nix build .#site -o "$site_tmp/site-package"
+test -d "$site_tmp/site-package/www"
+test -d "$site_tmp/site-package/blog"
+test -d "$site_tmp/site-package/docs"
+test -d "$site_tmp/site-package/nsaspy"
+
 if ! git -C "$root" check-ignore -q .env 2>/dev/null; then
   grep -Eq '^\.env$' "$root/.gitignore"
 fi
