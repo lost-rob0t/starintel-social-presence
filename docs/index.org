@@ -6,7 +6,7 @@
 #+slug: docs-index
 #+filetags: :docs:index:
 #+status: POST
-#+revision: 2
+#+revision: 3
 
 This section documents how StarIntel components work today, as far as the
 editorial desk can verify them. Documentation pages carry a revision badge
@@ -38,10 +38,13 @@ Documentation for this repository's own deterministic adapters:
 
 * External repositories
 
-Aggregated, read-only, revision-pinned:
-
-- [[id:external-starintel-server][StarIntel Server]] — upstream server README.
-- [[id:external-quasar][quasar]] — upstream Quasar README.
+Every public StarIntel repository is aggregated here, read-only and
+revision-pinned: each contributes its README as a landing page plus its
+=docs/= and =doc/= Org trees where present — the server's generated API
+reference included. The current set covers StarIntel Server, Quasar, Auto
+Research, Auto Dig, Star-Lang, starintel-doc, a0-symbolics, star-cl,
+cl-couch, star-bbpd, starintel-client, and RAGE; the sidebar lists
+whatever the build pulled in.
 
 * Scope and authority
 
