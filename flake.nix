@@ -12,7 +12,7 @@
       # packages. Empty in the dev shell; the site package build fixes the
       # staging hostnames so cross-vhost links and assets are absolute.
       siteBaseMap = {
-        www = "https://www-staging.starintel.actor";
+        www = "https://staging.starintel.actor";
         blog = "https://blog-staging.starintel.actor";
         docs = "https://docs-staging.starintel.actor";
         nsaspy = "https://nsaspy-staging.starintel.actor";
@@ -80,7 +80,7 @@
                 --base-map "$STARINTEL_SITE_BASE_MAP"
             '';
 
-            passthru.vhosts = [ "www" "blog" "docs" "nsaspy" ];
+            passthru.vhosts = [ "www" "blog" "docs" "nsaspy" ];  # www built but not published
 
             dontStrip = true;
           };
@@ -89,6 +89,9 @@
               mkdir -p $out
               ln -s ${site}/${name}/* $out/
             '';
+          # The www/main-site vhost deploys from starintel-labs/website;
+          # this repo publishes only blog, docs, and nsaspy.
+          publishedVhosts = [ "blog" "docs" "nsaspy" ];
         in {
           site = site;
         } // builtins.listToAttrs (map
@@ -96,6 +99,6 @@
             name = name;
             value = vhostPackage name;
           })
-          site.passthru.vhosts));
+          publishedVhosts));
     };
 }

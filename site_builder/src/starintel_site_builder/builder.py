@@ -202,9 +202,10 @@ def build_site(
         _write_out(out_dir, bases, "www", rel, build())
         pages_written += 1
 
-    www_write("index.html", lambda: render.home_page(
-        SiteModel(posts=posts, portfolio=portfolio), SiteModel(docs=docs)
-    ))
+    if not bases.split:
+        www_write("index.html", lambda: render.home_page(
+            SiteModel(posts=posts, portfolio=portfolio), SiteModel(docs=docs)
+        ))
 
     # Blog vhost landing: the chronological blog index.
     render.set_page_vhost("blog")
@@ -237,15 +238,25 @@ def build_site(
     pages_written += 1
 
     tags = _collect_tags(model.all_published())
-    www_write("tags/index.html", lambda: render.tag_index(tags))
+    # Timeline, taxonomy, and the graph workspace ride the blog vhost
+    # (the www/main-site vhost deploys from starintel-labs/website).
+    surface = "blog" if bases.split else "www"
+
+    def surface_write(rel: str, build: callable) -> None:
+        nonlocal pages_written
+        render.set_page_vhost("blog" if bases.split else "www")
+        _write_out(out_dir, bases, surface, rel, build())
+        pages_written += 1
+
+    surface_write("tags/index.html", lambda: render.tag_index(tags))
     for tag, tagged in tags.items():
-        www_write(f"tags/{tag.lower()}.html",
-                  lambda t=tag, docs=tagged: render.tag_page(t, docs))
+        surface_write(f"tags/{tag.lower()}.html",
+                      lambda t=tag, docs=tagged: render.tag_page(t, docs))
 
-    www_write("archive.html", lambda: render.archive_page(posts))
+    surface_write("archive.html", lambda: render.archive_page(posts))
 
-    www_write("graph.html", lambda: render.graph_page(graph_model))
-    _write_out(out_dir, bases, "www", "assets/graph.json",
+    surface_write("graph.html", lambda: render.graph_page(graph_model))
+    _write_out(out_dir, bases, surface, "assets/graph.json",
                json.dumps(graph_model.to_json(), indent=1))
 
     vhosts = render.VHOSTS if bases.split else ("",)
@@ -258,11 +269,11 @@ def build_site(
     if bases.split:
         sitemap_urls = [d.url for d in model.all_published()] + [
             render.home_url(),
-            f"{render.vbase('www')}/archive.html",
-            f"{render.vbase('www')}/tags/index.html",
+            f"{render.vbase('blog')}/archive.html",
+            f"{render.vbase('blog')}/tags/index.html",
             f"{render.vbase('docs')}/index.html",
             f"{render.vbase('nsaspy')}/index.html",
-            f"{render.vbase('www')}/graph.html",
+            f"{render.vbase('blog')}/graph.html",
         ]
     else:
         sitemap_urls = [d.url for d in model.all_published()] + [
@@ -273,7 +284,8 @@ def build_site(
             "/portfolio/index.html",
             "/graph.html",
         ]
-    _write_out(out_dir, bases, "www", "sitemap.xml", render.sitemap(sorted(set(sitemap_urls))))
+    _write_out(out_dir, bases, "blog" if bases.split else "www",
+               "sitemap.xml", render.sitemap(sorted(set(sitemap_urls))))
     pages_written += 1
 
     report.pages = pages_written
