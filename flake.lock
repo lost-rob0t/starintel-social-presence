@@ -1,5 +1,37 @@
 {
   "nodes": {
+    "a0-symbolics": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788969193,
+        "narHash": "sha256-3x3x5mPYlbNGfYxEi58ZGYzeitNd3ynYA9qPAwuJx4Q=",
+        "owner": "lost-rob0t",
+        "repo": "a0-symbolics",
+        "rev": "ec0ef188e89ed77e53ec1e94d1ad800bb69b6c35",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lost-rob0t",
+        "repo": "a0-symbolics",
+        "type": "github"
+      }
+    },
+    "cl-couch": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1769528226,
+        "narHash": "sha256-Niq9klZi9iKOwNb5u7FUalz82FlP5XIGxnnEjN/Jg9A=",
+        "ref": "refs/heads/master",
+        "rev": "a37150193b81fad16d24b42102353fcad9c649ad",
+        "revCount": 34,
+        "type": "git",
+        "url": "https://git.starintel.actor/nsaspy/cl-couch"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://git.starintel.actor/nsaspy/cl-couch"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1788614874,
@@ -16,9 +48,181 @@
         "type": "github"
       }
     },
+    "quasar": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788724084,
+        "narHash": "sha256-boQzKiNXhov5vwZBzArHi6YNnMLnfeHwHY6QICmfsKc=",
+        "owner": "lost-rob0t",
+        "repo": "quasar",
+        "rev": "44f977cdecb91d78cd77e35cb287503c135dee50",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lost-rob0t",
+        "repo": "quasar",
+        "type": "github"
+      }
+    },
+    "rage": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1787734017,
+        "narHash": "sha256-qDBUUiz/73nX9RdEA//HPGcIIC5JCZsCTe57c3EZBzk=",
+        "ref": "refs/heads/main",
+        "rev": "271056b4b6c95355852310c807622332df977432",
+        "revCount": 19,
+        "type": "git",
+        "url": "https://git.starintel.actor/starintel-labs/RAGE"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://git.starintel.actor/starintel-labs/RAGE"
+      }
+    },
     "root": {
       "inputs": {
-        "nixpkgs": "nixpkgs"
+        "a0-symbolics": "a0-symbolics",
+        "cl-couch": "cl-couch",
+        "nixpkgs": "nixpkgs",
+        "quasar": "quasar",
+        "rage": "rage",
+        "star-bbpd": "star-bbpd",
+        "star-cl": "star-cl",
+        "star-lang": "star-lang",
+        "starintel-auto-research": "starintel-auto-research",
+        "starintel-client": "starintel-client",
+        "starintel-doc": "starintel-doc",
+        "starintel-gpt-auto-dig": "starintel-gpt-auto-dig",
+        "starintel-server": "starintel-server"
+      }
+    },
+    "star-bbpd": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788759786,
+        "narHash": "sha256-z4YYN/MZ1TN+AJCk2bVITeVkp6D/LruIit0JGkXdgUI=",
+        "ref": "refs/heads/master",
+        "rev": "d9fdc766e1a53743f372be2a4d6800adcfcd7672",
+        "revCount": 50,
+        "type": "git",
+        "url": "https://git.starintel.actor/nsaspy/star-bbpd"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://git.starintel.actor/nsaspy/star-bbpd"
+      }
+    },
+    "star-cl": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786244418,
+        "narHash": "sha256-WO/qeIgw7nvRDYeM21Iuwb5HUGttVPMOXj69Ghfmlj4=",
+        "ref": "refs/heads/master",
+        "rev": "b8dfbe2f9f56065ace8c3313b92ca748a115cdfa",
+        "revCount": 99,
+        "type": "git",
+        "url": "https://git.starintel.actor/nsaspy/star-cl"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://git.starintel.actor/nsaspy/star-cl"
+      }
+    },
+    "star-lang": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786912966,
+        "narHash": "sha256-bKqIe44Ktv4kWX+F1ujOiRgzIM2cTAyGzvp5GATP2Xc=",
+        "owner": "lost-rob0t",
+        "repo": "star-lang",
+        "rev": "0472ed8f4472252038b62bb19a17aa09d2ddf1b4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lost-rob0t",
+        "repo": "star-lang",
+        "type": "github"
+      }
+    },
+    "starintel-auto-research": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788915771,
+        "narHash": "sha256-+2ND2fG6p/WeLwbJwcvxT1PQvbAKUPl9NSo9sZHWNVY=",
+        "owner": "lost-rob0t",
+        "repo": "starintel-auto-research",
+        "rev": "72ec24f58b9c00fc6ab4f638d2f4a1abe415ef47",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lost-rob0t",
+        "repo": "starintel-auto-research",
+        "type": "github"
+      }
+    },
+    "starintel-client": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788970816,
+        "narHash": "sha256-GUmlzZmuTHIg4/Bm7+h0CadqVUOeauBM3BOH7SV+BNA=",
+        "ref": "refs/heads/main",
+        "rev": "2d886d257b42d5769b2a6002c4aa9db5d783d2c6",
+        "revCount": 9,
+        "type": "git",
+        "url": "https://git.starintel.actor/starintel-labs/starintel-client"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://git.starintel.actor/starintel-labs/starintel-client"
+      }
+    },
+    "starintel-doc": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788919236,
+        "narHash": "sha256-cy3ZmB933QD6EruHGMe/a9elRz/ce+V0Eon7Ch4gAaI=",
+        "owner": "lost-rob0t",
+        "repo": "starintel-doc",
+        "rev": "5857914a1e34ad18a6956b8ff0df5349de0ca099",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lost-rob0t",
+        "repo": "starintel-doc",
+        "type": "github"
+      }
+    },
+    "starintel-gpt-auto-dig": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788978608,
+        "narHash": "sha256-NxsZ83UHw9CM0C7L0yc9PQrJSKiaHEDPE4xL8/8Cedk=",
+        "owner": "lost-rob0t",
+        "repo": "starintel-gpt-auto-dig",
+        "rev": "234381e2c90378451bcbaa0459b370e3fc72cdef",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lost-rob0t",
+        "repo": "starintel-gpt-auto-dig",
+        "type": "github"
+      }
+    },
+    "starintel-server": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788739259,
+        "narHash": "sha256-eWvvIMLR5XNAoHq7fwBS1jxcccAFJ4phIZPPDbp3t+M=",
+        "owner": "lost-rob0t",
+        "repo": "starintel-server",
+        "rev": "4721efaf8141fd7199b6e1ceb1011b9ad970796e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "lost-rob0t",
+        "repo": "starintel-server",
+        "type": "github"
       }
     }
   },

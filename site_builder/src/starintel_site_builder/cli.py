@@ -12,10 +12,32 @@ from .render import SiteBases
 
 
 DEFAULT_EXTERNALS = (
+    # Every public StarIntel repository: README landing plus any
+    # docs/**.org and doc/**.org trees, revision-pinned per checkout.
     '[{"name":"starintel-server","repo_dir_env":"STARINTEL_SERVER_DIR",'
     '"entry":"README.org","title":"StarIntel Server","include_docs":true},'
     '{"name":"quasar","repo_dir_env":"STARINTEL_QUASAR_DIR",'
-    '"entry":"README.md","title":"Quasar","include_docs":true}]'
+    '"entry":"README.md","title":"Quasar","include_docs":true},'
+    '{"name":"auto-research","repo_dir_env":"STARINTEL_AUTO_RESEARCH_DIR",'
+    '"entry":"README.md","title":"Auto Research"},'
+    '{"name":"auto-dig","repo_dir_env":"STARINTEL_AUTO_DIG_DIR",'
+    '"entry":"README.md","title":"Auto Dig"},'
+    '{"name":"star-lang","repo_dir_env":"STARINTEL_STAR_LANG_DIR",'
+    '"entry":"README.md","title":"Star-Lang","include_docs":true},'
+    '{"name":"starintel-doc","repo_dir_env":"STARINTEL_STARINTEL_DOC_DIR",'
+    '"entry":"README.md","title":"starintel-doc"},'
+    '{"name":"a0-symbolics","repo_dir_env":"STARINTEL_A0_SYMBOLICS_DIR",'
+    '"entry":"README.md","title":"a0-symbolics"},'
+    '{"name":"star-cl","repo_dir_env":"STARINTEL_STAR_CL_DIR",'
+    '"entry":"README.org","title":"star-cl"},'
+    '{"name":"cl-couch","repo_dir_env":"STARINTEL_CL_COUCH_DIR",'
+    '"entry":"README.org","title":"cl-couch"},'
+    '{"name":"star-bbpd","repo_dir_env":"STARINTEL_STAR_BBPD_DIR",'
+    '"entry":"README.md","title":"star-bbpd"},'
+    '{"name":"starintel-client","repo_dir_env":"STARINTEL_STARINTEL_CLIENT_DIR",'
+    '"entry":"README.md","title":"starintel-client"},'
+    '{"name":"rage","repo_dir_env":"STARINTEL_RAGE_DIR",'
+    '"entry":"README.org","title":"RAGE"}]'
 )
 
 

@@ -3,7 +3,32 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-  outputs = { self, nixpkgs, ... }:
+  inputs.starintel-server.flake = false;
+  inputs.starintel-server.url = "github:lost-rob0t/starintel-server";
+  inputs.quasar.flake = false;
+  inputs.quasar.url = "github:lost-rob0t/quasar";
+  inputs.starintel-auto-research.flake = false;
+  inputs.starintel-auto-research.url = "github:lost-rob0t/starintel-auto-research";
+  inputs.starintel-gpt-auto-dig.flake = false;
+  inputs.starintel-gpt-auto-dig.url = "github:lost-rob0t/starintel-gpt-auto-dig";
+  inputs.star-lang.flake = false;
+  inputs.star-lang.url = "github:lost-rob0t/star-lang";
+  inputs.starintel-doc.flake = false;
+  inputs.starintel-doc.url = "github:lost-rob0t/starintel-doc";
+  inputs.a0-symbolics.flake = false;
+  inputs.a0-symbolics.url = "github:lost-rob0t/a0-symbolics";
+  inputs.star-cl.flake = false;
+  inputs.star-cl.url = "git+https://git.starintel.actor/nsaspy/star-cl";
+  inputs.cl-couch.flake = false;
+  inputs.cl-couch.url = "git+https://git.starintel.actor/nsaspy/cl-couch";
+  inputs.star-bbpd.flake = false;
+  inputs.star-bbpd.url = "git+https://git.starintel.actor/nsaspy/star-bbpd";
+  inputs.starintel-client.flake = false;
+  inputs.starintel-client.url = "git+https://git.starintel.actor/starintel-labs/starintel-client";
+  inputs.rage.flake = false;
+  inputs.rage.url = "git+https://git.starintel.actor/starintel-labs/RAGE";
+
+  outputs = { self, nixpkgs, ... }@inputs:
     let
       systems = [ "x86_64-linux" "aarch64-linux" ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
@@ -53,6 +78,22 @@
           emacs-site = (pkgs.emacsPackagesFor pkgs.emacs-nox).emacsWithPackages
             (epkgs: with epkgs; [ org-roam ]);
           python-site = pkgs.python313.withPackages (ps: [ ps.pygments ]);
+          # Every public StarIntel repo: the docs vhost aggregates its
+          # README landing plus docs/**.org and doc/**.org trees.
+          repoInputs = {
+            STARINTEL_SERVER_DIR = inputs.starintel-server;
+            STARINTEL_QUASAR_DIR = inputs.quasar;
+            STARINTEL_AUTO_RESEARCH_DIR = inputs.starintel-auto-research;
+            STARINTEL_AUTO_DIG_DIR = inputs.starintel-gpt-auto-dig;
+            STARINTEL_STAR_LANG_DIR = inputs.star-lang;
+            STARINTEL_STARINTEL_DOC_DIR = inputs.starintel-doc;
+            STARINTEL_A0_SYMBOLICS_DIR = inputs.a0-symbolics;
+            STARINTEL_STAR_CL_DIR = inputs.star-cl;
+            STARINTEL_CL_COUCH_DIR = inputs.cl-couch;
+            STARINTEL_STAR_BBPD_DIR = inputs.star-bbpd;
+            STARINTEL_STARINTEL_CLIENT_DIR = inputs.starintel-client;
+            STARINTEL_RAGE_DIR = inputs.rage;
+          };
           site = pkgs.stdenv.mkDerivation {
             pname = "starintel-social-presence-site";
             version = "unstable-${self.shortRev or "dirty"}";
@@ -66,7 +107,9 @@
               pkgs.git
             ];
 
-            env.STARINTEL_SITE_BASE_MAP = baseMapJson;
+            env = builtins.mapAttrs (name: path: toString path) repoInputs // {
+              STARINTEL_SITE_BASE_MAP = baseMapJson;
+            };
 
             buildPhase = ''
               export HOME=$TMPDIR/home
