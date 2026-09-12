@@ -143,6 +143,21 @@ python -m starintel_auto_research.cli \
   "$STARINTEL_AUTO_RESEARCH_DIR"
 ```
 
+The same CLI emits the fail-closed website publishing manifest used by
+`starintel-labs/website` (`publish.toml` target `research`). A document is
+publishable only when its `#+approval_state` is `APPROVED` **with**
+`#+approval_evidence` and its org-roam `:ID:` appears in the explicit
+public allowlist; the workflow `#+status` (e.g. `DONE`) never gates
+publication, and an empty allowlist publishes nothing:
+
+```bash
+PYTHONPATH=auto_research/src \
+python -m starintel_auto_research.cli \
+  "$STARINTEL_AUTO_RESEARCH_DIR" \
+  --publish-manifest \
+  --public-id <org-roam-id>...
+```
+
 ## Discovery and production
 
 Discovery is deliberately a set of direct Emacs commands over local canonical
