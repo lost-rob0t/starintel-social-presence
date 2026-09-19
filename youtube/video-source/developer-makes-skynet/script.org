@@ -1,0 +1,93 @@
+#+title: Developer Makes Skynet — Video Script
+#+author: lost-rob0t
+#+slug: developer-makes-skynet
+#+options: toc:nil num:nil ^:nil
+#+startup: content
+
+* Cold open
+
+I named it Skynet because obviously I did.
+
+No, it is not conscious. It is not taking over the world. It is the part of
+StarIntel that I want to turn into a serious RLM and actor runtime.
+
+Today I am making it actually do something.
+
+[Cut straight to Quasar. No logo animation.]
+
+* What I am building
+
+The useful version is pretty simple.
+
+Quasar is the workbench. StarIntel actors do the jobs. The RLM layer decides how
+to break a job apart, call tools, use Prolog, verify results, and keep enough
+state that a run can be inspected instead of turning into mystery AI soup.
+
+Skynet is the runtime I want sitting in the middle of that.
+
+* First boot
+
+[Screen recording: terminal + Quasar side by side.]
+
+Boot the local stack.
+
+Show the actor registry.
+
+Show one tiny task go in.
+
+Do not explain the entire architecture. Let the UI move.
+
+If it fails, keep the failure in the video.
+
+* Make it break
+
+This is the part most software demos cut out.
+
+Give Skynet something slightly annoying: a tool error, an actor timeout, a bad
+result, or a Prolog verification failure.
+
+Then show what the runtime actually records and how the failed step is retried or
+rejected.
+
+The point is not "AI magic." The point is that I can see what happened.
+
+* Quasar payoff
+
+Now show the result in Quasar.
+
+Keep this visual: nodes appear, details open, the actor trace is visible, and I
+can click from the result back toward the work that produced it.
+
+No dramatic narration. Just explain what changed on screen.
+
+* Zara angle
+
+The next step is letting Zara drive this without turning the whole thing into an
+opaque chatbot.
+
+Zara should be able to start a recording, launch a known demo plan, call Skynet,
+watch the run, and hand this video pipeline the recording when it is done.
+
+That is the loop I want: build something, run it for real, capture it, cut it
+down, publish the interesting part.
+
+* End
+
+That is Skynet for now.
+
+Next video I want to make Zara drive more of the session itself and see how much
+of a clean demo can be reproduced from a checked-in plan.
+
+[End on the live Quasar screen, not a logo.]
+
+* Production Notes :noexport:
+
+- Style: normal programmer/devlog pacing. Avoid cinematic AI trailer language.
+- Keep real terminal mistakes, retries, broken UI moments, and quick fixes when
+  they help explain the system.
+- Music should sit under the screen recording, not dominate it.
+- The tiny ARG cue is fictional and optional. The normal video must make sense
+  without it.
+- Do not claim a feature exists unless the recording actually demonstrates it.
+- Use the 16:9 master for the full devlog and derive 15-second, 30-second
+  vertical, and square cuts from the same verified recording.
