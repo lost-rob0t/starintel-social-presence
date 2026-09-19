@@ -26,6 +26,11 @@ class MusicBed:
 
 
 @dataclass(frozen=True, slots=True)
+class DemoConfig:
+    scenario: str
+
+
+@dataclass(frozen=True, slots=True)
 class AIShot:
     shot_id: str
     prompt: str
@@ -66,6 +71,7 @@ class VideoProject:
     recording_has_audio: bool
     variants: tuple[RenderVariant, ...]
     music: MusicBed | None
+    demo: DemoConfig | None
     ai_shots: tuple[AIShot, ...]
     arg: ARGConfig | None
     youtube: YouTubeMetadata
@@ -123,6 +129,14 @@ def load_project(path: str | Path) -> VideoProject:
             path=_require_relpath(music_raw["path"], "music.path"),
             gain_db=float(music_raw.get("gain_db", -16.0)),
         )
+
+    demo_raw = raw.get("demo")
+    demo = None
+    if demo_raw:
+        scenario = str(demo_raw.get("scenario", "")).strip()
+        if not scenario or len(scenario) > 128:
+            raise ValueError("demo.scenario must contain 1 to 128 characters")
+        demo = DemoConfig(scenario=scenario)
 
     shots = tuple(
         AIShot(
@@ -183,6 +197,7 @@ def load_project(path: str | Path) -> VideoProject:
         recording_has_audio=bool(source.get("has_audio", True)),
         variants=variants,
         music=music,
+        demo=demo,
         ai_shots=shots,
         arg=arg,
         youtube=youtube,
