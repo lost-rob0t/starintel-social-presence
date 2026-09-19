@@ -60,6 +60,7 @@
               emacs-site
               git
               ffmpeg
+              wf-recorder
               pandoc
               graphviz
               ripgrep
@@ -67,7 +68,7 @@
             ];
 
             shellHook = ''
-              export PYTHONPATH="$PWD/change_fetcher/src:$PWD/auto_findings/src:$PWD/auto_research/src:$PWD/starintel_tutorial_gen/src:$PWD/site_builder/src''${PYTHONPATH:+:$PYTHONPATH}"
+              export PYTHONPATH="$PWD/change_fetcher/src:$PWD/auto_findings/src:$PWD/auto_research/src:$PWD/starintel_tutorial_gen/src:$PWD/video_studio/src:$PWD/site_builder/src''${PYTHONPATH:+:$PYTHONPATH}"
             '';
           };
         });
