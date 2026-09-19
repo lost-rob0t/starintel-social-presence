@@ -1,0 +1,57 @@
+#+title: Developer Makes Skynet
+#+subtitle: a normal devlog, not an AI trailer
+#+author: lost-rob0t
+#+slug: developer-makes-skynet
+#+options: toc:nil num:nil ^:nil
+
+* Developer Makes Skynet
+
+#+begin_example
+$ starintel-video ... record
+$ skynet run demo/skynet-smoke.star
+$ quasar
+#+end_example
+
+/I named it Skynet because obviously I did./
+
+* The loop
+
+#+begin_example
+Zara -> record
+     -> run a checked-in demo
+     -> Skynet / actors / Prolog
+     -> Quasar
+     -> FFmpeg cuts
+     -> YouTube package
+#+end_example
+
+No fake benchmark. No fake "AI awakened" story.
+
+* Make it break
+
+#+begin_example
+actor timeout
+    |
+    v
+event log -> retry / reject -> visible trace
+#+end_example
+
+Keep the failure if it explains the runtime.
+
+* Show the result
+
+- real Quasar footage
+- real actor trace
+- source/provenance where available
+- fast cuts only when they help
+- music under the demo, not over it
+
+* Next
+
+Let Zara drive a reproducible demo plan and hand the finished recording to the
+video studio automatically.
+
+* Production Notes :noexport:
+
+This deck is deliberately sparse because the video should mostly be live screen
+capture. It is a fallback title-card source, not the main visual.
