@@ -38,7 +38,7 @@ def write_project(tmp_path: Path, *, fictional: bool = True) -> Path:
                         "name": "short",
                         "width": 1080,
                         "height": 1920,
-                        "start_seconds": 12,
+                        "start_seconds": 8,
                         "max_seconds": 30,
                     },
                 ],
@@ -96,6 +96,11 @@ def test_load_project_and_commands(tmp_path: Path) -> None:
     assert "amix=inputs=2" in joined
     assert "drawtext=" in joined
     assert command[-1].endswith("/youtube.mp4")
+    assert "between(t,8.200,8.550)" in joined
+
+    short_command = render_command(project, project.variants[1], tmp_path)
+    short_joined = " ".join(short_command)
+    assert "between(t,0.200,0.550)" in short_joined
 
 
 def test_ai_request_is_provider_neutral(tmp_path: Path) -> None:
