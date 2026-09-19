@@ -42,9 +42,24 @@ def _video_filter(
         ),
         f"crop={variant.width}:{variant.height}",
     ]
+    variant_start = variant.start_seconds
+    variant_end = (
+        None
+        if variant.max_seconds is None
+        else variant_start + variant.max_seconds
+    )
     for clue in _frame_clues(project):
-        start = clue.start_seconds
-        end = start + clue.duration_seconds
+        clue_start = clue.start_seconds
+        clue_end = clue_start + clue.duration_seconds
+        if clue_end <= variant_start:
+            continue
+        if variant_end is not None and clue_start >= variant_end:
+            continue
+
+        visible_start = max(clue_start, variant_start)
+        visible_end = clue_end if variant_end is None else min(clue_end, variant_end)
+        start = visible_start - variant_start
+        end = visible_end - variant_start
         clue_path = _filter_path(_clue_file(project, clue, root))
         filters.append(
             "drawtext="
