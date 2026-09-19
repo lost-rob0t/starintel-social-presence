@@ -78,7 +78,15 @@ if ! git -C "$root" check-ignore -q .env 2>/dev/null; then
   grep -Eq '^\.env$' "$root/.gitignore"
 fi
 
-grep -Eq '^youtube/videos/' "$root/.gitignore"
+for ignored_media in \
+  youtube/videos/ \
+  youtube/renders/ \
+  youtube/rendered/ \
+  youtube/audio/ \
+  youtube/recordings/
+do
+  grep -Fqx "$ignored_media" "$root/.gitignore"
+done
 grep -Eq '^local-exports/' "$root/.gitignore"
 
 echo "all checks passed"
