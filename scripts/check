@@ -3,13 +3,14 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export STARINTEL_SOCIAL_ROOT="$root"
-export PYTHONPATH="$root/change_fetcher/src:$root/auto_findings/src:$root/auto_research/src:$root/starintel_tutorial_gen/src:$root/site_builder/src${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONPATH="$root/change_fetcher/src:$root/auto_findings/src:$root/auto_research/src:$root/starintel_tutorial_gen/src:$root/video_studio/src:$root/site_builder/src${PYTHONPATH:+:$PYTHONPATH}"
 
 python3 -m compileall -q \
   "$root/change_fetcher/src" \
   "$root/auto_findings/src" \
   "$root/auto_research/src" \
   "$root/starintel_tutorial_gen/src" \
+  "$root/video_studio/src" \
   "$root/site_builder/src" \
   "$root/install_skills.py" \
   "$root/scripts/validate-web-org.py"
@@ -19,7 +20,13 @@ pytest -q \
   "$root/auto_findings/tests" \
   "$root/auto_research/tests" \
   "$root/starintel_tutorial_gen/tests" \
+  "$root/video_studio/tests" \
   "$root/site_builder/tests"
+
+python3 -m starintel_video_studio.cli \
+  --root "$root" \
+  --project "$root/youtube/video-source/developer-makes-skynet/video.json" \
+  plan >/dev/null
 
 python3 "$root/install_skills.py" --list
 skill_tmp="$(mktemp -d)"
