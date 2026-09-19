@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "slug": "developer-makes-skynet",
+  "title": "Developer Makes Skynet",
+  "source": {
+    "recording": "youtube/recordings/developer-makes-skynet/master.mkv",
+    "has_audio": true
+  },
+  "music": {
+    "path": "youtube/audio/developer-makes-skynet/music.wav",
+    "gain_db": -18
+  },
+  "variants": [
+    {
+      "name": "youtube",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "name": "instream-15",
+      "width": 1920,
+      "height": 1080,
+      "start_seconds": 8,
+      "max_seconds": 15
+    },
+    {
+      "name": "shorts-vertical",
+      "width": 1080,
+      "height": 1920,
+      "start_seconds": 8,
+      "max_seconds": 30
+    },
+    {
+      "name": "square-15",
+      "width": 1080,
+      "height": 1080,
+      "start_seconds": 8,
+      "max_seconds": 15
+    }
+  ],
+  "ai_shots": [
+    {
+      "id": "boot-stinger",
+      "prompt": "Two-second fictional terminal boot bumper. Black terminal, plain monospace text, SKynet runtime node count increments, no fake news footage, no people, no cinematic lens effects.",
+      "duration_seconds": 2,
+      "aspect": "16:9",
+      "output": "youtube/recordings/developer-makes-skynet/ai/boot-stinger.mp4"
+    }
+  ],
+  "arg": {
+    "fictional": true,
+    "landing_page": "https://starintel.actor",
+    "clues": [
+      {
+        "id": "node-seven",
+        "kind": "frame_text",
+        "text": "NODE 7 // 47.09.18",
+        "start_seconds": 8.2,
+        "duration_seconds": 0.35
+      },
+      {
+        "id": "signal-token",
+        "kind": "description_token",
+        "text": "signal:47-09-18"
+      }
+    ]
+  },
+  "youtube": {
+    "title": "Developer Makes Skynet",
+    "description": "I named the StarIntel RLM/actor runtime Skynet because obviously I did. This is a devlog: real Quasar footage, actor/runtime work, failures, fixes, and one small fictional ARG trail for anyone who notices it.",
+    "tags": [
+      "starintel",
+      "skynet",
+      "quasar",
+      "prolog",
+      "common lisp",
+      "devlog",
+      "programming"
+    ]
+  }
+}
