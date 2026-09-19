@@ -60,12 +60,17 @@
 
 ## Phase 5 — Video workflow
 
-- [ ] demo checklist
-- [ ] recording integration
-- [ ] FFmpeg helpers
+- [x] checked-in per-video production manifest
+- [x] Wayland recording integration
+- [x] FFmpeg horizontal/vertical/square render helpers
+- [x] music-bed mixing
+- [x] provider-neutral AI-shot adapter boundary
+- [x] fictional ARG cue manifest + frame-text renderer
 - [ ] chapter generation
-- [ ] asset tracking
-- [ ] publishing preparation
+- [ ] richer asset/provenance manifest
+- [x] YouTube/ads publishing preparation manifest
+- [ ] uploader adapters (explicit human approval)
+- [ ] campaign metrics adapter
 
 ## Phase 6 — Metrics/social plugin
 
