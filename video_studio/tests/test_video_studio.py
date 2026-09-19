@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from starintel_video_studio.ai import request_for_shot
+from starintel_video_studio.demo import request_for_demo
 from starintel_video_studio.models import load_project
 from starintel_video_studio.package import publish_manifest
 from starintel_video_studio.record import wf_recorder_command
@@ -42,6 +43,9 @@ def write_project(tmp_path: Path, *, fictional: bool = True) -> Path:
                         "max_seconds": 30,
                     },
                 ],
+                "demo": {
+                    "scenario": "skynet-smoke"
+                },
                 "ai_shots": [
                     {
                         "id": "boot",
@@ -101,6 +105,13 @@ def test_load_project_and_commands(tmp_path: Path) -> None:
     short_command = render_command(project, project.variants[1], tmp_path)
     short_joined = " ".join(short_command)
     assert "between(t,0.200,0.550)" in short_joined
+
+
+def test_demo_request_is_provider_neutral(tmp_path: Path) -> None:
+    project = load_project(write_project(tmp_path))
+    request = request_for_demo(project, tmp_path)
+    assert request["scenario"] == "skynet-smoke"
+    assert request["slug"] == "developer-makes-skynet"
 
 
 def test_ai_request_is_provider_neutral(tmp_path: Path) -> None:
