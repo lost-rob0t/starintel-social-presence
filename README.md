@@ -37,6 +37,7 @@ Claims about StarIntel behavior should be traceable to source repositories, comm
 ├── auto_research/          # read-only Auto Research status adapter
 ├── deep_research/          # integration boundary; no vendored engine
 ├── starintel_tutorial_gen/ # source -> plan -> Org renderers
+├── video_studio/           # recording, render, ARG, AI-shot, publish prep
 ├── site_builder/           # deterministic static site publisher
 ├── site-assets/            # shared black/gold theme + graph workspace JS
 ├── skills/                 # canonical repository-local SKILL.md packages
@@ -66,7 +67,7 @@ Or enter directly:
 nix develop
 ```
 
-The shell intentionally stays small: Python, pytest, uv, Emacs, Git, FFmpeg, Pandoc, Graphviz, ripgrep, and basic shell tooling. Content is not packaged as a Nix artifact.
+The shell intentionally stays small: Python, pytest, uv, Emacs, Git, FFmpeg, wf-recorder, Pandoc, Graphviz, ripgrep, and basic shell tooling. Content is not packaged as a Nix artifact.
 
 `.envrc` loads the flake and then `.env` when present. Secrets belong only in `.env` or external secret stores; `.env` is ignored.
 
@@ -86,6 +87,7 @@ The important variables are repository locations, not invented service credentia
   as `starintelV4`, `starintelV5`, and later)
 - `STARINTEL_API_URL` when a live server is intentionally used
 - optional model/provider settings for editorial assistance
+- `STARINTEL_AI_VIDEO_COMMAND_JSON` for an optional external AI-video generator adapter
 
 Deep research is intentionally configured as an integration boundary through Auto Research. The current Auto Research design defines adapter semantics; this repository does not vendor or pretend to implement a research engine.
 
@@ -267,11 +269,55 @@ Canonical per-video source layout:
 youtube/video-source/<slug>/
 ├── script.org
 ├── present.org
+├── video.json
 └── assets/
     └── images/
 ```
 
-`script.org` is spoken copy and production notes. `present.org` is the presentation source. Rendered media remains ignored.
+`script.org` is spoken copy and production notes. `present.org` is the presentation source.
+`video.json` is a deterministic production manifest for capture, output variants,
+music, optional synthetic shots, optional fictional ARG cues, and YouTube metadata.
+Rendered media remains ignored.
+
+### Video studio
+
+The video studio is intentionally boring infrastructure. Zara or a human can call the
+same CLI; no LLM is required to record or render.
+
+```bash
+project=youtube/video-source/developer-makes-skynet/video.json
+
+# inspect every command/request without touching media
+python -m starintel_video_studio.cli --project "$project" plan
+
+# Wayland capture; Ctrl-C stops wf-recorder
+python -m starintel_video_studio.cli --project "$project" record
+
+# render the 16:9 master plus configured ad/Shorts cuts
+python -m starintel_video_studio.cli --project "$project" render
+
+# prepare provider-neutral synthetic shots
+python -m starintel_video_studio.cli --project "$project" generate --dry-run
+
+# write local publish.json for a later YouTube/ads adapter
+python -m starintel_video_studio.cli --project "$project" package
+```
+
+The external video-generator protocol is deliberately tiny. Configure
+`STARINTEL_AI_VIDEO_COMMAND_JSON` as a JSON argv array. The command receives a
+single shot request on stdin as JSON and must create the requested output file.
+Provider credentials stay in that adapter's private environment rather than in
+tracked Org/JSON.
+
+The first project is `developer-makes-skynet`: ordinary programmer/devlog pacing,
+real Quasar footage, failures left in when useful, low music under the capture, and
+small optional ARG cues. ARG manifests must explicitly set `fictional: true`.
+The normal video must remain understandable without solving the ARG.
+
+The default ad outputs cover 1920x1080 horizontal, 1080x1920 vertical, and
+1080x1080 square variants. Publishing and ad spend remain explicit human actions;
+the repository prepares assets and metadata but does not silently upload or buy
+media.
 
 ## Editorial assistance
 
