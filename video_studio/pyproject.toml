@@ -1,0 +1,15 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "starintel-video-studio"
+version = "0.1.0"
+description = "Deterministic recording, render, ARG, and publish-prep tools for StarIntel videos"
+requires-python = ">=3.11"
+
+[project.scripts]
+starintel-video = "starintel_video_studio.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/starintel_video_studio"]
