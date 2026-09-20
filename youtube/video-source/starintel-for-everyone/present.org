@@ -146,10 +146,12 @@ curl --fail --silent --show-error \
   --header 'Content-Type: application/json' \
   --header "X-Star-Bootstrap-Secret: $bootstrap_secret" \
   --data '{"owner":"youtube-demo"}' \
-  http://127.0.0.1:5000/auth/bootstrap |
-  tee /tmp/starintel-bootstrap.json
+  --output /tmp/starintel-bootstrap.json \
+  http://127.0.0.1:5000/auth/bootstrap
 
-api_key="$(jq -r '.api_key' /tmp/starintel-bootstrap.json)"
+api_key="$(jq --exit-status -r '.api_key' /tmp/starintel-bootstrap.json)"
+test -n "$api_key"
+printf 'local StarIntel credential created\n'
 #+end_src
 
 Never show the credential value in the recording.
@@ -159,7 +161,8 @@ Never show the credential value in the recording.
 #+begin_src sh
 curl --fail --silent \
   --header "Authorization: Bearer $api_key" \
-  http://127.0.0.1:5000/auth/context | jq
+  http://127.0.0.1:5000/auth/context |
+  jq '{principal_id, principal_type, owner}'
 #+end_src
 
 #+begin_example
