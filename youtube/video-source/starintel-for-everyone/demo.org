@@ -173,7 +173,8 @@ docker compose ps
 Required health proof:
 
 #+begin_src sh
-curl --fail --silent --show-error   http://127.0.0.1:5000/health |
+curl --fail --silent --show-error \
+  http://127.0.0.1:5000/health |
   tee "$STARINTEL_DEMO_ROOT/server-health.txt"
 #+end_src
 
@@ -191,10 +192,17 @@ Acceptance:
 #+begin_src sh
 bootstrap_secret="$(<secrets/auth_bootstrap_secret)"
 
-curl --fail --silent --show-error   --request POST   --header 'Content-Type: application/json'   --header "X-Star-Bootstrap-Secret: $bootstrap_secret"   --data '{"owner":"youtube-demo"}'   --output "$STARINTEL_DEMO_ROOT/bootstrap.json"   http://127.0.0.1:5000/auth/bootstrap
+curl --fail --silent --show-error \
+  --request POST \
+  --header 'Content-Type: application/json' \
+  --header "X-Star-Bootstrap-Secret: $bootstrap_secret" \
+  --data '{"owner":"youtube-demo"}' \
+  --output "$STARINTEL_DEMO_ROOT/bootstrap.json" \
+  http://127.0.0.1:5000/auth/bootstrap
 
 api_key="$(
-  jq --exit-status --raw-output '.api_key'     "$STARINTEL_DEMO_ROOT/bootstrap.json"
+  jq --exit-status --raw-output '.api_key' \
+    "$STARINTEL_DEMO_ROOT/bootstrap.json"
 )"
 
 test -n "$api_key"
@@ -206,7 +214,9 @@ Never display =bootstrap.json= or =$api_key=.
 Show only authenticated context:
 
 #+begin_src sh
-curl --fail --silent --show-error   --header "Authorization: Bearer $api_key"   http://127.0.0.1:5000/auth/context |
+curl --fail --silent --show-error \
+  --header "Authorization: Bearer $api_key" \
+  http://127.0.0.1:5000/auth/context |
   jq '{principal_id, principal_type, owner}'
 #+end_src
 
@@ -321,7 +331,8 @@ cd starintel-gpt-auto-dig
 
 git rev-parse HEAD | tee "$STARINTEL_DEMO_ROOT/gpt-auto-dig.sha"
 
-git clone https://github.com/lost-rob0t/starintel-doc.nim   .starintel-doc-nim
+git clone https://github.com/lost-rob0t/starintel-doc.nim \
+  .starintel-doc-nim
 
 git -C .starintel-doc-nim rev-parse HEAD |
   tee "$STARINTEL_DEMO_ROOT/starintel-doc-nim.sha"
@@ -360,7 +371,8 @@ The README documents the Python administrative search CLI.
 Required search:
 
 #+begin_src sh
-python3 scripts/starintel.py search flock   --with-location |
+python3 scripts/starintel.py search flock \
+  --with-location |
   tee "$STARINTEL_DEMO_ROOT/auto-dig-search.txt" |
   head -n 40
 #+end_src
@@ -493,7 +505,9 @@ docker compose down --volumes --remove-orphans
 Remove transient credential output before archiving any recording workspace:
 
 #+begin_src sh
-rm -f   "$STARINTEL_DEMO_ROOT/bootstrap.json"   "$STARINTEL_DEMO_ROOT/starintel-server/secrets/"*
+rm -f \
+  "$STARINTEL_DEMO_ROOT/bootstrap.json" \
+  "$STARINTEL_DEMO_ROOT/starintel-server/secrets/"*
 #+end_src
 
 Delete the throwaway workspace when capture artifacts have been moved to the
