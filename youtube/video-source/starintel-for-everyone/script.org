@@ -120,20 +120,24 @@ curl --fail --silent --show-error \
   --header 'Content-Type: application/json' \
   --header "X-Star-Bootstrap-Secret: $bootstrap_secret" \
   --data '{"owner":"youtube-demo"}' \
-  http://127.0.0.1:5000/auth/bootstrap |
-  tee /tmp/starintel-bootstrap.json
+  --output /tmp/starintel-bootstrap.json \
+  http://127.0.0.1:5000/auth/bootstrap
 
-api_key="$(jq -r '.api_key' /tmp/starintel-bootstrap.json)"
+api_key="$(jq --exit-status -r '.api_key' /tmp/starintel-bootstrap.json)"
+test -n "$api_key"
+printf 'local StarIntel credential created\n'
 #+end_src
 
-[PRODUCTION: crop or blur the credential value. Never leave it readable.]
+[PRODUCTION: the bootstrap response is written to a file; do not open it on
+screen. The credential never needs to be visible.]
 
 And now I can ask the server who I am.
 
 #+begin_src sh
 curl --fail --silent \
   --header "Authorization: Bearer $api_key" \
-  http://127.0.0.1:5000/auth/context | jq
+  http://127.0.0.1:5000/auth/context |
+  jq '{principal_id, principal_type, owner}'
 #+end_src
 
 [VISUAL: CAPTURE LIVE. Zoom only the principal type/owner fields.]
