@@ -423,6 +423,94 @@ StarIntel: turn the open web into an evidence graph.
 - Use active StarIntel release wording exactly as recorded by the current schema
   lock: release 0.9.1 over schema 0.9.0, unless rehearsal finds a newer lock.
 
+* YouTube packaging :noexport:
+
+** Primary title
+
+#+begin_example
+Search Gives You Tabs. StarIntel Gives You an Evidence Graph.
+#+end_example
+
+** Alternate titles
+
+#+begin_example
+I Built an Evidence Graph for the Open Web — StarIntel
+StarIntel: Turn the Open Web Into an Evidence Graph
+What If Search Results Became a Living Evidence Graph?
+#+end_example
+
+** Thumbnail copy
+
+Keep it to one short contrast:
+
+#+begin_example
+TABS  ->  EVIDENCE GRAPH
+#+end_example
+
+Use a real Quasar graph screenshot from the final rehearsal as the visual.
+Do not use a fake/generated UI.
+
+** Description
+
+#+begin_example
+Search finds pages. StarIntel turns observations into typed, source-preserving
+documents that actors can expand and Quasar can project into an investigation
+graph.
+
+In this video I build the public stack locally, bootstrap the StarIntel server,
+run a real public Quasar actor on harmless demo input, inspect the resulting
+documents and relations, then validate and search the public GPT Auto Dig
+corpus.
+
+Everything shown is tied to public repositories and the exact revisions used
+for the recording will be linked below.
+
+Repos:
+- starintel-server: <PINNED PUBLIC REVISION>
+- quasar-ui: <PINNED PUBLIC REVISION>
+- quasar: <OPTIONAL PINNED PUBLIC REVISION>
+- starintel-gpt-auto-dig: <PINNED PUBLIC REVISION>
+- starintel-doc.nim: <PINNED PUBLIC REVISION>
+
+StarIntel is experimental. This is a localhost development demo, not a hardened
+public deployment.
+
+Chapters:
+00:00 Search gives you tabs
+00:35 Documents, actors, Quasar
+01:30 Install StarIntel
+03:05 Run a public actor
+04:40 Why the graph matters
+05:45 GPT Auto Dig
+07:15 The full StarIntel loop
+08:25 Why normal people should care
+09:30 What is still rough
+10:05 Build one useful thing
+#+end_example
+
+Update chapter timestamps after the final edit.
+
+** Pinned comment
+
+#+begin_example
+If you try one thing from this video, clone the public repos and reproduce the
+target-input-expansion demo locally. Then build one actor or one dataset you
+actually care about.
+
+If a command has changed since this recording, check the pinned revisions and
+current repo docs first. StarIntel is moving fast.
+#+end_example
+
+** Short-form pull quote
+
+#+begin_example
+Not "trust the AI."
+
+Trust less.
+Keep more evidence.
+Make the machinery inspectable.
+#+end_example
+
 * Provenance :noexport:
 
 Primary evidence is indexed in:
