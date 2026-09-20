@@ -1,0 +1,553 @@
+#+title: StarIntel for Everyone — demo
+#+slug: starintel-for-everyone
+#+topic: [[file:../../../editorial/topics/starintel-for-everyone.org][StarIntel for Everyone — From Open Web to Evidence Graph]]
+#+status: DRAFT
+#+date: 2026-09-19
+#+options: toc:2
+
+* Objective
+
+Rehearse and capture a real public StarIntel vertical slice:
+
+#+begin_example
+public repos
+  -> local StarIntel server stack
+  -> authenticated local operator
+  -> public Quasar browser actor
+  -> typed documents + relations
+  -> Quasar graph
+  -> public GPT Auto Dig corpus validation/search
+#+end_example
+
+No terminal output is prewritten for the final video.  Every output shot must be
+captured from a successful rehearsal on the revisions recorded below.
+
+* Required repositories and services
+
+Public repositories used in the required demo:
+
+- =https://github.com/lost-rob0t/starintel-server=
+- =https://github.com/lost-rob0t/quasar-ui=
+- =https://github.com/lost-rob0t/starintel-gpt-auto-dig=
+- =https://github.com/lost-rob0t/starintel-doc.nim=
+
+Optional full-runtime capture:
+
+- =https://github.com/lost-rob0t/quasar=
+
+Required local tools:
+
+#+begin_src sh
+git --version
+nix --version
+docker --version
+docker compose version
+curl --version
+jq --version
+openssl version
+node --version
+npm --version
+nim --version
+nimble --version
+#+end_src
+
+The server stack stays on loopback.  Do not expose the demo API, CouchDB,
+RabbitMQ, Valkey, Vite, or Quasar directly to the public Internet.
+
+* Clean rehearsal workspace
+
+Use a throwaway root so the recording cannot accidentally expose normal project
+state.
+
+#+begin_src sh
+export STARINTEL_DEMO_ROOT="${TMPDIR:-/tmp}/starintel-youtube-demo"
+
+rm -rf "$STARINTEL_DEMO_ROOT"
+mkdir -p "$STARINTEL_DEMO_ROOT"
+cd "$STARINTEL_DEMO_ROOT"
+#+end_src
+
+Record the machine/toolchain snapshot:
+
+#+begin_src sh
+{
+  date -Iseconds
+  uname -a
+  nix --version
+  docker --version
+  docker compose version
+  node --version
+  npm --version
+  nim --version
+} | tee toolchain.txt
+#+end_src
+
+Do not show usernames, hostnames, or unrelated environment variables in the
+published frame if they identify the recording machine.
+
+* Stage 1 — clone and pin StarIntel Server
+
+#+begin_src sh
+cd "$STARINTEL_DEMO_ROOT"
+
+git clone https://github.com/lost-rob0t/starintel-server
+cd starintel-server
+
+git status --short --branch
+git rev-parse HEAD | tee "$STARINTEL_DEMO_ROOT/starintel-server.sha"
+#+end_src
+
+Before recording, compare the live schema lock:
+
+#+begin_src sh
+jq '{
+  release_version,
+  schema_version,
+  canonical_repository,
+  canonical_commit
+}' schema/starintel-schema.lock.json
+#+end_src
+
+The planning-time lock was:
+
+#+begin_example
+release_version = 0.9.1
+schema_version  = 0.9.0
+#+end_example
+
+If the live lock changes, update =script.org= and =present.org= before filming.
+
+* Stage 2 — configure local secrets
+
+The server README/DOCKER quick-start historically listed the database/broker
+secrets.  The current authenticated stack additionally consumes the auth pepper
+and one-time bootstrap secret, as exercised by =scripts/stack-test.sh=.  The
+video uses the current stack-test-derived set.
+
+#+begin_src sh
+cp .env.example .env
+install -d -m 0700 secrets
+
+openssl rand -base64 32 > secrets/couchdb_password
+openssl rand -base64 48 > secrets/couchdb_secret
+openssl rand -hex 24 |
+  tr '[:lower:]' '[:upper:]' > secrets/erlang_cookie
+openssl rand -base64 32 > secrets/rabbitmq_password
+openssl rand -base64 32 > secrets/valkey_password
+openssl rand -base64 48 > secrets/auth_pepper
+openssl rand -base64 48 > secrets/auth_bootstrap_secret
+
+chmod 0600 secrets/*
+#+end_src
+
+Do not run =cat secrets/*= while recording.
+
+Validate the Compose model:
+
+#+begin_src sh
+docker compose config --quiet
+#+end_src
+
+If Compose requires an actor-profile secret even though the =actors= profile is
+disabled, create a random local placeholder and rerun config:
+
+#+begin_src sh
+openssl rand -base64 32 > secrets/youtube_actor_api_key
+chmod 0600 secrets/youtube_actor_api_key
+docker compose config --quiet
+#+end_src
+
+This does *not* enable or demonstrate the private YouTube actor.
+
+* Stage 3 — build and start the public server stack
+
+Prewarm the Nix store before the final take when possible, but run these same
+commands on camera.
+
+#+begin_src sh
+nix run .#load-images
+docker compose up --detach --wait
+docker compose ps
+#+end_src
+
+Required health proof:
+
+#+begin_src sh
+curl --fail --silent --show-error   http://127.0.0.1:5000/health |
+  tee "$STARINTEL_DEMO_ROOT/server-health.txt"
+#+end_src
+
+Acceptance:
+
+- [ ] StarIntel server container is healthy.
+- [ ] CouchDB is healthy.
+- [ ] RabbitMQ is healthy.
+- [ ] Valkey is healthy.
+- [ ] =/health= exits zero.
+- [ ] No public/non-loopback bindings were intentionally introduced.
+
+* Stage 4 — bootstrap a local API key without displaying it
+
+#+begin_src sh
+bootstrap_secret="$(<secrets/auth_bootstrap_secret)"
+
+curl --fail --silent --show-error   --request POST   --header 'Content-Type: application/json'   --header "X-Star-Bootstrap-Secret: $bootstrap_secret"   --data '{"owner":"youtube-demo"}'   --output "$STARINTEL_DEMO_ROOT/bootstrap.json"   http://127.0.0.1:5000/auth/bootstrap
+
+api_key="$(
+  jq --exit-status --raw-output '.api_key'     "$STARINTEL_DEMO_ROOT/bootstrap.json"
+)"
+
+test -n "$api_key"
+printf 'local StarIntel credential created\n'
+#+end_src
+
+Never display =bootstrap.json= or =$api_key=.
+
+Show only authenticated context:
+
+#+begin_src sh
+curl --fail --silent --show-error   --header "Authorization: Bearer $api_key"   http://127.0.0.1:5000/auth/context |
+  jq '{principal_id, principal_type, owner}'
+#+end_src
+
+Acceptance:
+
+- [ ] Bootstrap succeeds exactly once on the fresh auth DB.
+- [ ] API key parses with =jq=.
+- [ ] Authenticated context exits zero.
+- [ ] Published frame contains no bearer token.
+
+* Stage 5 — clone and launch Quasar UI
+
+Open a second terminal.
+
+#+begin_src sh
+cd "$STARINTEL_DEMO_ROOT"
+
+git clone https://github.com/lost-rob0t/quasar-ui
+cd quasar-ui
+
+git rev-parse HEAD | tee "$STARINTEL_DEMO_ROOT/quasar-ui.sha"
+
+npm ci
+npm run dev
+#+end_src
+
+Required capture:
+
+- local Vite URL shown by the command;
+- Quasar graph route;
+- Settings;
+- browser-actor enable control.
+
+Do not describe standalone Quasar UI as capability-equivalent to the full
+connected Common Lisp Quasar runtime.
+
+* Stage 6 — deterministic public actor demo
+
+This is the required actor shot because the current public E2E suite exercises
+this exact flow.
+
+In Quasar:
+
+1. open Settings;
+2. enable actor execution;
+3. create a new =target= document;
+4. set Actor to:
+
+#+begin_example
+quasar.actor.target-input-expansion
+#+end_example
+
+5. set Target to:
+
+#+begin_example
+https://example.com/research
+#+end_example
+
+6. save;
+7. return to the graph;
+8. inspect the generated document(s)/relation(s).
+
+Capture:
+
+- target creation form;
+- graph before save if useful;
+- graph after actor application;
+- one generated node document;
+- one explicit relation;
+- actor provenance/extension if visible.
+
+Acceptance:
+
+- [ ] Actor execution was explicitly enabled.
+- [ ] Input is the harmless =example.com= target.
+- [ ] Actor completes without a browser console error.
+- [ ] Generated records are visible and inspectable.
+- [ ] No claim is made that screen adjacency alone proves a relationship.
+
+* Stage 7 — optional public Legistar actor
+
+Use only if it passes the rehearsal immediately before recording.
+
+Actor:
+
+#+begin_example
+quasar.actor.city-legistar-calendar
+#+end_example
+
+Use a municipality/client known to resolve in the current implementation.
+Prefer a civic-data example that returns a small bounded public event set.
+
+Capture only if:
+
+- [ ] official/public endpoint is reachable;
+- [ ] browser network policy permits the request;
+- [ ] actor completes;
+- [ ] resulting event/relation docs are inspectable;
+- [ ] no sensitive/private input is used.
+
+If any box fails, skip this shot.  Do not substitute prerecorded/fake output.
+
+* Stage 8 — clone and pin GPT Auto Dig
+
+Open a third terminal.
+
+#+begin_src sh
+cd "$STARINTEL_DEMO_ROOT"
+
+git clone https://github.com/lost-rob0t/starintel-gpt-auto-dig
+cd starintel-gpt-auto-dig
+
+git rev-parse HEAD | tee "$STARINTEL_DEMO_ROOT/gpt-auto-dig.sha"
+
+git clone https://github.com/lost-rob0t/starintel-doc.nim   .starintel-doc-nim
+
+git -C .starintel-doc-nim rev-parse HEAD |
+  tee "$STARINTEL_DEMO_ROOT/starintel-doc-nim.sha"
+#+end_src
+
+* Stage 9 — build and validate Auto Dig
+
+#+begin_src sh
+nimble buildFast
+nimble validate
+#+end_src
+
+Capture the live validator summary.
+
+Then inspect the source-audit report without turning the presence of a record
+into an accuracy claim:
+
+#+begin_src sh
+wc -l unverifed
+head -n 12 unverifed
+#+end_src
+
+If the file is empty, show that fact.  If it is non-empty, describe it plainly
+as the repository's list of source-less records.
+
+Acceptance:
+
+- [ ] =nimble buildFast= exits zero.
+- [ ] =nimble validate= exits zero.
+- [ ] No validation failure is edited around.
+
+* Stage 10 — search the public Auto Dig corpus
+
+The README documents the Python administrative search CLI.
+
+Required search:
+
+#+begin_src sh
+python3 scripts/starintel.py search flock   --with-location |
+  tee "$STARINTEL_DEMO_ROOT/auto-dig-search.txt" |
+  head -n 40
+#+end_src
+
+Before publishing, inspect the selected on-screen record and confirm it includes
+source/provenance material appropriate to the spoken claim.
+
+Do not narrate a substantive real-world allegation from the first search hit.
+The purpose of this shot is to show normalized, inspectable, source-aware
+research records.
+
+Optional static site build:
+
+#+begin_src sh
+nimble site
+#+end_src
+
+If the generated local site has a documented serve command at rehearsal time,
+capture it.  Otherwise show the successful build artifact only; do not invent a
+server command.
+
+* Stage 11 — optional full Quasar runtime cutaway
+
+This is optional because the required visual actor demo is already proven in
+the public =quasar-ui= checkout.
+
+If desired:
+
+#+begin_src sh
+cd "$STARINTEL_DEMO_ROOT"
+
+git clone https://github.com/lost-rob0t/quasar
+cd quasar
+
+git rev-parse HEAD | tee "$STARINTEL_DEMO_ROOT/quasar.sha"
+
+nix develop
+bash scripts/bootstrap-lisp-deps
+npm ci
+npm run dev
+#+end_src
+
+Use this only if the full runtime passes rehearsal.  The public README states
+that =npm run dev= supervises the Common Lisp control plane, WebSocket endpoint,
+CLOG host, and Vite development UI.
+
+* Screens to capture
+
+Required:
+
+1. title cold-open graph;
+2. =git clone= of =starintel-server=;
+3. =nix run .#load-images= start and completion;
+4. =docker compose ps=;
+5. server =/health=;
+6. authenticated context with no token visible;
+7. Quasar UI Settings → actor execution;
+8. new target form with =target-input-expansion=;
+9. graph before/after;
+10. generated document inspector;
+11. relation inspector;
+12. Auto Dig =nimble validate=;
+13. Auto Dig corpus search;
+14. final Quasar graph hero shot.
+
+Optional:
+
+- Legistar actor result;
+- Auto Dig generated static site;
+- full Quasar Common Lisp runtime terminal.
+
+* Fallback steps
+
+** Server build is slow
+
+Prewarm Nix/Docker before the take.  During recording show:
+
+1. the exact command starting;
+2. a jump cut;
+3. the same terminal after successful completion;
+4. =docker compose ps= and =/health= as proof.
+
+Do not fabricate elapsed-time claims.
+
+** Server stack fails
+
+Run:
+
+#+begin_src sh
+docker compose ps --all
+docker compose logs --no-color star-server | tail -n 200
+docker compose logs --no-color couchdb | tail -n 120
+docker compose logs --no-color rabbitmq | tail -n 120
+#+end_src
+
+Fix/rehearse before recording.  Do not record around a broken stack.
+
+** Quasar actor fails
+
+Required actor fallback is not a different claim.  Use the public test suite as
+a diagnostic:
+
+#+begin_src sh
+cd "$STARINTEL_DEMO_ROOT/quasar-ui"
+npm run check
+npm test
+#+end_src
+
+If the exact target actor path is broken on current main, update the video
+source to the newly verified public path or postpone the actor shot.
+
+** Legistar fails
+
+Skip it.  It is optional.
+
+** Auto Dig validation fails
+
+Do not show the corpus as validated.  Capture the failure only if the video is
+explicitly discussing a current bug; otherwise rehearse on a passing revision.
+
+* Cleanup
+
+Stop the StarIntel stack:
+
+#+begin_src sh
+cd "$STARINTEL_DEMO_ROOT/starintel-server"
+docker compose down --volumes --remove-orphans
+#+end_src
+
+Remove transient credential output before archiving any recording workspace:
+
+#+begin_src sh
+rm -f   "$STARINTEL_DEMO_ROOT/bootstrap.json"   "$STARINTEL_DEMO_ROOT/starintel-server/secrets/"*
+#+end_src
+
+Delete the throwaway workspace when capture artifacts have been moved to the
+editor's non-Git recording storage:
+
+#+begin_src sh
+rm -rf "$STARINTEL_DEMO_ROOT"
+#+end_src
+
+Rendered video/audio and raw recordings do not belong in this repository.
+
+* Verification
+
+Before final recording:
+
+- [ ] MANUAL — rerun every required command from a clean throwaway workspace.
+- [ ] MANUAL — =starintel-server.sha= recorded.
+- [ ] MANUAL — =quasar-ui.sha= recorded.
+- [ ] MANUAL — =gpt-auto-dig.sha= recorded.
+- [ ] MANUAL — =starintel-doc-nim.sha= recorded.
+- [ ] MANUAL — schema release/profile rechecked.
+- [ ] MANUAL — server stack healthy.
+- [ ] MANUAL — bootstrap credential hidden.
+- [ ] MANUAL — target-input-expansion actor succeeds.
+- [ ] MANUAL — generated documents/relations inspected.
+- [ ] MANUAL — Auto Dig validator succeeds.
+- [ ] MANUAL — selected Auto Dig search record has appropriate source material.
+- [ ] MANUAL — optional Legistar shot passes or is removed.
+- [ ] MANUAL — optional full Quasar runtime passes or is removed.
+- [ ] MANUAL — browser/terminal frames contain no secrets/private repository data.
+- [ ] MANUAL — final description links exact public revisions used.
+
+* Final recorded revisions :noexport:
+
+Fill after rehearsal.  These are intentionally blank in the planning source.
+
+#+begin_example
+starintel-server:
+quasar-ui:
+quasar:                  optional
+starintel-gpt-auto-dig:
+starintel-doc.nim:
+recorded-at:
+#+end_example
+
+* Evidence :noexport:
+
+Current planning evidence is indexed in
+[[file:../../../editorial/topics/starintel-for-everyone.org][the editorial topic]].
+
+The deterministic Quasar actor demo follows the public
+=quasar-ui/e2e/target-actors.spec.ts= flow using
+=quasar.actor.target-input-expansion= and =https://example.com/research=.
+
+The current StarIntel auth bootstrap sequence is derived from
+=starintel-server/scripts/stack-test.sh= rather than relying only on older
+quick-start snippets.
