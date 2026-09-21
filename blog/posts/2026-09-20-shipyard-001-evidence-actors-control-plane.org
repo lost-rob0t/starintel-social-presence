@@ -1,0 +1,143 @@
+:PROPERTIES:
+:ID: blog-shipyard-001
+:END:
+#+title: Shipyard #001 — Evidence, Actors, and the Control Plane
+#+date: [2026-09-20 Sun]
+#+author: nsaspy
+#+description: StarIntel Shipyard #001: deterministic evidence promotion, Sento actors, and paid pro actors wired into Quasar.
+#+slug: shipyard-001-evidence-actors-control-plane
+#+tags: starintel shipyard prolog actors quasar lisp
+#+status: POST
+#+revision: 1
+
+StarIntel has enough moving pieces now that a normal changelog does not really explain what is happening.
+
+So this is *Shipyard*: short engineering reports about things that actually reached a repository's main line, why they matter, and which pieces are still somewhere between an issue and running code.
+
+The rule is simple:
+
+#+begin_quote
+Merged code is shipped. Design documents are design documents. A branch is a branch.
+#+end_quote
+
+No flattening all three into "we built it."
+
+* Observations can now become claims deterministically
+
+A useful intelligence system needs a boundary between /something was observed/ and /the system is willing to assert something based on it/.
+
+That boundary is now executable Prolog.
+
+=starintel-pro-actors= merged deterministic geographic promotion rules that convert eligible geo observations into evidence-backed claims.
+
+The implementation includes:
+
+- deterministic promotion rules
+- explicit evidence linkage
+- a fixed worker operation
+- worker-boundary tests
+- Prolog semantic tests
+- Nix packaging gates
+- documentation of the promotion contract
+
+The interesting part is not geography by itself. The pattern is reusable.
+
+Instead of asking an LLM whether an observation "sounds strong enough" to become knowledge, StarIntel can encode promotion rules symbolically and make the provenance part of the result.
+
+Evidence in. Rules run. Claim out.
+
+Source: [[https://github.com/lost-rob0t/starintel-pro-actors/commit/978112e0ac81c293223d6d965e377b19c806b68b][starintel-pro-actors 978112e0]]
+
+* Domain Hunt moved into the actor runtime
+
+Domain Hunt has also been reimplemented as a Common Lisp Sento actor.
+
+That matters because one-off services are steadily being pulled into the same runtime model:
+
+- mailbox
+- actor lifecycle
+- supervision
+- explicit messages
+- tested boundaries
+- shared infrastructure
+
+The merge was accompanied by hardening and regression coverage rather than treating the actor port as a straight syntax rewrite.
+
+Source: [[https://github.com/lost-rob0t/starintel-pro-actors/commit/a5567bc983634df521533128093ddbd9c37940ab][starintel-pro-actors a5567bc9]]
+
+This is where the actor architecture becomes less theoretical. Every old standalone worker that crosses this boundary gives StarIntel fewer unique failure modes to reason about.
+
+* Quasar knows about paid Pro Actors
+
+The next piece is the control plane.
+
+Quasar merged wiring for canonical paid Pro Actors across both its Common Lisp control plane and frontend.
+
+The change touches:
+
+- the control-plane actor integration
+- actor tests
+- frontend actor management
+- mutations
+- the Actor Hub
+- Pro Actor UI state
+- CI around the Pro Actor integration
+
+So "paid actor" is no longer only a business-model concept sitting next to the runtime. Quasar has a concrete management path for it.
+
+Source: [[https://github.com/lost-rob0t/quasar/commit/d95157a2c9857da9dde63060b03ddf7615d2d913][quasar d95157a2]]
+
+That is an important architectural convergence:
+
+#+begin_src text
+observation
+    ↓
+symbolic promotion
+    ↓
+typed claim
+    ↓
+actor runtime
+    ↓
+control plane
+    ↓
+metered / managed service
+#+end_src
+
+The pieces are starting to meet.
+
+* What this does not mean
+
+This does not mean every StarIntel worker is a Sento actor.
+
+It does not mean every evidence type has deterministic promotion rules.
+
+It does not mean the entire billing system is finished.
+
+It means three specific seams are now materially stronger:
+
+1. Prolog can own evidence-to-claim decisions.
+2. more collection/enrichment logic is moving behind actors.
+3. Quasar can manage the paid actor layer those workers are becoming part of.
+
+That is enough progress to call a Shipyard entry.
+
+* Next out of the yard
+
+The next useful test is end-to-end rather than another isolated feature:
+
+#+begin_src text
+Target
+  → routed actor
+  → observations
+  → symbolic promotion
+  → claims with provenance
+  → durable storage
+  → Quasar inspection
+  → metering
+#+end_src
+
+When that complete path is boring, StarIntel's actor model stops being architecture documentation and starts being the default way the system operates.
+
+#+begin_quote
+AI provenance: drafted from current repository history and merged commit state on 2026-09-20. Claims about shipped functionality are restricted to observed repository changes; planned work is labeled separately.
+#+end_quote
