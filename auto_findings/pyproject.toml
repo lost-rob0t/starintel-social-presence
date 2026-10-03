@@ -7,6 +7,10 @@ name = "starintel-auto-findings"
 version = "0.1.0"
 description = "Read-only Auto Dig editorial candidate adapter"
 requires-python = ">=3.11"
+dependencies = ["starintel-doc @ git+https://github.com/lost-rob0t/starintel-doc.git@d450ba77ca2cb0c11b8bf6edd8fac3250101c308"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [project.scripts]
 starintel-auto-findings = "starintel_auto_findings.cli:main"

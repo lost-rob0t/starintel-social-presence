@@ -77,7 +77,7 @@ When a claim says StarIntel can do something, prefer evidence from repositories,
 
 ## Auto Dig
 
-Auto Dig owns its executable StarIntel document contract. Inspect its current repository instructions/schema before changing this adapter.
+StarLang owns the canonical StarIntel document contract. Auto Dig owns its corpus. Inspect the immutable generated release and consumer runtime before changing this adapter.
 
 The social-presence adapter is read-only. It may surface candidate records and source references, but it must not reinterpret graph adjacency as proof of association.
 
@@ -172,3 +172,4 @@ Do not claim a command passed unless it was executed and observed.
 Prefer real environment, interfaces, tests, and one or two vertical slices over placeholder subsystems or dependency piles.
 
 Phase 0 does not mean autonomous posting, a full research engine, or a full tutorial generator.
+

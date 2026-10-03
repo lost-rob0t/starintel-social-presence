@@ -37,22 +37,27 @@ def _candidate(path: Path, root: Path) -> FindingCandidate:
     raw = json.loads(path.read_text())
     if not isinstance(raw, dict):
         raise ValueError(f"expected JSON object: {path}")
-    document_id = raw.get("_id")
+    canonical = raw.get("schemaVersion") == "0.10.1"
+    if "schemaVersion" in raw:
+        from starintel_canonical import validate_document
+        validate_document(raw)
+    document_id = raw.get("id") if canonical else raw.get("_id")
     dtype = raw.get("dtype")
     if not isinstance(document_id, str) or not isinstance(dtype, str):
-        raise ValueError(f"missing _id/dtype: {path}")
+        raise ValueError(f"missing document identity/dtype: {path}")
     sources = raw.get("sources") or []
     if not isinstance(sources, list):
         raise ValueError(f"sources must be an array: {path}")
-    locators = tuple(locator for item in sources if (locator := _locator(item)))
+    locators = (tuple(raw.get("sourceUrls", [])) if canonical else
+                tuple(locator for item in sources if (locator := _locator(item))))
     return FindingCandidate(
         document_id=document_id,
         dtype=dtype,
         dataset=raw.get("dataset") if isinstance(raw.get("dataset"), str) else None,
-        title=str(raw.get("title") or document_id),
-        summary=str(raw.get("summary") or raw.get("description") or ""),
+        title=str(raw.get("title") or raw.get("displayName") or raw.get("fullName") or document_id),
+        summary=str(raw.get("summary") or raw.get("description") or raw.get("bio") or raw.get("rawContent") or ""),
         source_path=str(path.relative_to(root)),
-        source_count=len(sources),
+        source_count=len(sources) + (len(raw.get("sourceUrls", [])) if canonical else 0),
         source_locators=locators,
     )
 
