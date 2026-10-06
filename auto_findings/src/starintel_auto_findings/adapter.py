@@ -57,7 +57,7 @@ def _candidate(path: Path, root: Path) -> FindingCandidate:
         title=str(raw.get("title") or raw.get("displayName") or raw.get("fullName") or document_id),
         summary=str(raw.get("summary") or raw.get("description") or raw.get("bio") or raw.get("rawContent") or ""),
         source_path=str(path.relative_to(root)),
-        source_count=len(sources) + (len(raw.get("sourceUrls", [])) if canonical else 0),
+        source_count=len(sources),
         source_locators=locators,
     )
 

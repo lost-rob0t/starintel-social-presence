@@ -28,7 +28,7 @@ def test_canonical_flat_record_preserves_sources(tmp_path: Path) -> None:
     assert candidate.document_id == 'person:test'
     assert candidate.title == 'Test'
     assert candidate.summary == 'Explicit bio'
-    assert candidate.source_count == 2
+    assert candidate.source_count == 1  # URL does not establish a second independent source
     assert candidate.source_locators == ('https://example.invalid/',)
 
 

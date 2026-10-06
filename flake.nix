@@ -12,9 +12,9 @@
   inputs.starintel-gpt-auto-dig.flake = false;
   inputs.starintel-gpt-auto-dig.url = "github:lost-rob0t/starintel-gpt-auto-dig";
   inputs.star-lang.flake = false;
-  inputs.star-lang.url = "github:lost-rob0t/star-lang";
+  inputs.star-lang.url = "github:lost-rob0t/star-lang/fa1c8f4fb0590526c39aa3e9bc4a7e6eac30bea7";
   inputs.starintel-doc.flake = false;
-  inputs.starintel-doc.url = "github:lost-rob0t/starintel-doc/d450ba77ca2cb0c11b8bf6edd8fac3250101c308";
+  inputs.starintel-doc.url = "github:lost-rob0t/starintel-doc/6aa8051dc7ea560943a60a25e1d600467f2778bc";
   inputs.a0-symbolics.flake = false;
   inputs.a0-symbolics.url = "github:lost-rob0t/a0-symbolics";
   inputs.star-cl.flake = false;

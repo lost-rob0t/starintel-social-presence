@@ -3,7 +3,6 @@
 :END:
 #+title: Shipyard #001 — Evidence, Actors, and the Control Plane
 #+date: [2026-09-20 Sun]
-#+author: nsaspy
 #+description: StarIntel Shipyard #001: deterministic evidence promotion, Sento actors, and paid pro actors wired into Quasar.
 #+slug: shipyard-001-evidence-actors-control-plane
 #+tags: starintel shipyard prolog actors quasar lisp

@@ -10,9 +10,10 @@
 #+revision: 2
 
 StarIntel models knowledge as typed documents rather than freeform rows.
-The pinned StarLang 0.10.1 generated release defines sixty document kinds.
-Its authority is =specs/starintel/0.10.1/core.star= in StarLang commit
-=765f1673851192bcaf1cdd2f35c47608f979b079=. Each record uses flat lowerCamelCase
+The pinned StarLang 0.10.1 generated release defines the persistent document
+inventory. Its authority is =specs/starintel/0.10.1/core.star= at the immutable
+revision recorded by the pinned Python runtime's =schema/starintel-schema.lock.json=.
+Transient helper records are not persistent document kinds. Each record uses flat lowerCamelCase
 fields, including required =id=, =dataset=, =dtype= and =schemaVersion=.
 Specific types add their own required fields. The findings adapter validates
 current records through the immutable Python consumer; historical =_id=
