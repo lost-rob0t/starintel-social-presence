@@ -12,9 +12,9 @@
   inputs.starintel-gpt-auto-dig.flake = false;
   inputs.starintel-gpt-auto-dig.url = "github:lost-rob0t/starintel-gpt-auto-dig";
   inputs.star-lang.flake = false;
-  inputs.star-lang.url = "github:lost-rob0t/star-lang";
+  inputs.star-lang.url = "github:lost-rob0t/star-lang/fa1c8f4fb0590526c39aa3e9bc4a7e6eac30bea7";
   inputs.starintel-doc.flake = false;
-  inputs.starintel-doc.url = "github:lost-rob0t/starintel-doc";
+  inputs.starintel-doc.url = "github:lost-rob0t/starintel-doc/6aa8051dc7ea560943a60a25e1d600467f2778bc";
   inputs.a0-symbolics.flake = false;
   inputs.a0-symbolics.url = "github:lost-rob0t/a0-symbolics";
   inputs.star-cl.flake = false;
@@ -53,6 +53,9 @@
           default = pkgs.mkShell {
             packages = with pkgs; [
               python313
+              python313Packages.jsonschema
+              python313Packages.rfc3987
+              python313Packages.rfc3339-validator
               python313Packages.pytest
               python313Packages.pygments
               python313Packages.playwright
@@ -67,7 +70,7 @@
             ];
 
             shellHook = ''
-              export PYTHONPATH="$PWD/change_fetcher/src:$PWD/auto_findings/src:$PWD/auto_research/src:$PWD/starintel_tutorial_gen/src:$PWD/site_builder/src''${PYTHONPATH:+:$PYTHONPATH}"
+              export PYTHONPATH="${inputs.starintel-doc}:$PWD/change_fetcher/src:$PWD/auto_findings/src:$PWD/auto_research/src:$PWD/starintel_tutorial_gen/src:$PWD/site_builder/src''${PYTHONPATH:+:$PYTHONPATH}"
             '';
           };
         });

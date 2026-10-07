@@ -22,7 +22,7 @@ Rendered video, recordings, audio, caches, local exports, model caches, download
 This workspace reads StarIntel state; it does not redefine it.
 
 - `starintel-server` is the server/control/ingest/search runtime.
-- `starintel-gpt-auto-dig` owns its executable StarIntel document schema and canonical Auto Dig data.
+- `star-lang` owns the StarIntel 0.10.1 document contract; `starintel-gpt-auto-dig` owns its corpus.
 - `starintel-auto-research` owns research/design status and approval semantics.
 - `quasar` is the canonical Quasar runtime; related forks remain separate repositories.
 
@@ -122,7 +122,7 @@ Output is a JSON array containing repository identity, commit SHA, timestamp, au
 
 ## Auto Dig adapter
 
-Auto Dig currently stores canonical v0.9.0 records under `db/<dtype>/<id>.ndjson`. The adapter reads those records and surfaces inspectable candidates; it does not invent associations from graph adjacency.
+The adapter reads flat StarLang 0.10.1 records under `db/<dtype>/<id>.ndjson`, validating them with the immutable merged Python consumer pinned in `auto_findings/pyproject.toml`. Install `python -m pip install -e auto_findings` first. Historical `_id` records retain a separate read-only compatibility path and are never relabeled. It does not infer associations from graph adjacency.
 
 ```bash
 PYTHONPATH=auto_findings/src \
@@ -131,7 +131,7 @@ python -m starintel_auto_findings.cli \
   --limit 20
 ```
 
-Every candidate retains the source record path, StarIntel `_id`, dtype, dataset, title/summary, and source count.
+Every candidate retains the source record path, StarIntel `id` (historical `_id`), dtype, dataset, title/summary, and source-reference count. Canonical `sourceUrls` are exposed as locators; a URL is not counted as an additional independent source alongside a reference.
 
 ## Auto Research adapter
 

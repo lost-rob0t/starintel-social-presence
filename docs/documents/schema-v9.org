@@ -1,30 +1,38 @@
 :PROPERTIES:
 :ID: docs-documents-schema
 :END:
-#+title: The v0.9 document model
+#+title: The StarLang 0.10.1 document model
 #+date: [2026-09-03 Thu]
 #+description: Typed StarIntel documents, provenance metadata, and the design invariants that make records auditable.
 #+slug: document-model-v9
 #+filetags: :docs:documents:schema:
 #+status: POST
-#+revision: 1
+#+revision: 2
 
 StarIntel models knowledge as typed documents rather than freeform rows.
-The v0.9 schema defines fifty typed document kinds, each carrying sources,
-evidence, and assessment metadata.
+The pinned StarLang 0.10.1 generated release defines the persistent document
+inventory. Its authority is =specs/starintel/0.10.1/core.star= at the immutable
+revision recorded by the pinned Python runtime's =schema/starintel-schema.lock.json=.
+Transient helper records are not persistent document kinds. Each record uses flat lowerCamelCase
+fields, including required =id=, =dataset=, =dtype= and =schemaVersion=.
+Specific types add their own required fields. The findings adapter validates
+current records through the immutable Python consumer; historical =_id=
+records remain read-only compatibility inputs and are never relabeled.
+
+The filename and public slug remain stable so existing links keep working.
 
 * Design invariants
 
-- Every document carries sources, evidence, and assessment metadata.
-- Schema validation is strict and pinned (v0.9, additive compatibility).
+- Provenance, sources and assessment fields are governed by the selected generated type.
+- Schema validation is strict and pinned to the generated StarLang release.
 - Publication is gated: approval state is machine-checked, with evidence.
 - Storage is CouchDB; routing is RabbitMQ topic exchanges; supervision is
   Sento actors; the whole stack builds reproducibly under Nix.
 
 * Document kind families
 
-The fifty kinds group into families. The exact enumeration lives in the
-executable schema owned by Auto Dig; this table maps the families to their
+The document kinds group into families. The exact enumeration lives in
+StarLang's generated portable manifest; this table maps common families to their
 role in an investigation:
 
 | Family        | Role                                        |

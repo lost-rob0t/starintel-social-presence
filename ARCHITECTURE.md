@@ -35,9 +35,9 @@ The deterministic spine owns collection, normalization, traceability, and render
 
 ### Auto Dig
 
-The current Auto Dig repository declares its executable StarIntel document schema as authoritative and stores normalized records at `db/<dtype>/<id>.ndjson`.
+StarLang owns the generated 0.10.1 contract. Auto Dig stores records at `db/<dtype>/<id>.ndjson`; this adapter consumes the pinned starintel-doc runtime for canonical validation.
 
-`auto_findings` therefore reads existing records and retains `_id`, dtype, dataset, record path, summary/title, and source references. It does not derive association claims from graph adjacency.
+`auto_findings` therefore reads existing records and retains canonical `id` (historical `_id`), dtype, dataset, record path, summary/title, and source references. It does not derive association claims from graph adjacency.
 
 ### Auto Research
 
@@ -135,3 +135,4 @@ Generated HTML is an export artifact. Video recordings/renders are local artifac
 ## Model/vendor independence
 
 No content store or normalized fact model depends on one LLM vendor. Optional provider/model names live in configuration. A missing model must reduce capability, not break editing/export.
+

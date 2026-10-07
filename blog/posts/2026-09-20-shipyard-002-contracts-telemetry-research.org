@@ -3,7 +3,6 @@
 :END:
 #+title: Shipyard #002 — Contracts, Telemetry, and Research Surfaces
 #+date: [2026-09-20 Sun]
-#+author: nsaspy
 #+description: StarIntel Shipyard #002: actor protocols, explicit telemetry, Auto Research on the website, and the line between shipped infrastructure and design.
 #+slug: shipyard-002-contracts-telemetry-research
 #+tags: starintel shipyard server observability research website

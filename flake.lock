@@ -132,17 +132,18 @@
     "star-lang": {
       "flake": false,
       "locked": {
-        "lastModified": 1786912966,
-        "narHash": "sha256-bKqIe44Ktv4kWX+F1ujOiRgzIM2cTAyGzvp5GATP2Xc=",
+        "lastModified": 1791138517,
+        "narHash": "sha256-w8LdD3MyvEUCBaGw8GPFH32LgN5U3bOOQKYp4t6yDJI=",
         "owner": "lost-rob0t",
         "repo": "star-lang",
-        "rev": "0472ed8f4472252038b62bb19a17aa09d2ddf1b4",
+        "rev": "fa1c8f4fb0590526c39aa3e9bc4a7e6eac30bea7",
         "type": "github"
       },
       "original": {
         "owner": "lost-rob0t",
         "repo": "star-lang",
-        "type": "github"
+        "type": "github",
+        "rev": "fa1c8f4fb0590526c39aa3e9bc4a7e6eac30bea7"
       }
     },
     "starintel-auto-research": {
@@ -180,17 +181,18 @@
     "starintel-doc": {
       "flake": false,
       "locked": {
-        "lastModified": 1788919236,
-        "narHash": "sha256-cy3ZmB933QD6EruHGMe/a9elRz/ce+V0Eon7Ch4gAaI=",
+        "lastModified": 1791129200,
+        "narHash": "sha256-AEmghTaQb8mCvLxSpP3f71ftcZ1yBpdX4Uh6rlujIg4=",
         "owner": "lost-rob0t",
         "repo": "starintel-doc",
-        "rev": "5857914a1e34ad18a6956b8ff0df5349de0ca099",
+        "rev": "6aa8051dc7ea560943a60a25e1d600467f2778bc",
         "type": "github"
       },
       "original": {
         "owner": "lost-rob0t",
         "repo": "starintel-doc",
-        "type": "github"
+        "type": "github",
+        "rev": "6aa8051dc7ea560943a60a25e1d600467f2778bc"
       }
     },
     "starintel-gpt-auto-dig": {
