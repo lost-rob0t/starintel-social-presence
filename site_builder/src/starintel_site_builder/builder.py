@@ -18,6 +18,7 @@ from . import render
 from .graph import build_graph
 from .highlight import highlight_fragment
 from .models import GraphModel, SiteModel, SourceDoc
+from .publication import check_public_output, contains_tenant_identifier
 from .roam import sync_roam_db
 
 HREF_RE = re.compile(r'href="([^"]+)"')
@@ -288,6 +289,7 @@ def build_site(
                "sitemap.xml", render.sitemap(sorted(set(sitemap_urls))))
     pages_written += 1
 
+    check_public_output(out_dir)
     report.pages = pages_written
     (build_dir / "report.json").write_text(
         json.dumps(report.to_json(), indent=1), encoding="utf-8"
@@ -444,6 +446,8 @@ def _prepare_external_docs(
                 )
             revision = export_mod.external_repo_revision(repo_dir)
             description = f"Aggregated from {config.name} ({config.entry})."
+            if contains_tenant_identifier(body):
+                body = "* Not available on the public site\n"
         else:
             body = (
                 f"* Not available in this build\n\n"
@@ -510,6 +514,9 @@ def _repo_docs_pages(
         return []
     pages: list[SourceDoc] = []
     for rel_posix, org_file in sorted(candidates.items()):
+        text = org_file.read_text(encoding="utf-8")
+        if contains_tenant_identifier(rel_posix) or contains_tenant_identifier(text):
+            continue
         rel = PurePosixPath(rel_posix)
         synthetic_id = "external-{}-{}".format(
             config.name,
@@ -517,7 +524,6 @@ def _repo_docs_pages(
         )
         out_org = ext_dir / config.name / rel
         out_org.parent.mkdir(parents=True, exist_ok=True)
-        text = org_file.read_text(encoding="utf-8")
         if ":ID:" not in text:
             text = f":PROPERTIES:\n:ID: {synthetic_id}\n:END:\n" + text
         else:
