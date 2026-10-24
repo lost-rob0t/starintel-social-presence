@@ -14,6 +14,7 @@ import pytest
 
 from starintel_site_builder.builder import BuildReport, build_site
 from starintel_site_builder.highlight import highlight_fragment
+from starintel_site_builder.publication import check_public_output
 
 
 def test_highlight_json_block() -> None:
@@ -226,6 +227,43 @@ class TestDocsSources:
     def test_report_counts_external_pages(self, built) -> None:
         _out, report = built
         assert report.external == 3  # landing + guide + unique
+
+
+def test_imported_tenant_document_is_not_published(tmp_path, fake_repo, ext_repo) -> None:
+    from starintel_site_builder.builder import ExternalDocConfig
+
+    imported = ext_repo / "ext-repo" / "docs"
+    (imported / "tenant.org").write_text(
+        "#+title: Tenant example\n\ntenant_id: tenant-main\n", encoding="utf-8"
+    )
+    out = tmp_path / "site"
+    build_site(
+        repo_root=fake_repo,
+        out_dir=out,
+        build_dir=fake_repo / ".build",
+        externals=[ExternalDocConfig(
+            name="ext-repo", repo_dir_env="TEST_EXT_REPO_DIR",
+            entry="README.md", include_docs=True,
+        )],
+    )
+    assert not (out / "docs" / "ext-repo" / "tenant.html").exists()
+    assert (out / "docs" / "ext-repo" / "guide.html").is_file()
+    assert "tenant_id" not in (out / "sitemap.xml").read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("name,content", [
+    ("page.html", "<span>tenant</span><span>_id</span>"),
+    ("graph.json", r'{"tenant\u005fids": ["tenant-main"]}'),
+    ("graph.js", r'const key = "tenant\x5fid";'),
+    ("escaped.html", "tenant&#95;id"),
+    ("attribute.html", '<a href="/tenant_id">link</a>'),
+])
+def test_public_output_gate_catches_escaped_identifiers(tmp_path, name, content) -> None:
+    page = tmp_path / "docs" / name
+    page.parent.mkdir()
+    page.write_text(content, encoding="utf-8")
+    with pytest.raises(RuntimeError, match=f"public tenant identifier in docs/{name}"):
+        check_public_output(tmp_path)
 
 
 def test_highlight_strips_code_wrapper() -> None:
