@@ -134,16 +134,16 @@
       "locked": {
         "lastModified": 1791138517,
         "narHash": "sha256-w8LdD3MyvEUCBaGw8GPFH32LgN5U3bOOQKYp4t6yDJI=",
-        "owner": "lost-rob0t",
-        "repo": "star-lang",
+        "ref": "refs/heads/main",
         "rev": "fa1c8f4fb0590526c39aa3e9bc4a7e6eac30bea7",
-        "type": "github"
+        "revCount": 296,
+        "type": "git",
+        "url": "https://git.starintel.actor/nsaspy/star-lang.git"
       },
       "original": {
-        "owner": "lost-rob0t",
-        "repo": "star-lang",
-        "type": "github",
-        "rev": "fa1c8f4fb0590526c39aa3e9bc4a7e6eac30bea7"
+        "rev": "fa1c8f4fb0590526c39aa3e9bc4a7e6eac30bea7",
+        "type": "git",
+        "url": "https://git.starintel.actor/nsaspy/star-lang.git"
       }
     },
     "starintel-auto-research": {
@@ -183,16 +183,16 @@
       "locked": {
         "lastModified": 1791129200,
         "narHash": "sha256-AEmghTaQb8mCvLxSpP3f71ftcZ1yBpdX4Uh6rlujIg4=",
-        "owner": "lost-rob0t",
-        "repo": "starintel-doc",
+        "ref": "refs/heads/master",
         "rev": "6aa8051dc7ea560943a60a25e1d600467f2778bc",
-        "type": "github"
+        "revCount": 103,
+        "type": "git",
+        "url": "https://git.starintel.actor/starintel-labs/starintel-doc.git"
       },
       "original": {
-        "owner": "lost-rob0t",
-        "repo": "starintel-doc",
-        "type": "github",
-        "rev": "6aa8051dc7ea560943a60a25e1d600467f2778bc"
+        "rev": "6aa8051dc7ea560943a60a25e1d600467f2778bc",
+        "type": "git",
+        "url": "https://git.starintel.actor/starintel-labs/starintel-doc.git"
       }
     },
     "starintel-gpt-auto-dig": {
