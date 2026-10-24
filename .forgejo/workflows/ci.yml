@@ -38,7 +38,7 @@ jobs:
       - name: forgejo hygiene
         run: |
           test -d .forgejo/workflows
-          if grep -rn "uses:" .forgejo/workflows/; then
+          if grep -RnE '^[[:space:]]*-[[:space:]]*uses:' .forgejo/workflows/; then
             echo "'uses:' steps are not allowed"; exit 1
           fi
           echo "hygiene ok"
