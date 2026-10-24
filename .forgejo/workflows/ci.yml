@@ -11,8 +11,21 @@ jobs:
     container: docker.io/library/python:3.13-slim
     steps:
       - name: checkout
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          test -n "$GITHUB_TOKEN"
           apt-get update -qq && apt-get install -y -qq git > /dev/null
+          cat > /tmp/forgejo-askpass <<'EOF'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf 'oauth2\n' ;;
+            *Password*) printf '%s\n' "$GITHUB_TOKEN" ;;
+          esac
+          EOF
+          chmod 700 /tmp/forgejo-askpass
+          export GIT_ASKPASS=/tmp/forgejo-askpass GIT_TERMINAL_PROMPT=0
+          trap 'rm -f /tmp/forgejo-askpass' EXIT
           git clone --no-checkout "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" repo
           cd repo
           git fetch --depth=1 origin "$GITHUB_SHA"
