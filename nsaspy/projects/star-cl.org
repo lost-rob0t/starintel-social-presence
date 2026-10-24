@@ -1,0 +1,25 @@
+:PROPERTIES:
+:ID: 62e9cf3e-3185-4d81-b7f8-53430234ed99
+:END:
+#+TITLE: star-cl
+#+CREATED: [2026-10-24 Sat 19:10]
+#+LAST_MODIFIED: [2026-10-24 Sat 19:10]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: project
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: spec/star-cl/README.org; nsaspy/resume.org at b5c3f51c7f3ee1bb83a25a435e59a3740087d946
+#+AI_GENERATED: t
+#+AI_TAG: ai_63312bc1e61a8e26
+#+FILETAGS: :ai:ai_63312bc1e61a8e26:common-lisp:schema:starintel:
+
+#+description: Common Lisp implementation of the StarIntel document contract.
+#+slug: star-cl
+
+* Overview
+
+star-cl brings the StarIntel document contract to Common Lisp. It is one of the language bindings used to keep documents consistent across the platform.
+
+* Source
+
+- [[https://git.starintel.actor/nsaspy/star-cl][Browse the source repository]]

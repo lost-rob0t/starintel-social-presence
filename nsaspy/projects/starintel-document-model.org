@@ -1,0 +1,25 @@
+:PROPERTIES:
+:ID: 0b8e1238-1c3b-4c36-aa8e-29b2e36fae35
+:END:
+#+TITLE: StarIntel document model
+#+CREATED: [2026-10-24 Sat 19:10]
+#+LAST_MODIFIED: [2026-10-24 Sat 19:10]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: project
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: spec/star-lang/README.md; nsaspy/resume.org at b5c3f51c7f3ee1bb83a25a435e59a3740087d946
+#+AI_GENERATED: t
+#+AI_TAG: ai_7ac7839f155f3bb5
+#+FILETAGS: :ai:ai_7ac7839f155f3bb5:schema:provenance:starintel:
+
+#+description: Typed intelligence documents with source provenance and a pinned schema contract.
+#+slug: starintel-document-model
+
+* Overview
+
+The document contract gives StarIntel records typed structure for provenance, evidence, assessment, and verification. StarLang owns the canonical schema and release tooling; consumers pin the contract rather than guessing a version from a filename.
+
+* Source
+
+- [[https://git.starintel.actor/nsaspy/star-lang][Browse the source repository]]

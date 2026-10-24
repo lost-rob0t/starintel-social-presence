@@ -1,0 +1,25 @@
+:PROPERTIES:
+:ID: 41d146b4-5e67-4af1-8cb1-47bfa344814d
+:END:
+#+TITLE: forge-sync
+#+CREATED: [2026-10-24 Sat 19:09]
+#+LAST_MODIFIED: [2026-10-24 Sat 19:09]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: project
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: forge-sync/README.md; nsaspy/resume.org at b5c3f51c7f3ee1bb83a25a435e59a3740087d946
+#+AI_GENERATED: t
+#+AI_TAG: ai_cbfe95966e6e3564
+#+FILETAGS: :ai:ai_cbfe95966e6e3564:go:forgejo:synchronization:
+
+#+description: Go service that reconciles GitHub and Forgejo repositories and metadata.
+#+slug: forge-sync
+
+* Overview
+
+forge-sync is a deterministic Go service for synchronization between GitHub and Forgejo. It reconciles refs and repository metadata, records conflicts when both sides diverge, and keeps unknown visibility private.
+
+* Source
+
+- [[https://github.com/starintel-labs/forge-sync][Browse the source repository]]

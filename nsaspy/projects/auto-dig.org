@@ -1,0 +1,25 @@
+:PROPERTIES:
+:ID: cb5743e8-f2e2-43b5-af1c-ee70da3d7c28
+:END:
+#+TITLE: Auto Dig
+#+CREATED: [2026-10-24 Sat 19:09]
+#+LAST_MODIFIED: [2026-10-24 Sat 19:09]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: project
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: starintel-gpt-auto-dig/README.md; nsaspy/resume.org at b5c3f51c7f3ee1bb83a25a435e59a3740087d946
+#+AI_GENERATED: t
+#+AI_TAG: ai_bf5cc0576b69aece
+#+FILETAGS: :ai:ai_bf5cc0576b69aece:osint:nim:starintel:
+
+#+description: Nim-backed OSINT investigation and canonical document generation.
+#+slug: auto-dig
+
+* Overview
+
+Auto Dig develops evidence-first investigation packets and a Git-backed document corpus. Its Nim runtime handles performance-sensitive validation and static-site work. Source references and canonical document validation are explicit parts of its pipeline.
+
+* Source
+
+- [[https://github.com/lost-rob0t/starintel-gpt-auto-dig][Browse the source repository]]

@@ -975,6 +975,20 @@ h1, h2, h3, h4, h5, h6 {
 .portfolio-article--resume .outline-2:first-of-type > h2 { margin-top: 2rem; }
 .portfolio-article--resume .article-header + .toc + .outline-2 h2 { margin-top: 2rem; }
 .portfolio-article--resume table { max-width: 100%; }
+.portfolio-related { margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--line); }
+.portfolio-related h2 { margin: 0.4rem 0 1.4rem; }
+.portfolio-related ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.portfolio-related li { margin: 0; padding: 0.8rem 0; border-bottom: 1px solid var(--line); }
+.portfolio-related a { color: var(--text-strong); }
+.portfolio-related a:hover { color: var(--gold-bright); }
+.portfolio-related a span { color: var(--gold); }
 
 @media (max-width: 760px) {
   .portfolio-hero { grid-template-columns: 1fr; min-height: 0; padding: 4rem 0 3rem; }
@@ -992,6 +1006,7 @@ h1, h2, h3, h4, h5, h6 {
   .portfolio-section-heading { align-items: start; flex-direction: column; }
   .portfolio-project { grid-template-columns: 2rem minmax(0, 1fr); gap: 0.7rem; }
   .portfolio-stack { gap: 0.3rem 1rem; }
+  .portfolio-related ul { grid-template-columns: 1fr; }
 }
 
 @media print {

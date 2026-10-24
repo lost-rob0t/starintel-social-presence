@@ -1,0 +1,25 @@
+:PROPERTIES:
+:ID: 2ec2b05e-e3f7-42d4-8452-e2e519ec73eb
+:END:
+#+TITLE: Quasar
+#+CREATED: [2026-10-24 Sat 19:09]
+#+LAST_MODIFIED: [2026-10-24 Sat 19:09]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: project
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: quasar/README.md; nsaspy/resume.org at b5c3f51c7f3ee1bb83a25a435e59a3740087d946
+#+AI_GENERATED: t
+#+AI_TAG: ai_95bca6ca57488c5b
+#+FILETAGS: :ai:ai_95bca6ca57488c5b:graph:workspace:quasar:
+
+#+description: Graph-first investigation workspace with a Common Lisp control plane and browser UI.
+#+slug: quasar
+
+* Overview
+
+Quasar is the investigation workspace for exploring StarIntel documents and their relationships. Its canonical control plane is Common Lisp. The repository also contains a React and Cytoscape browser UI for graph presentation and a standalone web surface.
+
+* Source
+
+- [[https://git.starintel.actor/nsaspy/quasar][Browse the source repository]]

@@ -346,7 +346,8 @@ def _render_doc_page(
             (doc.title, None),
         ]
     return render.article_page(
-        doc, fragment_html, graph_model, crumbs, prev_doc, next_doc
+        doc, fragment_html, graph_model, crumbs, prev_doc, next_doc,
+        related_projects=model.portfolio,
     )
 
 

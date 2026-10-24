@@ -7,6 +7,9 @@ site_vhost_renderer(nsaspy, 'site_builder/src/starintel_site_builder/render.py')
 site_vhost_theme(nsaspy, 'site-assets/starintel.css').
 site_presentation(nsaspy, author_badges, omitted).
 site_vhost_link_source(nsaspy, based_site_model).
+site_project_source(nsaspy, 'nsaspy/projects/*.org').
+site_project_link_surface(nsaspy, portfolio_landing).
+site_project_link_surface(nsaspy, resume_article).
 site_build_parameter('STARINTEL_SITE_BASE_MAP', absolute_cross_vhost_urls).
 site_publication_filter(imported_org_document, tenant_identifier, omit_page).
 site_publication_gate(rendered_output, tenant_identifier, reject_build).

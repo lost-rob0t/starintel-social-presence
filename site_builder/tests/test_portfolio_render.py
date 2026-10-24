@@ -69,6 +69,29 @@ def test_resume_has_personal_navigation_without_publication_badges() -> None:
     assert "badge--post" not in page
 
 
+def test_resume_links_to_each_project_page() -> None:
+    resume = SourceDoc(
+        path=Path("nsaspy/resume.org"), section="portfolio", slug="resume",
+        title="Resume", url="https://nsaspy.starintel.actor/resume.html",
+    )
+    projects = [
+        SourceDoc(
+            path=Path(f"nsaspy/projects/{slug}.org"), section="portfolio",
+            slug=slug, title=title,
+            url=f"https://nsaspy.starintel.actor/projects/{slug}.html",
+        )
+        for slug, title in (("starintel", "StarIntel"), ("quasar", "Quasar"))
+    ]
+    page = render.article_page(
+        resume, "<p>Work summary.</p>", GraphModel(), [],
+        related_projects=projects,
+    )
+
+    assert 'id="project-pages-title"' in page
+    for project in projects:
+        assert f'href="{project.url}"' in page
+
+
 def test_daily_note_keeps_its_own_label() -> None:
     note = SourceDoc(
         path=Path("nsaspy/daily/2026-08-28.org"),

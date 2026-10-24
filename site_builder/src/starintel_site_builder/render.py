@@ -318,6 +318,7 @@ def article_page(
     crumbs: list[tuple[str, str | None]],
     prev_doc: SourceDoc | None = None,
     next_doc: SourceDoc | None = None,
+    related_projects: list[SourceDoc] | None = None,
 ) -> str:
     portfolio = doc.section == "portfolio"
     article_class = "article portfolio-article" if portfolio else "article"
@@ -337,6 +338,24 @@ def article_page(
         '</div>'
         if portfolio and doc.slug == "resume" else ""
     )
+    project_links = ""
+    if portfolio and doc.slug == "resume" and related_projects:
+        projects = sorted(
+            (p for p in related_projects if "/projects/" in p.path.as_posix()),
+            key=lambda p: (p.title.lower() != "starintel", p.title.lower()),
+        )
+        project_links = (
+            '<section class="portfolio-related" aria-labelledby="project-pages-title">'
+            '<p class="portfolio-eyebrow">Project pages</p>'
+            '<h2 id="project-pages-title">Explore the work</h2>'
+            '<ul>'
+            + "".join(
+                f'<li><a href="{esc(project.url)}">{esc(project.title)} '
+                '<span aria-hidden="true">↗</span></a></li>'
+                for project in projects
+            )
+            + '</ul></section>'
+        )
     body = (
         f'<div class="{shell_class}">'
         + breadcrumbs(crumbs)
@@ -349,6 +368,7 @@ def article_page(
         + actions
         + "</header>"
         + _fragment_document(doc, fragment_html)
+        + project_links
         + "</article>"
         + '<div class="article-footer">'
         + backlinks_section(doc, model)

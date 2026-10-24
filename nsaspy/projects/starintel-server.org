@@ -1,0 +1,25 @@
+:PROPERTIES:
+:ID: 74bc3d88-6ec1-463e-bc17-abf8a2e1efea
+:END:
+#+TITLE: StarIntel Server
+#+CREATED: [2026-10-24 Sat 19:09]
+#+LAST_MODIFIED: [2026-10-24 Sat 19:09]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: project
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: starintel-server/AGENTS.md; nsaspy/resume.org at b5c3f51c7f3ee1bb83a25a435e59a3740087d946
+#+AI_GENERATED: t
+#+AI_TAG: ai_3645883f7315af2d
+#+FILETAGS: :ai:ai_3645883f7315af2d:common-lisp:actors:starintel:
+
+#+description: Common Lisp API, ingest, search, persistence, and actor routing for StarIntel.
+#+slug: starintel-server
+
+* Overview
+
+The server is the Common Lisp runtime behind StarIntel’s API, ingestion, persistence, search, and actor routing. Its integration points include CouchDB, RabbitMQ, and Sento actors. The resume also records Nix-built binaries, tests, and container images.
+
+* Source
+
+- [[https://git.starintel.actor/starintel-labs/starintel-server][Browse the source repository]]

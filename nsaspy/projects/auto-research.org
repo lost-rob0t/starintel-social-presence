@@ -1,0 +1,25 @@
+:PROPERTIES:
+:ID: d2c6f3da-7e79-40ac-a5b2-d70ae3f3ce56
+:END:
+#+TITLE: Auto Research
+#+CREATED: [2026-10-24 Sat 19:09]
+#+LAST_MODIFIED: [2026-10-24 Sat 19:09]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: project
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: starintel-auto-research/README.md; nsaspy/resume.org at b5c3f51c7f3ee1bb83a25a435e59a3740087d946
+#+AI_GENERATED: t
+#+AI_TAG: ai_1e4062792173e853
+#+FILETAGS: :ai:ai_1e4062792173e853:research:approval:starintel:
+
+#+description: Research and design workflow with recorded evidence and explicit approval states.
+#+slug: auto-research
+
+* Overview
+
+Auto Research keeps research and design work in an Org-based graph. Its workflow records implementation and rejection decisions, validates metadata and links, and preserves approval status before work is promoted or published.
+
+* Source
+
+- [[https://github.com/lost-rob0t/starintel-auto-research][Browse the source repository]]
