@@ -115,6 +115,7 @@ def test_default_page_matrix_covers_required_surfaces() -> None:
         "/docs/index.html",
         "/docs/external/starintel-server.html",
         "/portfolio/index.html",
+        "/portfolio/resume.html",
         "/graph.html",
     ):
         assert required in urls, f"required page missing from visual matrix: {required}"

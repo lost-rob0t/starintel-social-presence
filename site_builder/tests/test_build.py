@@ -138,8 +138,19 @@ def test_markdown_to_org(tmp_path: Path) -> None:
 class TestVhostSplit:
     @pytest.fixture()
     def split(self, tmp_path, fake_repo):
+        from conftest import write_roam_db
         from starintel_site_builder.render import SiteBases
 
+        project_dir = fake_repo / "nsaspy" / "projects"
+        project_dir.mkdir(parents=True)
+        (project_dir / "starintel.org").write_text(
+            ":PROPERTIES:\n:ID: test-nsaspy-starintel\n:END:\n"
+            "#+title: StarIntel\n#+description: A project.\n"
+            "#+slug: starintel\n#+filetags: :nsaspy:projects:human:\n\n"
+            "* StarIntel\n\nA project.\n",
+            encoding="utf-8",
+        )
+        write_roam_db(fake_repo, fake_repo / ".cache" / "org-roam.db")
         out = tmp_path / "split"
         bases = SiteBases(
             www="https://starintel.actor",
@@ -171,6 +182,13 @@ class TestVhostSplit:
     def test_no_section_prefix_on_own_vhost(self, split) -> None:
         out, _bases, _report = split
         assert (out / "blog" / "blog").exists() is False
+
+    def test_portfolio_project_links_use_own_vhost(self, split) -> None:
+        out, bases, _report = split
+        landing = (out / "nsaspy" / "index.html").read_text(encoding="utf-8")
+        assert f'href="{bases.nsaspy}/projects/starintel.html"' in landing
+        assert 'href="/portfolio/projects/starintel.html"' not in landing
+        assert (out / "nsaspy" / "projects" / "starintel.html").is_file()
 
     def test_cross_vhost_links_absolute(self, split) -> None:
         out, bases, _report = split

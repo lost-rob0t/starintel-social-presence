@@ -78,10 +78,15 @@ class NavContext:
 
 def _head(title: str, description: str, draft: bool = False) -> str:
     robots = '<meta name="robots" content="noindex, nofollow">' if draft else ""
+    page_title = (
+        "nsaspy — Systems and intelligence engineer"
+        if _PAGE_VHOST == "nsaspy" and title == "nsaspy"
+        else f"{title} — {'nsaspy' if _PAGE_VHOST == 'nsaspy' else 'StarIntel'}"
+    )
     return (
         f'<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
         f'<meta name="viewport" content="width=device-width, initial-scale=1">'
-        f'<title>{esc(title)} — StarIntel</title>'
+        f'<title>{esc(page_title)}</title>'
         f'<meta name="description" content="{esc(description)}">{robots}'
         f'<link rel="icon" href="data:,">'
         f'<link rel="stylesheet" href="{asset_url("starintel.css")}">'
@@ -100,6 +105,27 @@ _NAV_LINKS = [
 
 
 def _header(active: str) -> str:
+    if _PAGE_VHOST == "nsaspy":
+        writing_url = f"{vbase('blog')}/index.html" if _BASES.split else "/blog/index.html"
+        links = (
+            ("portfolio", portfolio_url(), "Work"),
+            ("resume", portfolio_url("resume.html"), "Resume"),
+            ("about", portfolio_url("about.html"), "About"),
+            ("writing", writing_url, "Writing"),
+        )
+        items = "".join(
+            f'<a href="{esc(href)}"'
+            f'{" aria-current=\"page\"" if key == active else ""}>{label}</a>'
+            for key, href, label in links
+        )
+        return (
+            '<header class="site-header personal-header"><div class="site-header__inner">'
+            f'<a class="personal-brand" href="{esc(portfolio_url())}" aria-label="nsaspy home">'
+            '<span class="personal-brand__mark" aria-hidden="true">n.</span>'
+            '<span>nsaspy<small>systems &amp; intelligence</small></span></a>'
+            f'<nav class="site-nav" aria-label="Primary">{items}</nav>'
+            '</div></header>'
+        )
     items = "".join(
         f'<a href="{vbase(vh) or ""}{href}"'
         f'{" aria-current=\"page\"" if key == active else ""}>{label}</a>'
@@ -116,6 +142,15 @@ def _header(active: str) -> str:
 
 
 def _footer() -> str:
+    if _PAGE_VHOST == "nsaspy":
+        return (
+            '<footer class="site-footer personal-footer"><div class="site-footer__inner">'
+            '<span>nsaspy · systems and intelligence engineering</span>'
+            '<span><a href="mailto:nsaspy@airmail.cc">Email</a> · '
+            '<a href="https://github.com/lost-rob0t">GitHub</a> · '
+            '<a href="https://starintel.actor/">StarIntel</a></span>'
+            '</div></footer>'
+        )
     graph = f"{vbase('blog')}/graph.html" if vbase("blog") else "/graph.html"
     archive = f"{vbase('blog')}/archive.html" if vbase("blog") else "/archive.html"
     return (
@@ -135,8 +170,9 @@ def page_shell(
     active: str = "",
     draft: bool = False,
 ) -> str:
+    body_class = ' class="site--nsaspy"' if _PAGE_VHOST == "nsaspy" else ""
     return (
-        f'{_head(title, description, draft)}<body>'
+        f'{_head(title, description, draft)}<body{body_class}>'
         f'<a class="skip-link" href="#main">Skip to content</a>'
         f"{_header(active)}"
         f'<main class="site-main" id="main">{body}</main>'
@@ -146,6 +182,11 @@ def page_shell(
 
 def home_url() -> str:
     return f"{vbase('www')}/index.html" if vbase("www") else "/index.html"
+
+
+def portfolio_url(path: str = "index.html") -> str:
+    prefix = vbase("nsaspy") if _BASES.split else "/portfolio"
+    return f"{prefix}/{path}"
 
 
 def breadcrumbs(parts: list[tuple[str, str | None]]) -> str:
@@ -277,17 +318,35 @@ def article_page(
     crumbs: list[tuple[str, str | None]],
     prev_doc: SourceDoc | None = None,
     next_doc: SourceDoc | None = None,
-    extra_note: str = "",
 ) -> str:
+    portfolio = doc.section == "portfolio"
+    article_class = "article portfolio-article" if portfolio else "article"
+    if portfolio and doc.slug == "resume":
+        article_class += " portfolio-article--resume"
+    shell_class = "shell portfolio-article-shell" if portfolio else "shell"
+    label = (
+        "Selected work" if "/projects/" in doc.path.as_posix()
+        else {"about": "About", "resume": "Resume"}.get(doc.slug, "Notes")
+    )
+    eyebrow = f'<p class="portfolio-eyebrow">{label}</p>' if portfolio else ""
+    actions = (
+        '<div class="portfolio-article-actions">'
+        '<a class="btn btn--gold" href="mailto:nsaspy@airmail.cc">'
+        'Get in touch <span aria-hidden="true">↗</span></a>'
+        f'<a class="btn" href="{esc(portfolio_url())}">Selected work</a>'
+        '</div>'
+        if portfolio and doc.slug == "resume" else ""
+    )
     body = (
-        '<div class="shell">'
+        f'<div class="{shell_class}">'
         + breadcrumbs(crumbs)
-        + '<article class="article">'
+        + f'<article class="{article_class}">'
         + '<header class="article-header">'
+        + eyebrow
         + f'<h1 class="page-title">{esc(doc.title)}</h1>'
         + f'<p class="page-lead">{esc(doc.description)}</p>'
-        + meta_row(doc)
-        + (f'<p class="meta-text">{extra_note}</p>' if extra_note else "")
+        + ("" if portfolio else meta_row(doc))
+        + actions
         + "</header>"
         + _fragment_document(doc, fragment_html)
         + "</article>"
@@ -297,7 +356,10 @@ def article_page(
         + "</div>"
         + "</div>"
     )
-    return page_shell(doc.title, doc.description, body, active=_section_active(doc.section), draft=doc.is_draft)
+    active = _section_active(doc.section)
+    if portfolio and doc.slug in {"resume", "about"}:
+        active = doc.slug
+    return page_shell(doc.title, doc.description, body, active=active, draft=doc.is_draft)
 
 
 def _section_active(section: str) -> str:
@@ -425,31 +487,64 @@ def _month_name(month: str) -> str:
     return names.get(month, month)
 
 
-def portfolio_landing(model: SiteModel, extra_pages: list[SourceDoc]) -> str:
-    project_cards = [
-        post_card(p, kicker="project") for p in model.portfolio if "/projects/" in p.path.as_posix()
-    ]
-    other_cards = [post_card(p) for p in extra_pages]
+def portfolio_landing(model: SiteModel) -> str:
+    projects = sorted(
+        (p for p in model.portfolio if "/projects/" in p.path.as_posix()),
+        key=lambda p: (p.title.lower() != "starintel", p.title.lower()),
+    )
+    project_rows = "".join(
+        '<article class="portfolio-project">'
+        f'<span class="portfolio-project__number">{index:02d}</span>'
+        '<div>'
+        f'<h3><a href="{esc(project.url)}">{esc(project.title)} '
+        '<span aria-hidden="true">↗</span></a></h3>'
+        f'<p>{esc(project.description)}</p>'
+        '</div></article>'
+        for index, project in enumerate(projects, 1)
+    )
     body = (
-        '<div class="shell shell--wide">'
-        + breadcrumbs([("Home", home_url()), ("Portfolio", None)])
-        + '<section class="hero">'
-        + '<div class="hero__eyebrow">Portfolio</div>'
-        + "<h1>Things I build.</h1>"
-        + '<p class="hero__lead">StarIntel and the systems around it: local-first '
-        "intelligence, symbolic reasoning, and the editorial desk that writes "
-        "about them.</p>"
-        + '<div class="hero__actions">'
-        + f'<a class="btn btn--gold" href="{vbase("nsaspy")}/about.html">About me</a> '
-        + f'<a class="btn" href="{vbase("blog")}/index.html">Read the writing</a></div>'
-        + "</section>"
-        + section_head("Projects")
-        + card_list(project_cards)
-        + section_head("More")
-        + card_list(other_cards)
+        '<div class="shell shell--wide portfolio-shell">'
+        + '<section class="portfolio-hero" aria-labelledby="portfolio-title">'
+        + '<div class="portfolio-hero__copy">'
+        + '<p class="portfolio-eyebrow">nsaspy / systems and intelligence engineering</p>'
+        + '<h1 id="portfolio-title">I build systems that can explain what they know.</h1>'
+        + '<p class="portfolio-hero__lead">I build StarIntel and the tools around it: '
+        'document-driven intelligence, symbolic reasoning, and infrastructure '
+        'that keeps evidence close to every decision.</p>'
+        + '<div class="portfolio-hero__actions">'
+        + f'<a class="btn btn--gold" href="{esc(portfolio_url("resume.html"))}">View resume <span aria-hidden="true">↗</span></a>'
+        + '<a class="btn" href="mailto:nsaspy@airmail.cc">Get in touch</a>'
+        + '</div></div>'
+        + '<div class="portfolio-hero__art" aria-hidden="true"><span>n.</span>'
+        + '<small>systems / evidence / clarity</small></div>'
+        + '</section>'
+        + '<div class="portfolio-stack" aria-label="Tools used in the work">'
+        + '<span>Common Lisp</span><span>Prolog</span><span>Nim</span><span>Nix</span></div>'
+        + '<section class="portfolio-work" id="work" aria-labelledby="work-title">'
+        + '<div class="portfolio-section-heading"><div>'
+        + '<p class="portfolio-eyebrow">01 / Selected work</p>'
+        + '<h2 id="work-title">The work, in context.</h2></div>'
+        + f'<a href="{esc(portfolio_url("resume.html"))}">Full resume <span aria-hidden="true">↗</span></a>'
+        + '</div>'
+        + (project_rows or '<p>No projects published yet.</p>')
+        + '</section>'
+        + '<section class="portfolio-approach" aria-labelledby="approach-title">'
+        + '<div><p class="portfolio-eyebrow">02 / Approach</p>'
+        + '<h2 id="approach-title">Built to be checked.</h2></div>'
+        + '<p>Provenance first. Unknown states fail closed. Reproducible builds '
+        + 'make the work inspectable from source to deployment.</p>'
+        + '</section>'
+        + '<section class="portfolio-contact" aria-labelledby="contact-title">'
+        + '<p class="portfolio-eyebrow">03 / Contact</p>'
+        + '<h2 id="contact-title">Have a difficult system to build?</h2>'
+        + '<a href="mailto:nsaspy@airmail.cc">nsaspy@airmail.cc <span aria-hidden="true">↗</span></a>'
+        + '</section>'
         + "</div>"
     )
-    return page_shell("Portfolio", "StarIntel projects", body, active="portfolio")
+    return page_shell(
+        "nsaspy", "Systems and intelligence engineering, selected work, and resume.",
+        body, active="portfolio",
+    )
 
 
 _SIDEBAR_GROUP_LABELS = {

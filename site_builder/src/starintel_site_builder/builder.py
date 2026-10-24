@@ -226,15 +226,10 @@ def build_site(
         ))
         pages_written += 1
 
-    extra_pages = [
-        d for d in portfolio if "/projects/" not in d.path.as_posix()
-    ]
     render.set_page_vhost("nsaspy")
     _write_out(
         out_dir, bases, "nsaspy", "index.html",
-        render.portfolio_landing(
-            SiteModel(posts=posts, portfolio=portfolio), extra_pages
-        ),
+        render.portfolio_landing(SiteModel(portfolio=model.portfolio)),
     )
     pages_written += 1
 
@@ -347,15 +342,11 @@ def _render_doc_page(
         crumbs = [("Home", render.home_url()), ("Draft", None), (doc.title, None)]
     else:
         crumbs = [
-            ("Home", render.home_url()),
-            ("Portfolio", f"{render.vbase('nsaspy')}/index.html"),
+            ("Work", render.portfolio_url()),
             (doc.title, None),
         ]
-    extra_note = ""
-    if doc.section == "portfolio" and "/projects/" in doc.path.as_posix():
-        extra_note = ""
     return render.article_page(
-        doc, fragment_html, graph_model, crumbs, prev_doc, next_doc, extra_note
+        doc, fragment_html, graph_model, crumbs, prev_doc, next_doc
     )
 
 

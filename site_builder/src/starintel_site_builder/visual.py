@@ -42,6 +42,7 @@ DEFAULT_PAGES = [
     ("docs-external-server", "/docs/external/starintel-server.html"),
     ("docs-external-quasar", "/docs/external/quasar.html"),
     ("portfolio", "/portfolio/index.html"),
+    ("portfolio-resume", "/portfolio/resume.html"),
     ("portfolio-starintel", "/portfolio/projects/starintel.html"),
     ("portfolio-prolog-rlm", "/portfolio/projects/prolog-rlm.html"),
     ("portfolio-about", "/portfolio/about.html"),
