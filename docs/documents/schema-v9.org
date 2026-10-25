@@ -1,83 +1,63 @@
 :PROPERTIES:
 :ID: docs-documents-schema
 :END:
-#+title: The StarLang 0.10.1 document model
-#+date: [2026-09-03 Thu]
-#+description: Typed StarIntel documents, provenance metadata, and the design invariants that make records auditable.
-#+slug: document-model-v9
+#+title: StarIntel v0.9 document contract
+#+date: [2026-10-25 Sun]
+#+description: How the StarIntel v0.9 document contract separates its release profile from the immutable base schema.
+#+slug: documents/schema-v9
 #+filetags: :docs:documents:schema:
 #+status: POST
-#+revision: 2
+#+revision: 3
 
-StarIntel models knowledge as typed documents rather than freeform rows.
-The pinned StarLang 0.10.1 generated release defines the persistent document
-inventory. Its authority is =specs/starintel/0.10.1/core.star= at the immutable
-revision recorded by the pinned Python runtime's =schema/starintel-schema.lock.json=.
-Transient helper records are not persistent document kinds. Each record uses flat lowerCamelCase
-fields, including required =id=, =dataset=, =dtype= and =schemaVersion=.
-Specific types add their own required fields. The findings adapter validates
-current records through the immutable Python consumer; historical =_id=
-records remain read-only compatibility inputs and are never relabeled.
+StarIntel consumers do not all select the same document release. This page
+describes the v0.9 contract selected by the main-site consumer lock in
+=starintel-labs/website/packages/starintel-doc/schemas/starintel-schema.lock.json=.
+That lock records *release/profile 0.9.1* and *base schema 0.9.0*.
 
-The filename and public slug remain stable so existing links keep working.
+Those numbers describe different things. The release profile identifies the
+consumer contract, while the base schema identifies the immutable wire-schema
+family. A consumer can therefore use release 0.9.1 while continuing to
+validate documents against the 0.9.0 base schema and its additive profile.
 
-* Design invariants
+* What the contract provides
 
-- Provenance, sources and assessment fields are governed by the selected generated type.
-- Schema validation is strict and pinned to the generated StarLang release.
-- Publication is gated: approval state is machine-checked, with evidence.
-- Storage is CouchDB; routing is RabbitMQ topic exchanges; supervision is
-  Sento actors; the whole stack builds reproducibly under Nix.
+The contract gives producers and consumers a shared structure for typed
+documents, including their identity, dataset, sources, evidence, and
+assessment. Type-specific fields are checked against the selected schema.
+Consumers pin the lock and validate against that exact contract instead of
+choosing a version from a filename or a documentation title.
 
-* Document kind families
+For the StarIntel v0.9 family:
 
-The document kinds group into families. The exact enumeration lives in
-StarLang's generated portable manifest; this table maps common families to their
-role in an investigation:
+- The website lock selects release/profile =0.9.1=.
+- The same lock identifies base schema =0.9.0=.
+- The immutable schema filename remains =starintel-doc-v0.9.0.schema.json=.
+- Additive profile changes do not rename or replace that base schema.
 
-| Family        | Role                                        |
-|---------------+---------------------------------------------|
-| sources       | raw material exactly as collected           |
-| entities      | canonical people, orgs, accounts, hosts     |
-| claims        | atomic assertions, kept separable           |
-| evidence      | links between claims and sources            |
-| relations     | typed edges, visibly inferred or sourced    |
-| activities    | what an actor did, with which inputs        |
-| assessments   | analyst judgments, with provenance          |
+* Why another page mentions 0.10.1
 
-* Why claims stay separable
+StarLang 0.10.1 is a separate contract used by the Auto Dig findings adapter.
+It is not the release selected by the website's v0.9 lock. The adapter page
+describes that consumer and its own version boundary:
 
-A graph edge should not become a fact because it looks convincing on
-screen. Keeping claims, evidence, relations, and activities as distinct
-kinds means:
+- [[https://docs.starintel.actor/documents/star-lang-0.10.1.html][StarLang 0.10.1 findings-adapter input]]
 
-1. two sources can disagree without one silently overwriting the other
-2. a fuzzy match stays visibly fuzzy
-3. an inferred relationship stays visibly inferred
-4. a retracted input can invalidate derived results instead of leaving
-   them looking current
+Keep the consumer and its lock beside every version claim. The string
+=0.10.1= is not a replacement for the website's pinned v0.9 profile.
 
-* Provenance in practice
+The lock's canonical source is
+=lost-rob0t/starintel-gpt-auto-dig@6479c0a9dc88ce9fed183515fc4df5d245de0b3a=.
 
-Even the simplest adapter output keeps its provenance. The change records
-produced by the editorial desk's Git adapter carry the repository, commit,
-timestamp, author, subject, changed files, and comparison range — raw
-facts, serializable, testable without a model:
+* Compatibility rules
 
-#+begin_src json
-{
-  "repository": "starintel-server",
-  "commit": "0df7c4f",
-  "timestamp": "2026-08-29T06:55:26Z",
-  "author": "N545PY",
-  "subject": "feat: nsaspy site org sources, launch post",
-  "changed_files": ["nsaspy/about.org", "scripts/validate-web-org.py"],
-  "range": "HEAD~20..HEAD"
-}
-#+end_src
+- Validate with the consumer's pinned lock.
+- Keep =release_version= distinct from =schema_version=.
+- Treat schema filenames as immutable artifact names, not release selectors.
+- Make migrations explicit; do not relabel old records to pass validation.
+- Keep source, evidence, and uncertainty attached to derived conclusions.
 
 * Related
 
-- [[id:nsaspy-project-starintel][StarIntel project page]] — the platform summary.
-- [[id:docs-server-ingest][Ingest and dataflow recursion]] — how documents move through the runtime.
-- [[id:intro-what-is-starintel][What Is StarIntel]] — the narrative overview.
+- [[https://nsaspy.starintel.actor/projects/starintel.html][StarIntel project overview]]
+- [[https://docs.starintel.actor/documents/star-lang-0.10.1.html][StarLang 0.10.1 findings-adapter input]]
+- [[id:docs-server-ingest][Ingest and dataflow recursion]]

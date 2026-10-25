@@ -5,7 +5,7 @@
 #+date: [2026-08-28 Fri]
 #+description: Website platform bootstrap: monorepo, design system, Org publishing pipeline.
 #+slug: 2026-08-28
-#+filetags: :nsaspy:daily:starintel:website:human:
+#+filetags: :nsaspy:daily:starintel:website:
 
 * Website platform bootstrap
 

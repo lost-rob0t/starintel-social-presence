@@ -4,7 +4,7 @@
 #+title: prolog-rlm
 #+description: Prolog reasoning and research-approval machinery that gates StarIntel publication.
 #+slug: prolog-rlm
-#+filetags: :nsaspy:projects:prolog:rlm:human:
+#+filetags: :nsaspy:projects:prolog:rlm:
 
 * prolog-rlm
 

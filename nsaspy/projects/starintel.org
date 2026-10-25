@@ -2,32 +2,69 @@
 :ID: nsaspy-project-starintel
 :END:
 #+title: StarIntel
-#+description: Local-first, document-driven intelligence platform: symbolic AI, actors, structured documents.
+#+description: An intelligence platform that turns sourced information into typed records, investigations, and reviewable conclusions.
 #+slug: starintel
-#+filetags: :nsaspy:projects:starintel:human:
+#+filetags: :nsaspy:projects:starintel:
 
 * StarIntel
 
-A local-first, document-driven intelligence platform. StarIntel models
-knowledge explicitly, orchestrates work with actors, and verifies outcomes
-with Prolog.
+StarIntel is a local-first intelligence platform for collecting information,
+keeping its sources attached, and turning it into conclusions that people can
+inspect. It combines a typed document model, supervised actors, research
+tools, and explicit verification and approval steps.
 
-** Components
+The platform is built as cooperating projects. Each project owns a specific
+part of the work, while shared document contracts and recorded provenance let
+their outputs connect without hiding where a claim came from.
 
-| Component | Role | Implementation |
-|-----------------------+-------------------------------------------+----------------|
-| starintel-server | ingest, persistence, search, actor routing | Common Lisp |
-| StarIntel v0.9 model | fifty typed document kinds + provenance | JSON Schema, polyglot |
-| Quasar | operator graph workspace | TypeScript |
-| Auto Dig | autonomous OSINT investigations | Nim |
-| Auto Research | autonomous research with approval gates | Python, Org |
-| prolog-rlm | reasoning + approval verification | Prolog |
-| star-cl | document contract in Common Lisp | Common Lisp |
+* How the platform works
 
-** Design invariants
+1. *Collect*: actors gather records and retain source references, collection
+   context, and timestamps.
+2. *Structure*: documents use declared types and pinned contracts so that
+   consumers can validate what they read.
+3. *Investigate*: Auto Dig follows a bounded investigation plan; Quasar gives
+   operators a graph workspace for reviewing documents and relationships.
+4. *Review*: Prolog rules check workflow state and declared invariants.
+   Research remains a proposal until the required human approval is recorded.
+5. *Publish*: accepted material moves through an explicit, provenance-bearing
+   publication path.
 
-- Every document carries sources, evidence, and assessment metadata.
-- Schema validation is strict and pinned (v0.9, additive compatibility).
-- Publication is gated: approval state is machine-checked, with evidence.
-- Storage is CouchDB; routing is RabbitMQ topic exchanges; supervision is
-  Sento actors; the whole stack builds reproducibly under Nix.
+* Projects
+
+| Project | Responsibility |
+|---------+----------------|
+| starintel-server | API, ingestion, persistence, search, and actor routing |
+| StarLang | Canonical language and StarIntel document-contract authority |
+| Quasar | Operator workspace for inspecting documents and graph relationships |
+| Auto Dig | Bounded OSINT investigations and their document corpus |
+| Auto Research | Research plans, status, and approval semantics |
+| prolog-rlm | Reusable Prolog reasoning and verification runtime |
+
+* Document contracts
+
+StarIntel has more than one pinned document consumer, so a version number only
+has meaning alongside the contract and consumer that selected it. The platform
+document page explains the website's v0.9 contract: release 0.9.1 over the
+immutable 0.9.0 base schema. A separate page describes the StarLang 0.10.1
+records read by the social-presence findings adapter.
+
+- [[https://docs.starintel.actor/documents/schema-v9.html][StarIntel v0.9 document contract]]
+- [[https://docs.starintel.actor/documents/star-lang-0.10.1.html][StarLang 0.10.1 findings-adapter input]]
+
+* Operating principles
+
+- *Provenance stays with the record.* Sources, evidence, and assessment are
+  available to downstream reviewers.
+- *Unknown is not verified.* Validation and approval state must be explicit.
+- *Automation has boundaries.* Workers can collect and propose; publication
+  follows its declared review gate.
+- *Contracts are pinned.* Consumers select a release from their repository
+  lock and preserve compatibility deliberately.
+- *Results remain inspectable.* Plans, outputs, and checks are kept as data
+  that operators can revisit.
+
+* Explore
+
+- [[https://docs.starintel.actor/][Documentation]]
+- [[https://blog.starintel.actor/llm-repo-tour.html][Repository tour]]
