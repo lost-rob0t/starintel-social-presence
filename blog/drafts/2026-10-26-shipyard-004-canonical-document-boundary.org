@@ -1,0 +1,112 @@
+:PROPERTIES:
+:ID: blog-shipyard-004
+:END:
+#+title: Shipyard #004: A Document Contract That Reaches the Server
+#+date: [2026-10-26 Mon]
+#+description: StarIntel's generated 0.10.1 contract reaches ingestion and Target dispatch, with October 25 synthetic producers and the integration proof still owed.
+#+slug: shipyard-004-canonical-document-boundary
+#+tags: starintel shipyard contracts server testing
+#+status: DRAFT
+#+revision: 1
+
+A producer can generate valid JSON and still send the wrong document.
+
+That has been a practical migration problem for StarIntel. A collector, a Common Lisp actor, and a Python tool can agree on a document type while disagreeing about its envelope, field names, or revision. The disagreement becomes harder to find once the record has been stored and another component starts building on it.
+
+The 0.10.1 server work puts an executable contract at those handoffs. StarLang owns the generated document definition; the server consumes it through the maintained =star-cl= library. Producers have something precise to satisfy, and the server checks what arrives.
+
+This installment follows that contract from ingestion through Target dispatch, then looks at the fictional-world producer merged on October 25. The distinction that matters throughout is how far each test actually travels.
+
+* Validation reaches the write paths
+
+[[https://github.com/lost-rob0t/starintel-server/pull/313][Server PR #313]], merged October 10 as [[https://github.com/lost-rob0t/starintel-server/commit/ca6fdcbdc1f3b8aa344c533a40d298f741a54f25][ca6fdcbd]], adopted the generated flat, lowerCamelCase 0.10.1 contract. Its scope includes HTTP document input and bulk ingestion, RabbitMQ document mutations, and updates.
+
+The server pins =star-cl= at =33935f1e6739b0015926a2a163ba55cf203fbc9d=, with StarLang authority =96d26c338078676ec1dc6928755901636c9f7ef0=. The dependency brings an 18-file generated schema closure. Advertised concrete document schemas come from that contract rather than a fixed count maintained inside the server.
+
+A small example from the PR's regression suite makes the envelope change visible:
+
+#+begin_src json
+{
+  "id": "canonical:person",
+  "dataset": "canonical-tests",
+  "dtype": "person",
+  "schemaVersion": "0.10.1",
+  "fname": "Ada"
+}
+#+end_src
+
+This is the canonical Person fixture used by that suite, not a template for every document type. Each concrete type has its own requirements.
+
+The tests reject an added legacy =_id= field on canonical HTTP input. They also reject an invalid enum value on a wireless-network document. At the Rabbit mutation boundary, an invalid canonical timestamp is rejected before the persistence callback runs. These checks make failures observable at the point where the server still has enough context to explain them.
+
+Updates need the same discipline. A patch can look harmless on its own and produce an invalid stored record after merging. The update path validates the resulting state and rejects attempts to change canonical identity or schema version. Checking only the incoming fragment would leave that hole open.
+
+Source: [[https://github.com/lost-rob0t/starintel-server/blob/ca6fdcbdc1f3b8aa344c533a40d298f741a54f25/t/v0101-runtime-test.lisp][0.10.1 boundary regression suite]].
+
+* Storage metadata stays at storage
+
+CouchDB still needs its own identity and revision fields. Document producers should not have to treat the database envelope as the interchange format.
+
+The server maps canonical identity at the storage boundary. On canonical output it removes storage-only fields and projects the revision into the canonical representation. A caller gets =id= and, where present, =rev= rather than having to interpret =_id= and =_rev= as document fields.
+
+The follow-up [[https://github.com/lost-rob0t/starintel-server/pull/326][PR #326]], merged as [[https://github.com/lost-rob0t/starintel-server/commit/bf400c232b2bb87c080203e0f8face44cd4ae3cc][bf400c23]], also repaired raw document and search readback so JSON false, null, and empty collections retain their distinct meanings. Its public projection removes the server-owned =_server_outbox= and =_server_mutations= extension keys while retaining caller extensions. Stored evidence is left intact.
+
+That matters to round trips. A producer cannot reason reliably about its output if reading the record back silently changes false into null or an empty collection into another value.
+
+* Legacy remains a named boundary
+
+Existing historical records do not become 0.10.1 documents because a server dependency changed.
+
+The retained constructors explicitly load =starintel-legacy= and use =STARINTEL.LEGACY=. Historical HTTP normalization keeps its historical schema version. The retired =SPEC= alias is not restored.
+
+This makes compatibility visible in the code that uses it. It also prevents a version label from implying a conversion that never happened.
+
+The historical URL extractor shows why this separation needs teeth. It rejects canonical input before constructing legacy URL or relation documents, serializing them, or publishing them. The rejection tests include canonical keys with null or empty values: checking only whether a value is truthy would miss those inputs.
+
+Canonical matcher replacement remains separately owned by [[https://github.com/lost-rob0t/starintel-server/issues/44][issue #44]]. The CLI MOP generator remains explicitly legacy too. Keeping those paths available does not establish that every active producer has migrated.
+
+Source: [[https://github.com/lost-rob0t/starintel-server/blob/bf400c232b2bb87c080203e0f8face44cd4ae3cc/docs/canonical-compatibility.md][canonical and retained legacy boundaries]].
+
+* Target dispatch has its own proof
+
+The original ingestion change left Target construction and dispatch to a dependent implementation. PR #326 subsequently merged, so describing that entire path as unfinished would now be stale.
+
+It constructs generated flat Targets with object-valued =options= and validates canonical dispatch without CouchDB envelope fields. =InvestigationTarget= retains its separately generated array-options contract. Similar names do not make those payloads interchangeable.
+
+Durable retries compare typed semantic content, including dataset and nested options, alongside routing and tenant scope. Compatibility also affects request identity: a valid canonical request that encounters an existing historical acceptance key receives =409 target_idempotency_version_conflict=. The guard does not rewrite or resume that historical work. Invalid old-format payloads can fail validation with 422 before the lookup.
+
+There is a concrete cutover constraint here. Old-version HTTP writers must stop before production cutover because the read-only historical-key check cannot atomically prevent one from creating a separate historical key concurrently. A deliberately new idempotency key means new work.
+
+PR #326 records a real actor probe against its exact candidate head, including authenticated dispatch and persisted canonical output readback, same-key replay, conflict handling, and invalid input. That is stronger evidence than a broker confirmation alone. It remains evidence for the tested candidate and probe; it does not establish compatibility with every actor.
+
+* October 25: a producer with reproducible fictional worlds
+
+Today's [[https://github.com/lost-rob0t/star-synthdata/pull/6][star-synthdata PR #6]] merged as [[https://github.com/lost-rob0t/star-synthdata/commit/329008d1dcef1d9b896107e4a966b43cbf76f885][329008d1]]. It gives this contract work a useful producer-side counterpart.
+
+The offline world generator uses the pinned StarLang-generated Python 0.10.1 SDK. Each output record passes its concrete validator, including semantic checks. A seed, configuration, knowledge base, and model version determine the generated bytes and identities, allowing a failing fixture to be reproduced.
+
+The worlds contain invented communities and event-driven relationships. Their social layer produces fictional group conversations and feeds using supported canonical records, with reply chains and channel-author permissions checked by the validator. Review repairs require collaboration relations to cite a shared event with the right participants and timing.
+
+The value is in having records whose expected relationships are known. A fixture can deliberately lose observed relation records while retaining a separate truth snapshot. A consumer can then be tested against a known input instead of an unexplained pile of plausible-looking JSON. The model remains uncalibrated; generated activity is not a measured account of real communities.
+
+The merged implementation includes an isolated SQLite import that validates the bundle, commits records and references, closes and reopens the database, then checks full readback equality. The [[https://github.com/lost-rob0t/star-synthdata/actions/runs/40215325147][post-merge run]] passed Python 3.11, Python 3.12, and Nix checks.
+
+That round trip ends at SQLite. The generator has no live ingestion command, and this change does not prove its bundles traverse the Lisp server, RabbitMQ, and supported client together. That is a useful next acceptance test precisely because its inputs can now be reproduced.
+
+Also added today: [[https://github.com/lost-rob0t/starintel-sources/commit/1c7a8caf2ec0bf1379fc4c61ca598559ebdbf366][starintel-sources 1c7a8caf]] organizes public locators by topic and election year, retaining row-level provenance and verification status. Locator identity is kept distinct from verified community identity; an advertised invitation is not proof of current access. The catalog supplies research references, not an installed collector or a demonstrated canonical ingestion path.
+
+* The remaining integration work is measurable
+
+The October 20 readiness work adds further checks around the document pipeline. [[https://github.com/lost-rob0t/starintel-server/pull/346][PR #346]] records a clean-instance CouchDB restore drill using synthetic records and a binary attachment. That drill excludes revision/conflict history and full server/client recovery. [[https://github.com/lost-rob0t/starintel-server/pull/345][PR #345]] adds a private two-tenant HTTP probe, but its recorded validation explicitly leaves the live probe unrun.
+
+[[https://github.com/lost-rob0t/starintel-server/commit/23947111fdbf086850762d3b04666b54c1b1118d][The authenticated-search fix]] rejects queries longer than 512 characters before authorized query construction. Its documentation still calls for exact-head hosted verification; a text-length cap alone says little about backend execution time.
+
+[[https://github.com/lost-rob0t/starintel-server/pull/347][PR #347]] tightens release evidence and replaces mutable version publication with full-SHA candidates. The verifier checks evidence structure and digests; independent inspection of logs and live results remains necessary.
+
+Those limits give [[https://github.com/lost-rob0t/starintel-server/issues/343][the readiness milestone]] a concrete job. The remaining proof must connect a representative producer through authenticated transport to persisted client readback, exercise retry and forced-crash behavior, and verify recovery and tenant isolation on the release candidate. The new synthetic generator is a candidate input for that work, not evidence that the work has already passed.
+
+The contract now reaches several places where StarIntel accepts or changes a document. The next integration result should identify the exact producer, server revision, and path exercised, so another developer can run it again.
+
+#+begin_quote
+AI provenance: drafted from repository files, merged PRs, and linked verification records inspected on 2026-10-25 for the October 26 writing commitment. Test outcomes above are attributed to those records; they were not rerun as part of writing this article. Editorial review and publication remain pending.
+#+end_quote
