@@ -121,6 +121,14 @@ def build_site(
     posts = _scan_section(repo_root / "blog" / "posts", "blog", "/blog/")
     drafts = _scan_section(repo_root / "blog" / "drafts", "blog", "/drafts/", force_draft=True)
     docs = _scan_section(repo_root / "docs", "docs", "/docs/")
+    archive_file = repo_root / "docs/archive.json"
+    archived_paths = set(json.loads(archive_file.read_text())) if archive_file.exists() else set()
+    docs = [
+        dataclasses.replace(
+            doc, archived=doc.path.relative_to(repo_root / "docs").as_posix() in archived_paths
+        )
+        for doc in docs
+    ]
     portfolio = _scan_section(repo_root / "nsaspy", "portfolio", "/portfolio/")
 
     sources = docs_sources if docs_sources is not None else externals or []
@@ -189,6 +197,14 @@ def build_site(
         fragment_html = _rewrite_links(
             fragment_html, doc.path, url_of_source, repo_root, anchors
         )
+        if doc.path == repo_root / "docs/index.org":
+            for archived in model.docs:
+                if archived.archived:
+                    fragment_html = re.sub(
+                        r'<a href="' + re.escape(archived.url) + r'">.*?</a>',
+                        '<a href="https://spec.starintel.actor/latest/">Current StarIntel specification</a>',
+                        fragment_html,
+                    )
         render.set_page_vhost(doc.vhost_name())
         page = _render_doc_page(doc, fragment_html, model, graph_model)
         target = _out_path(out_dir, bases, doc.vhost_name(), doc.url)
@@ -225,6 +241,20 @@ def build_site(
             SiteModel(docs=docs)
         ))
         pages_written += 1
+
+    render.set_page_vhost("docs")
+    archived_docs = [d for d in model.docs if d.archived]
+    archive_links = "".join(
+        f'<li><a href="{render.esc(d.url)}">{render.esc(d.title)}</a></li>'
+        for d in archived_docs
+    )
+    _write_out(out_dir, bases, "docs", "versions.html", render.page_shell(
+        "Older documentation", "Historical documentation retained for existing consumers",
+        '<div class="shell"><h1>Older documentation</h1>'
+        '<p><a href="https://spec.starintel.actor/latest/">Current specification</a> · '
+        '<a href="https://spec.starintel.actor/versions.json">Spec releases</a></p>'
+        f'<ul>{archive_links}</ul></div>', active="docs", draft=True))
+    pages_written += 1
 
     extra_pages = [
         d for d in portfolio if "/projects/" not in d.path.as_posix()

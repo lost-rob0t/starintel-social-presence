@@ -313,3 +313,11 @@ Generated drafts must be labeled by workflow/context, and factual claims must re
 ## Status
 
 Phase 0 establishes the environment, contracts, deterministic readers, tutorial IR/rendering slice, Emacs package/exporter, skill installer, tests, and documentation. Autonomous social posting is deliberately out of scope.
+
+The primary navigation and docs sidebar use
+[`spec.starintel.actor/latest/`](https://spec.starintel.actor/latest/) for the
+current canonical specification, so release changes do not require hardcoded
+version links. `docs/archive.json` lists superseded editorial pages: the builder
+keeps their original URLs with an archive notice, removes them from default
+navigation, graph, and sitemap, and lists them on `/versions.html`. Existing
+consumer-specific documentation stays readable without becoming the default.

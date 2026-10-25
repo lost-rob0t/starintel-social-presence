@@ -105,6 +105,7 @@ def _header(active: str) -> str:
         f'{" aria-current=\"page\"" if key == active else ""}>{label}</a>'
         for key, vh, href, label in _NAV_LINKS
     )
+    items += '<a href="https://spec.starintel.actor/latest/">Spec</a>'
     home = f"{vbase('www')}/index.html" if vbase("www") else "/index.html"
     return (
         f'<header class="site-header"><div class="site-header__inner">'
@@ -465,6 +466,8 @@ def docs_sidebar(docs: list[SourceDoc], current: SourceDoc | None) -> str:
     """Nested navigation grouped by first-level directory."""
     groups: dict[str, list[SourceDoc]] = defaultdict(list)
     for doc in docs:
+        if doc.archived:
+            continue
         if doc.origin.startswith("repo:"):
             group = doc.origin[5:]
         elif doc.url.split("://", 1)[-1].startswith("/docs/external/"):
@@ -474,9 +477,13 @@ def docs_sidebar(docs: list[SourceDoc], current: SourceDoc | None) -> str:
         groups[group].append(doc)
     roots = [
         d for d in docs
-        if d.path.parent.name == "docs" and not d.url.endswith("/docs/index.html")
+        if not d.archived and d.path.parent.name == "docs" and not d.url.endswith("/docs/index.html")
     ]
-    html_parts = ['<div class="docs-sidebar" role="navigation">']
+    html_parts = [
+        '<div class="docs-sidebar" role="navigation">',
+        '<p><a href="https://spec.starintel.actor/latest/">Current specification</a></p>',
+        f'<p><a href="{vbase("docs")}/versions.html">Older documentation</a></p>',
+    ]
     if roots:
         html_parts.append('<div class="docs-sidebar__title">Documentation</div><ul>')
         for doc in sorted(roots, key=lambda d: d.title):
@@ -512,7 +519,7 @@ def docs_sidebar(docs: list[SourceDoc], current: SourceDoc | None) -> str:
 
 
 def docs_landing(model: SiteModel) -> str:
-    cards = [post_card(d, kicker="docs") for d in model.docs]
+    cards = [post_card(d, kicker="docs") for d in model.docs if not d.archived]
     body = (
         '<div class="shell shell--wide">'
         + breadcrumbs([("Home", home_url()), ("Docs", None)])
@@ -548,6 +555,9 @@ def docs_page(
         + f'<p class="page-lead">{esc(doc.description)}</p>'
         + meta_row(doc)
         + "</header>"
+        + ('<p class="page-lead" role="note">Archived documentation. '
+           '<a href="https://spec.starintel.actor/latest/">Read the current specification</a>.</p>'
+           if doc.archived else '')
         + _fragment_document(doc, fragment_html)
         + "</article>"
         + '<div class="article-footer">'
@@ -555,7 +565,7 @@ def docs_page(
         + "</div>"
         + "</div></div>"
     )
-    return page_shell(doc.title, doc.description, body, active="docs")
+    return page_shell(doc.title, doc.description, body, active="docs", draft=doc.archived)
 
 
 def graph_page(model: GraphModel) -> str:

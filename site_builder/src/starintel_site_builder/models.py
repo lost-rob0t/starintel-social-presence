@@ -24,6 +24,7 @@ class SourceDoc:
     url: str = ""  # site-relative URL of the rendered page
     human: bool = False  # tagged :human: -> the editor's own writing
     origin: str = ""  # "" = this desk; "repo:<name>" = aggregated from a repo
+    archived: bool = False
     vhost: str = ""  # www | blog | docs | nsaspy (empty -> derived from section)
 
     @property
@@ -96,7 +97,7 @@ class SiteModel:
     portfolio: list[SourceDoc] = field(default_factory=list)
 
     def all_published(self) -> list[SourceDoc]:
-        return [*self.posts, *self.docs, *self.portfolio]
+        return [*self.posts, *(d for d in self.docs if not d.archived), *self.portfolio]
 
     def all_including_drafts(self) -> list[SourceDoc]:
         return [*self.posts, *self.drafts, *self.docs, *self.portfolio]
