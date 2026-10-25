@@ -479,10 +479,11 @@ def docs_sidebar(docs: list[SourceDoc], current: SourceDoc | None) -> str:
         d for d in docs
         if not d.archived and d.path.parent.name == "docs" and not d.url.endswith("/docs/index.html")
     ]
+    archive_url = f'{vbase("docs")}/versions.html' if vbase("docs") else "/docs/versions.html"
     html_parts = [
         '<div class="docs-sidebar" role="navigation">',
         '<p><a href="https://spec.starintel.actor/latest/">Current specification</a></p>',
-        f'<p><a href="{vbase("docs")}/versions.html">Older documentation</a></p>',
+        f'<p><a href="{archive_url}">Older documentation</a></p>',
     ]
     if roots:
         html_parts.append('<div class="docs-sidebar__title">Documentation</div><ul>')

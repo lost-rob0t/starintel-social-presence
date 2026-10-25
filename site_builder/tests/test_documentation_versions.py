@@ -12,6 +12,7 @@ def test_old_documentation_is_retained_but_not_default(fake_repo, tmp_path):
     assert 'noindex' in archived
     assert 'https://spec.starintel.actor/latest/' in archived
     current = (out / 'docs/fixture-docs.html').read_text()
+    assert 'href="/docs/versions.html"' in current
     assert 'href="/docs/sub/nested.html"' not in current
     assert 'href="https://spec.starintel.actor/latest/">Spec</a>' in current
     assert 'href="/docs/sub/nested.html"' in (out / 'docs/versions.html').read_text()
