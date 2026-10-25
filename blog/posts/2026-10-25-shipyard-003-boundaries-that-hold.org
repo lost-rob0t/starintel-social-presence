@@ -1,0 +1,85 @@
+:PROPERTIES:
+:ID: 92c15c2e-f4ff-4fb0-a35c-f76fd2a9d2b4
+:END:
+#+TITLE: The StarIntel Shipyard #003 — Boundaries That Hold
+#+CREATED: [2026-10-25 Sun 00:37]
+#+LAST_MODIFIED: [2026-10-25 Sun 00:37]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: blog
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: User-approved publication in Codex, 2026-10-25; source references and factual scope retained from the reviewed Mara draft.
+#+AI_GENERATED: t
+#+AI_TAG: ai_43906b79b6fdf0ec
+#+FILETAGS: :ai:ai_43906b79b6fdf0ec:starintel:shipyard:actors:security:publication:
+
+#+date: [2026-10-25 Sun]
+#+description: StarIntel Shipyard 003: named actor accounts, scoped anonymous reads, and a publication guard that checks the generated site.
+#+slug: shipyard-003-boundaries-that-hold
+#+tags: starintel shipyard actors security publication
+#+status: POST
+#+revision: 3
+
+I want to be able to inspect a failed actor target without finding a bot token in it.
+
+Targets get queued, logged, retried, and read back while somebody works out what went wrong. A credential tucked into the target travels along for all of that. Selecting an account by name gives the worker a way to get what it needs without putting the secret in the job.
+
+That is the most useful thread I found for this Shipyard. Since [[https://blog.starintel.actor/blog/shipyard-002-contracts-telemetry-research.html][Shipyard 002]], StarIntel has merged account selection for actors, narrower anonymous reads, and a check on what the site builder exports. Each change gives us a particular boundary to inspect.
+
+* Name the account in the target
+
+The server's optional actor-credentials add-on resolves an actor, a named account, and a credential type through a private provider configured by the operator.
+
+The worker calls =actor-credentials.resolve= through the published client contract. Before asking the provider for anything, the server requires a service principal and checks its operation, actor, account, and credential-type scopes. Successful responses use =Cache-Control: no-store=. Provider failures return generic errors.
+
+I care about the order. A request that is going to be denied should never reach the secret provider.
+
+The matching Discord worker change adds an =account_id= selector to targets. The worker resolves the selected bot account when it runs, rejects target options that carry credentials, and separates checkpoints by account and channel. When no account is selected, the existing environment-token path remains available.
+
+The target can now say which account should do the work. The operator still owns the configuration that supplies its credential.
+
+Sources: [[https://git.starintel.actor/starintel-labs/starintel-server/commit/9840a43d0ce80d072fe733600d1a81c39980b7cc][server credential add-on]] and [[https://git.starintel.actor/starintel-labs/starintel-pro-actors/commit/b4e6817da9763414693d52c447674d0b498c5a5d][Discord account selection]]. Both are merged implementations. Their presence in Git does not establish that a deployment has enabled the add-on or configured a provider.
+
+* Check what an anonymous reader can see
+
+The anonymous search and statistics routes now select the server-owned public workspace and an explicit list of approved datasets. The deployment setting is =STAR_PUBLIC_SEARCH_DATASETS=. Missing, empty, or wildcard configuration returns 503.
+
+Public statistics use a reduce view keyed by workspace, dataset, and document type. The anonymous path no longer uses the global aggregates. Deploying that change includes installing the updated database design document and checking anonymous behavior before removing a proxy guard. A document's visibility tag alone does not grant public API access.
+
+Source: [[https://git.starintel.actor/starintel-labs/starintel-server/commit/76be395de8179b0ee0fa9b4c10f944504077818c][anonymous read boundary]].
+
+There is a recorded statistics mismatch to follow up here. The server KB reports a public count that disagrees with storage. I would not read a zero from that API as proof that the selected dataset is empty. The count needs to agree with the scoped database view after persisted writes.
+
+Authenticated reads have separate unfinished work. The proposed rule allowing a user's own workspace plus shared public reads is still documented as a future contract.
+
+Sources: [[https://git.starintel.actor/starintel-labs/starintel-server/commit/bdd9457c8751b8c8507daf53430b422218be4e92][recorded statistics mismatch]] and [[https://git.starintel.actor/starintel-labs/starintel-server/commit/839c03c0cedd3876348c01bb9a479552d8e787dd][future authenticated read contract]].
+
+* Inspect the exported files
+
+The social-presence builder screens imported documentation for internal workspace identifiers, then checks the generated output again before accepting the build.
+
+It examines paths and file contents, decodes HTML entities and escaped characters, and checks HTML text with the markup removed. Splitting an identifier across formatting does not automatically get it past the check. A detected match stops the build and identifies the offending output.
+
+That last check is useful because the exported files are what a reader will receive. Reviewing the Org source is one step; inspecting the result catches transformations that are easy to miss while editing.
+
+Source: [[https://git.starintel.actor/starintel-labs/starintel-social-presence/commit/c76baca5c9b28db2e3925cbdfe6c82b2edcabcfd][site publication guard]].
+
+For the next report, I want to follow one named-account target through a deployment: confirm that the worker resolves only the authorized credential, then read back the documents it produced. After that, exercise anonymous reads with approved public data and a matching private document. The private document must stay absent, and the public count must agree with storage.
+
+Those checks would tell us how the pieces behave together. This entry records the merged code and the work still needed to establish that behavior.
+
+* Editorial evidence :noexport:
+
+Generated by Mara at the user's request on 2026-10-25 and rewritten at the user's request in the registered =post/shipyard-003= worktree. This rewrite retains the original draft's source references and factual scope. No live actor, credential-provider, or anonymous-API acceptance run was performed for the article.
+
+Source heads recorded during the original draft's review:
+
+| Repository | Branch | Observed head |
+|------------+--------+---------------|
+| starintel-server | master | 16d3fbc0061e672e82053e2ba8c1711889e2cf1d |
+| starintel-pro-actors | main | 4270a0da8ea071e25964f02c972bbeede49dd9c7 |
+| starintel-social-presence | main | b5c3f51c7f3ee1bb83a25a435e59a3740087d946 |
+
+The original review used committed source rather than modified server working files. The source checkouts were left intact. This article makes no claim that the actors' pinned document contract is aligned with a live server deployment.
+
+Publication authorized by the user in this Codex chat on 2026-10-25.
