@@ -4,7 +4,7 @@
 #+title: Resume
 #+description: nsaspy - systems and intelligence tooling engineer. Common Lisp, Nim, Prolog, Python, Elisp.
 #+slug: resume
-#+filetags: :nsaspy:resume:human:
+#+filetags: :nsaspy:resume:
 
 * nsaspy
 

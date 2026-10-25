@@ -1,0 +1,55 @@
+:PROPERTIES:
+:ID: docs-documents-star-lang-0101
+:END:
+#+title: StarLang 0.10.1 findings-adapter input
+#+date: [2026-10-25 Sun]
+#+description: The separate StarLang 0.10.1 contract read by the Auto Dig findings adapter, and how it differs from the platform v0.9 profile.
+#+slug: documents/star-lang-0.10.1
+#+filetags: :docs:documents:star-lang:schema:
+#+status: POST
+#+revision: 1
+
+StarLang 0.10.1 is a distinct document contract. In this repository it is
+used by the read-only Auto Dig findings adapter, which reads canonical flat
+records and validates them through its pinned =starintel-doc= runtime. This
+page documents that specific consumer; it does not describe the release
+selected by every StarIntel service.
+
+The 0.10.1 release lock identifies both release and base schema as =0.10.1=.
+The authoritative generated contract is owned by StarLang. The findings
+adapter selects it through the immutable =starintel-doc= dependency declared
+in =auto_findings/pyproject.toml=.
+
+* Record shape
+
+Canonical records use flat lowerCamelCase fields. The adapter requires
+=id=, =dataset=, =dtype=, and =schemaVersion= before it treats a record as a
+current StarLang record. The selected dtype defines additional fields.
+
+The adapter preserves a record as an editorial candidate. It carries through
+the source path, identifiers, type, dataset, title or summary, and references
+to sources. It does not infer that two records are related simply because
+they appear near one another in a graph.
+
+* Legacy records
+
+Historical records with =_id= follow a separate read-only compatibility path.
+They remain marked as historical input; the adapter does not rename =_id= to
+=id= or relabel the record as a current 0.10.1 document.
+
+* Keep the version boundaries clear
+
+The website's StarIntel document lock selects release/profile =0.9.1= over
+base schema =0.9.0=. This findings adapter consumes StarLang 0.10.1 under a
+different dependency lock. Neither number should be copied to another
+consumer without checking that consumer's lock.
+
+- [[https://docs.starintel.actor/documents/schema-v9.html][StarIntel v0.9 document contract]]
+- [[https://nsaspy.starintel.actor/projects/starintel.html][StarIntel project overview]]
+
+* Source authority
+
+- StarLang 0.10.1 lock: =spec/starintel-doc/schema/starintel-schema.lock.json=
+- Canonical repository and commit: =nsaspy/star-lang@919833266723edc9bddb337d606f72ae25fb8ced=
+- Findings adapter dependency: =auto_findings/pyproject.toml=
+- Findings adapter implementation: =auto_findings/src/starintel_auto_findings/adapter.py=

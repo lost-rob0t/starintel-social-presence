@@ -4,7 +4,7 @@
 #+title: About
 #+description: nsaspy - builder of StarIntel, a symbolic AI intelligence platform.
 #+slug: about
-#+filetags: :nsaspy:about:human:
+#+filetags: :nsaspy:about:
 
 I build *StarIntel*: a local-first, document-driven intelligence platform.
 The thesis is simple: language models are useful components, but reasoning,
