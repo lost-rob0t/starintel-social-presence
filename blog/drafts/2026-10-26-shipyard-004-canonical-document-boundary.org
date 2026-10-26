@@ -15,6 +15,8 @@ That has been a practical migration problem for StarIntel. A collector, a Common
 
 The current contract work puts validation at those handoffs. Today's checkpoint is about how far that validation has reached, and where the evidence still stops. The synthetic-world generator results below landed on October 25. They are background for this October 26 update, rather than another day's newly completed work.
 
+The editor reports that machine and infrastructure downtime delayed publication. That provides context for the timing of this update. The technical status below is grounded in the source revisions inspected on October 26.
+
 * A contract has to survive a round trip
 
 StarLang owns StarIntel's generated canonical document contract. Producers and the server consume that contract rather than maintaining competing definitions.
