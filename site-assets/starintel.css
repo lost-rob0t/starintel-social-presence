@@ -382,6 +382,7 @@ h1, h2, h3, h4, h5, h6 {
 .article blockquote p { margin: 0.4rem 0; }
 
 .article code {
+  overflow-wrap: anywhere;
   color: #ffe8a3;
   background: var(--panel-2);
   border: 1px solid var(--line);
