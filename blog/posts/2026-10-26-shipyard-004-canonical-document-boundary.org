@@ -1,0 +1,93 @@
+:PROPERTIES:
+:ID: d651d999-db4a-4c42-8f39-080bf108966d
+:END:
+#+TITLE: Shipyard #004: A Document Contract That Reaches the Server
+#+CREATED: [2026-10-27 Tue 19:48]
+#+LAST_MODIFIED: [2026-10-27 Tue 19:48]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: article
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: https://github.com/lost-rob0t/starintel-social-presence/blob/41ff4bb492190896d89e55e935d14c11cc2e2fc0/blog/drafts/2026-10-26-shipyard-004-canonical-document-boundary.org; editor publication authorization in Codex chat, 2026-10-27
+#+AI_GENERATED: t
+#+AI_TAG: ai_9a53c1f73e1e2109
+#+FILETAGS: :ai:ai_9a53c1f73e1e2109:starintel:shipyard:contracts:server:testing:
+
+#+date: [2026-10-26 Mon]
+#+description: An October 26 checkpoint on canonical document handoffs, October 25 synthetic-data results, and the integration proof still outstanding.
+#+slug: shipyard-004-canonical-document-boundary
+#+tags: starintel shipyard contracts server testing
+#+status: POST
+#+revision: 2
+
+A producer can generate valid JSON and still send the wrong document.
+
+That has been a practical migration problem for StarIntel. A collector, a Common Lisp worker, and a Python tool can agree about a document's subject while disagreeing about its envelope or field names. The disagreement becomes harder to find once the record has been stored and another component starts building on it.
+
+The current contract work puts validation at those handoffs. Today's checkpoint is about how far that validation has reached, and where the evidence still stops. The synthetic-world generator results below landed on October 25. They are background for this October 26 update, rather than another day's newly completed work.
+
+The editor reports that machine and infrastructure downtime delayed publication. That provides context for the timing of this update. The technical status below is grounded in the source revisions inspected on October 26.
+
+* A contract has to survive a round trip
+
+StarLang owns StarIntel's generated canonical document contract. Producers and the server consume that contract rather than maintaining competing definitions.
+
+The merged server work brings canonical checks to ingestion and updates. That matters particularly for a patch: a fragment may look harmless while producing an invalid document once merged with stored state. Validation needs to examine the resulting document as well as the incoming request.
+
+Storage adds another boundary. A database needs bookkeeping that a document producer should not have to interpret as part of the interchange format. Reading a document back should preserve the public values the producer wrote, while applying the intended public projection consistently.
+
+Target dispatch has its own proof obligation. A target describes work to perform; successful delivery says that work reached a destination. To establish useful integration, the test must follow the result through persistence and supported client readback. Replaying a request and checking conflicts are part of that story, because the same request should not quietly become unrelated work.
+
+These are descriptions of the maintained boundaries. They do not establish that every actor and every retained document format has passed the complete path.
+
+* October 25 supplied a reproducible producer
+
+The public [[https://github.com/lost-rob0t/star-synthdata/pull/6][star-synthdata PR #6]] merged October 25 at [[https://github.com/lost-rob0t/star-synthdata/commit/329008d1dcef1d9b896107e4a966b43cbf76f885][329008d1]]. It extends the existing generator with seeded, entirely fictional worlds and simulated social histories.
+
+The generator can create places, households, organizations, events, and relationships. Its Discord-like and Telegram-like structures are invented fixtures. They are not conversations collected from either service.
+
+The larger recorded run generated and validated 100,020 records for 2,000 fictional people. A separate 260-record fixture makes the relationships small enough to inspect directly. Validation means those generated records passed the generator's checks; it does not turn fictional claims into real observations.
+
+Independent review exposed two useful defects. Collaboration records could lack the required supporting event evidence, and channel-author selection could violate posting permissions. Both defects were repaired before PR #6 merged. A controlled world made it possible to state what should have happened and reproduce the counterexample.
+
+The merged generator suite had 85 tests. The [[https://github.com/lost-rob0t/star-synthdata/actions/runs/40215325147][post-merge CI record]] covers Python 3.11, Python 3.12, and Nix. Those results belong to the generator and its exercised paths.
+
+Its SQLite fixture test imports a validated bundle, closes and reopens the database, and compares the records read back. That is a useful storage test. Its endpoint is SQLite; it does not establish generator-to-StarIntel-server acceptance.
+
+* October 26: the follow-up remains a candidate
+
+The public [[https://github.com/lost-rob0t/star-synthdata/pull/8][PR #8]] addresses a different graph-validation case: a reversed duplicate symmetric relationship supplied with a direction that conflicts with its meaning.
+
+At this October 26 inspection, that PR is open and unmerged at [[https://github.com/lost-rob0t/star-synthdata/commit/f9efe3d873c485b3fcbbe9b9f7f75ae98f5992c2][f9efe3d8]]. Its recorded Python validation reports 86 tests. That number belongs to the follow-up candidate and must not replace the merged generator's 85-test result.
+
+This is a small example of why a Shipyard needs dates and exact revisions. A fix can exist, have review evidence, and still be awaiting merge. Writing about it should preserve that state.
+
+* Actor acceptance still has failures
+
+The separate actor integration effort has not established full coverage. The current inspection still finds strict readback failures, blocked controls, skipped cases, and unrun native service checks.
+
+The failure is useful information. If a worker's expected result differs from what a client reads back, a successful message delivery has not settled the question. Filtering the comparison until it passes would hide the boundary the test was intended to exercise.
+
+A server projection fix remains a candidate. Its native runtime validation and the affected actor rerun are outstanding. No new accepted actor/server result is claimed in this installment.
+
+The actor field guide being drafted alongside this post will distinguish collectors, enrichment workers, document-stream evaluators, server services, and projection workers. A single test matrix does not cover all of those just because it uses the word “actor.”
+
+* Compatibility needs an explicit limit
+
+Historical records do not become canonical documents because a dependency changes. Retained legacy paths need to say what they accept, and unsupported canonical input should fail before producing misleading output.
+
+That is also why a manifest is a description rather than a readiness certificate. Some workers have a current canonical path; others retain historical output vocabulary or have incomplete acceptance evidence. A reader should be able to find that distinction without inferring it from a green test count.
+
+The same discipline applies to research and model-assisted work. A design record is not an implemented service. A deterministic adapter test does not demonstrate a successful real-model run. This installment does not promote either into a runtime result.
+
+* The next useful result
+
+A representative acceptance test should identify its producer and server revisions, reproduce its fixture, send work through the supported authenticated path, and compare persisted client readback. It should also exercise replay, failure handling, and recovery where those guarantees are claimed.
+
+The synthetic generator gives that work repeatable input. It does not supply the missing result by itself.
+
+For October 26, the verified position is bounded: the October 25 generator change is merged, its separate graph-validation follow-up is still open, and broader actor/server acceptance remains incomplete.
+
+#+begin_quote
+AI provenance: revision 2 updates the existing Shipyard #004 draft after source and PR inspection on October 26, 2026. Public generator results are attributed to the linked records and were not rerun for this article. Server and actor capabilities are summarized without private implementation code or infrastructure details. The editor lifted the publication hold on October 27, 2026; the dated evidence and acceptance limits remain unchanged.
+#+end_quote

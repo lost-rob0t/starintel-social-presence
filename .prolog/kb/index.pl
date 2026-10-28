@@ -3,3 +3,5 @@
 :- ensure_loaded('ci.pl').
 
 :- ensure_loaded('spec_navigation.pl').
+
+:- ensure_loaded('site_operations.pl').
