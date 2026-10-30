@@ -1,0 +1,91 @@
+:PROPERTIES:
+:ID: 004ddd23-a903-45ce-b02c-8a052c7e9c03
+:END:
+#+TITLE: The StarIntel Shipyard #004 — Honest Signals
+#+CREATED: [2026-10-30 Fri 14:40]
+#+LAST_MODIFIED: [2026-10-30 Fri 15:05]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: blog
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: Drafted from merged repository state on 2026-10-30; private repositories intentionally unlinked per publication policy. Publication pending user approval in the agent chat.
+#+AI_GENERATED: t
+#+AI_TAG: ai_a870c0c51a4807e8
+#+FILETAGS: :ai:ai_a870c0c51a4807e8:starintel:shipyard:rabbitmq:observability:publication:
+
+#+date: [2026-10-30 Fri]
+#+description: StarIntel Shipyard 004: a broker restart exposed healthy-but-idle actors, so reconnects got budgets, healthchecks got heartbeats, and the spec got a hash-verifiable front door.
+#+slug: shipyard-004-honest-signals
+#+tags: starintel shipyard rabbitmq observability deployment
+#+status: POST
+#+revision: 1
+
+[[https://blog.starintel.actor/blog/shipyard-003-boundaries-that-hold.html][Shipyard 003]] ended with a wishlist: follow one named-account target through a deployment, then exercise anonymous reads against approved public data. Neither ran this week. Instead a broker restart wrote the lesson for us: twelve actor services reported healthy while consuming nothing.
+
+This entry is about signals that are allowed to fail. A health signal that cannot fail is decoration.
+
+* Twelve healthy consumers of nothing
+
+The actor fleet's broker restarted, and every consumer socket went to zero. The services stayed green. Nobody was consuming anything, and the monitoring said everything was fine, until somebody noticed the data had stopped and restarted the containers by hand.
+
+The failure was specific. The consume loop exited once on the broker-forced connection closure and never came back. Supervision treated "thread still alive" as "work still happening", which is exactly the lie a supervision layer must never tell.
+
+* The broker was half right
+
+The same week, the server's deployment stack raised the broker's =consumer_timeout= to four hours. RabbitMQ closes a consumer's channel when a delivery goes unacknowledged too long; the thirty-minute default is there to catch consumers that stall. Our deliveries were not stalled. Uncapped collector backfill windows legitimately run longer than thirty minutes, so the broker kept closing the channel and redelivering the same work in a loop.
+
+Source: [[https://git.starintel.actor/starintel-labs/starintel-server/commit/1475bd8911fd1a1487df1c4bcc3b0dd165e5f50b][server consumer_timeout change]].
+
+So the broker gets to keep its opinion: a consumer that holds a delivery for hours without progress should be suspected. The timeout now tolerates long legitimate work instead of disabling the check entirely.
+
+* Reconnect with a budget, exit when broke
+
+The fleet's transport now reconnects with capped exponential backoff and a bounded per-outage attempt budget. A connection that outlives the backoff ceiling restores the budget. A budget that runs out ends the consume thread, so supervision has to act instead of idling. Supervision exits the service when readiness is lost after being established, which hands recovery to the container restart policy — the component that is actually built for it.
+
+The healthcheck changed with it. Services write a heartbeat only while a consumer is live, and the compose healthcheck now reads heartbeat freshness instead of poking broker TCP reachability. A broker that accepts TCP connections is not evidence that anyone is listening on the other end. The business-side deployment picked up the same contract, and the deployment repository repinned the fleet to the fix, so the running system and the merged code are the same thing.
+
+This is the closest Shipyard 003's "follow it through a deployment" wish has come so far: the verification is a heartbeat file going stale, not a dashboard.
+
+* The database got a pulse
+
+The hosted stack's CouchDB now exposes its native Prometheus endpoint, scraped by the observability sidecar. The metrics port is unauthenticated, so it is bound only to the private backend compose network and never published on a host interface. That pairing is the whole design: scrape locally, publish nothing.
+
+The same change dropped a redundant =domainname= field from two services after the container runtime inside our LXC host refused to reopen the kernel sysctl it maps to. Hostname plus explicit network aliases carry the naming; the field was decoration too.
+
+Source: [[https://git.starintel.actor/starintel-labs/starintel-server/commit/c91b0b2ebed24ea0c50a3368aeea06a3aef92955][server CouchDB metrics change]].
+
+* The spec got a front door
+
+The canonical StarIntel specification is now served over HTTPS with per-release routes and a version catalog: [[https://spec.starintel.actor/latest/][latest]] and [[https://spec.starintel.actor/versions.json][versions.json]] each carry the release metadata and a SHA-256 manifest over sources, artifacts, and the compatibility registry. Writing this entry, the catalog serves release 0.10.1, compiled from the canonical [[https://git.starintel.actor/nsaspy/star-lang][star-lang repository]].
+
+The deployment that publishes it lives in a private infrastructure repository, so Shipyard describes it only in prose. The public artifact is the point, though: version resolution by download and hash, not by trust.
+
+* Retract, then reattach
+
+The reporting pipeline posted a dataset update this week with a private link in it. The next action was not a quiet edit. A correction post retracted the link, and follow-up posts attach the dataset chart with private links omitted.
+
+Corrections are a publication feature, not a failure. Shipyard 003 added a guard that inspects the generated site; this week the discipline reached channel posts: when something private escapes, the record shows the retraction next to the mistake. The blog gate now enforces the same rule in the other direction — every published link must actually open, so a repository going private cannot leave a dead reference behind.
+
+* Still open
+
+- The 003 wishlist stands. No run has yet confirmed a named-account target resolves only the authorized credential and then read back the documents that target produced.
+- The anonymous-read exercise is also unrun: approved public data plus a private document, the private one absent, and the public count agreeing with the scoped storage view. The recorded statistics mismatch from last week is still the reason to be suspicious of a bare zero.
+- The ingestion-farm workstream solved its hosted-mail intake step and turned a sixty-eight-attempt shakeout into recorded verdicts about throttling and blocks. Phone verification sits behind a provider switch; the live probe is the only step left, and it has not run.
+
+#+begin_quote
+AI provenance: drafted from merged repository state available on 2026-10-30. Private repositories are referenced in prose without links by policy. Merged implementation, deployment wiring, and unrun verification are described as separate states.
+#+end_quote
+
+* Editorial evidence :noexport:
+
+Drafted by the OpenCode agent at the user's request on 2026-10-30 and posted in chat for approval before any branch, commit, or publish. No deployment or live-API acceptance run was performed for this article. The spec catalog release (0.10.1) was observed live at https://spec.starintel.actor/versions.json on 2026-10-30.
+
+Source heads observed during drafting:
+
+| Repository                      | Branch | Observed head                            |
+|---------------------------------+--------+------------------------------------------|
+| starintel-server                | master | 1475bd8911fd1a1487df1c4bcc3b0dd165e5f50b |
+| actor fleet (private, unlinked) | main   | c744c05 merge                            |
+| starintel-social-presence       | main   | b5c3f51c7f3ee1bb83a25a435e59a3740087d946 |
+
+All linked commits were verified anonymously reachable (HTTP 200) before drafting. The business-deployment, deployment-infrastructure, reporting, and farm work is merged in repositories that are deliberately not named or linked.
