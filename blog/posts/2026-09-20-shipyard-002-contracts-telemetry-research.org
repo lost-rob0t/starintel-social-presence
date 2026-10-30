@@ -7,7 +7,7 @@
 #+slug: shipyard-002-contracts-telemetry-research
 #+tags: starintel shipyard server observability research website
 #+status: POST
-#+revision: 1
+#+revision: 2
 
 A distributed system gets dangerous when its components share assumptions instead of contracts.
 
@@ -75,11 +75,11 @@ bounded public representation
 
 * Business automation is getting symbolic policy too
 
-On the business side, =starintel-biz= merged an autonomous opportunity board and OSINT target pack.
+On the business side, the business-automation repository merged an autonomous opportunity board and OSINT target pack.
 
 The slice includes a Prolog policy layer, tests, structured targets, research notes, and a prototype lead board.
 
-Source: [[https://github.com/starintel-labs/starintel-biz/commit/da88ad4728d48284860668f36070c81915a8a604][starintel-biz da88ad47]]
+Source: business-automation commit da88ad47 (merged implementation; private repository intentionally unlinked).
 
 That is a pattern worth keeping: business automation should still be inspectable as rules and structured data instead of disappearing inside one giant prompt.
 
@@ -91,7 +91,7 @@ That commit is documentation.
 
 It is not evidence that the hosted platform is production-ready, and Shipyard is going to keep saying that kind of thing out loud.
 
-Source: [[https://github.com/starintel-labs/starintel-infra/commit/e2f047afedc1f43d7585ca1eae1ca259eb1aa0b0][starintel-infra e2f047af]]
+Source: infrastructure commit e2f047af (documentation-only change; private repository intentionally unlinked).
 
 Design landing in Git is still progress: it gives implementation something concrete to satisfy.
 
