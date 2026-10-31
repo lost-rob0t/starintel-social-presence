@@ -28,7 +28,7 @@ jobs:
           trap 'rm -f /tmp/forgejo-askpass' EXIT
           git clone --no-checkout "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" repo
           cd repo
-          git fetch --depth=1 origin "$GITHUB_SHA"
+          git fetch --depth=50 origin "$GITHUB_SHA"
           git checkout --force "$GITHUB_SHA"
           cd ..
           mkdir -p "$GITHUB_WORKSPACE"
@@ -42,3 +42,10 @@ jobs:
             echo "'uses:' steps are not allowed"; exit 1
           fi
           echo "hygiene ok"
+      - name: notify new published posts
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          POST_WEBHOOK_URL: ${{ secrets.POST_WEBHOOK_URL }}
+        run: python3 scripts/notify_new_posts.py --base "${{ github.event.before }}" --head "${{ github.sha }}"

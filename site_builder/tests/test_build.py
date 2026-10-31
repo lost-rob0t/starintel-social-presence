@@ -7,6 +7,7 @@ cleanly when Emacs is unavailable so the suite stays deterministic.
 from __future__ import annotations
 
 import shutil
+import xml.etree.ElementTree as ET
 import subprocess
 from pathlib import Path
 
@@ -104,6 +105,27 @@ class TestFullBuild:
         assert "draft-notes" not in sitemap
         assert "/blog/first-test-post.html" in sitemap
 
+    def test_rss_contains_published_posts_only(self, built_site) -> None:
+        out, _report = built_site
+        feed = out / "feed.xml"
+        assert feed.is_file()
+        root = ET.fromstring(feed.read_text(encoding="utf-8"))
+        titles = [item.findtext("title") for item in root.findall("./channel/item")]
+        assert "First Test Post" in titles
+        assert "Draft Notes" not in titles
+        assert titles.index("Second Test Post") < titles.index("First Test Post")
+        index = (out / "index.html").read_text(encoding="utf-8")
+        assert 'type="application/rss+xml"' in index
+
+    def test_newest_posts_render_first_and_topics_is_in_navigation(self, built_site) -> None:
+        out, _report = built_site
+        index = (out / "index.html").read_text(encoding="utf-8")
+        assert index.index("Second Test Post") < index.index("First Test Post")
+        assert '>Topics</a>' in index
+        topics = (out / "tags" / "index.html").read_text(encoding="utf-8")
+        assert '<h1 class="page-title">Topics</h1>' in topics
+        assert 'aria-current="page">Topics</a>' in topics
+
     def test_byline_marks_llm_vs_human(self, built_site) -> None:
         out, report = built_site
         llm_page = (out / "blog" / "first-test-post.html").read_text(encoding="utf-8")
@@ -191,6 +213,11 @@ class TestVhostSplit:
         out, bases, _report = split
         sitemap = (out / "blog" / "sitemap.xml").read_text(encoding="utf-8")
         assert f"{bases.blog}/first-test-post.html" in sitemap
+
+    def test_feed_is_on_blog_vhost(self, split) -> None:
+        out, bases, _report = split
+        feed = (out / "blog" / "feed.xml").read_text(encoding="utf-8")
+        assert f"{bases.blog}/first-test-post.html" in feed
 
 
 class TestDocsSources:

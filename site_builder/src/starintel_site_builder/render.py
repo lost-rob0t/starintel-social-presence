@@ -10,6 +10,8 @@ from __future__ import annotations
 import html
 from collections import defaultdict
 from dataclasses import dataclass
+from datetime import datetime, timezone
+from email.utils import format_datetime
 
 from .models import GraphModel, SiteModel, SourceDoc
 
@@ -84,6 +86,8 @@ def _head(title: str, description: str, draft: bool = False) -> str:
         f'<title>{esc(title)} — StarIntel</title>'
         f'<meta name="description" content="{esc(description)}">{robots}'
         f'<link rel="icon" href="data:,">'
+        f'<link rel="alternate" type="application/rss+xml" title="StarIntel writing" '
+        f'href="{vbase("blog") or "https://blog.starintel.actor"}/feed.xml">'
         f'<link rel="stylesheet" href="{asset_url("starintel.css")}">'
         f"</head>"
     )
@@ -95,7 +99,8 @@ _NAV_LINKS = [
     ("portfolio", "nsaspy", "/index.html", "Portfolio"),
     ("graph", "blog", "/graph.html", "Graph"),
     ("archive", "blog", "/archive.html", "Archive"),
-    ("tags", "blog", "/tags/index.html", "Tags"),
+    ("topics", "blog", "/tags/index.html", "Topics"),
+    ("rss", "blog", "/feed.xml", "RSS"),
 ]
 
 
@@ -214,10 +219,11 @@ def post_card(doc: SourceDoc, kicker: str = "") -> str:
     )
 
 
-def card_list(cards: list[str]) -> str:
+def card_list(cards: list[str], modifier: str = "") -> str:
     if not cards:
         return '<div class="empty-state">Nothing here yet.</div>'
-    return f'<div class="card-list">{"".join(cards)}</div>'
+    suffix = f" card-list--{modifier}" if modifier else ""
+    return f'<div class="card-list{suffix}">{"".join(cards)}</div>'
 
 
 def section_head(title: str, more_url: str = "", more_label: str = "View all") -> str:
@@ -312,7 +318,7 @@ def blog_index(model: SiteModel) -> str:
         + '<h1 class="page-title">Writing</h1>'
         + '<p class="page-lead">Technical posts and devlogs from the StarIntel editorial desk. '
         "Every claim traces back to the repositories it came from.</p>"
-        + card_list(cards)
+        + card_list(cards, "editorial")
         + "</div>"
     )
     return page_shell("Blog", "StarIntel technical writing", body, active="blog")
@@ -339,11 +345,11 @@ def home_page(model: SiteModel, docs_model: SiteModel) -> str:
         + f'<a class="btn" href="{vbase("www")}/graph.html">Open the graph</a>'
         + "</div></section>"
         + section_head("Latest writing", f"{vbase('www')}/archive.html", "Full timeline")
-        + card_list(latest)
+        + card_list(latest, "editorial")
         + section_head("Documentation", f"{vbase('docs')}/index.html")
-        + card_list(doc_cards)
+        + card_list(doc_cards, "editorial")
         + section_head("Projects", f"{vbase('nsaspy')}/index.html")
-        + card_list(project_cards)
+        + card_list(project_cards, "editorial")
         + "</div>"
     )
     return page_shell("StarIntel", "Local-first intelligence, written in the open.", body, active="blog")
@@ -358,31 +364,31 @@ def tag_index(tags: dict[str, list[SourceDoc]]) -> str:
     )
     body = (
         '<div class="shell">'
-        + breadcrumbs([("Home", home_url()), ("Tags", None)])
-        + '<h1 class="page-title">Tags</h1>'
+        + breadcrumbs([("Home", home_url()), ("Topics", None)])
+        + '<h1 class="page-title">Topics</h1>'
         + '<p class="page-lead">Every published tag across writing, docs, and projects.</p>'
         + f'<div class="tag-cloud">{cloud}</div>'
         + "</div>"
     )
-    return page_shell("Tags", "Tag taxonomy", body, active="tags")
+    return page_shell("Topics", "Topic taxonomy", body, active="topics")
 
 
 def tag_page(tag: str, docs: list[SourceDoc]) -> str:
     cards = [post_card(d) for d in docs]
     body = (
         '<div class="shell">'
-        + breadcrumbs([("Home", home_url()), ("Tags", f"{vbase('www')}/tags/index.html"), (f"#{tag}", None)])
+        + breadcrumbs([("Home", home_url()), ("Topics", f"{vbase('www')}/tags/index.html"), (f"#{tag}", None)])
         + f'<h1 class="page-title">#{esc(tag)}</h1>'
         + f'<p class="page-lead">{len(docs)} page(s) tagged #{esc(tag)}.</p>'
         + card_list(cards)
         + "</div>"
     )
-    return page_shell(f"#{tag}", f"Pages tagged {tag}", body, active="tags")
+    return page_shell(f"#{tag}", f"Pages tagged {tag}", body, active="topics")
 
 
 def archive_page(posts: list[SourceDoc]) -> str:
     by_year: dict[str, list[SourceDoc]] = defaultdict(list)
-    for post in posts:
+    for post in sorted(posts, key=lambda item: item.date, reverse=True):
         year = post.date[:4] if post.date else "undated"
         by_year[year].append(post)
     sections = []
@@ -602,4 +608,44 @@ def sitemap(urls: list[str]) -> str:
         '<?xml version="1.0" encoding="UTF-8"?>'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
         f"{items}</urlset>"
+    )
+
+
+def rss_feed(posts: list[SourceDoc]) -> str:
+    """Render an RSS 2.0 feed from published posts, newest first."""
+    base = vbase("blog") or "https://blog.starintel.actor"
+
+    def absolute(url: str) -> str:
+        if url.startswith(("http://", "https://")):
+            return url
+        return f"{base}{url.removeprefix('/blog')}"
+
+    def pub_date(value: str) -> str:
+        try:
+            parsed = datetime.fromisoformat(value).replace(tzinfo=timezone.utc)
+        except ValueError:
+            parsed = datetime(1970, 1, 1, tzinfo=timezone.utc)
+        return format_datetime(parsed)
+
+    items = []
+    for post in posts:
+        url = absolute(post.url)
+        categories = "".join(f"<category>{esc(tag)}</category>" for tag in post.tags)
+        items.append(
+            "<item>"
+            f"<title>{esc(post.title)}</title>"
+            f"<link>{esc(url)}</link><guid isPermaLink=\"true\">{esc(url)}</guid>"
+            f"<pubDate>{pub_date(post.date)}</pubDate>"
+            f"<description>{esc(post.description)}</description>{categories}"
+            "</item>"
+        )
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<rss version="2.0"><channel><title>StarIntel writing</title>'
+        f"<link>{esc(base)}/</link>"
+        '<description>Technical writing and development notes from StarIntel.</description>'
+        '<language>en-us</language>'
+        f'<atom:link xmlns:atom="http://www.w3.org/2005/Atom" href="{esc(base)}/feed.xml" '
+        'rel="self" type="application/rss+xml"/>'
+        f'{"".join(items)}</channel></rss>'
     )

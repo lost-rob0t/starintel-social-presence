@@ -118,7 +118,11 @@ def build_site(
     bases = bases or render.SiteBases()
     render.set_bases(bases)
 
-    posts = _scan_section(repo_root / "blog" / "posts", "blog", "/blog/")
+    posts = sorted(
+        _scan_section(repo_root / "blog" / "posts", "blog", "/blog/"),
+        key=lambda post: post.date,
+        reverse=True,
+    )
     drafts = _scan_section(repo_root / "blog" / "drafts", "blog", "/drafts/", force_draft=True)
     docs = _scan_section(repo_root / "docs", "docs", "/docs/")
     portfolio = _scan_section(repo_root / "nsaspy", "portfolio", "/portfolio/")
@@ -255,6 +259,7 @@ def build_site(
                       lambda t=tag, docs=tagged: render.tag_page(t, docs))
 
     surface_write("archive.html", lambda: render.archive_page(posts))
+    surface_write("feed.xml", lambda: render.rss_feed(posts))
 
     surface_write("graph.html", lambda: render.graph_page(graph_model))
     _write_out(out_dir, bases, surface, "assets/graph.json",
@@ -275,6 +280,7 @@ def build_site(
             f"{render.vbase('docs')}/index.html",
             f"{render.vbase('nsaspy')}/index.html",
             f"{render.vbase('blog')}/graph.html",
+            f"{render.vbase('blog')}/feed.xml",
         ]
     else:
         sitemap_urls = [d.url for d in model.all_published()] + [
@@ -284,6 +290,7 @@ def build_site(
             "/docs/index.html",
             "/portfolio/index.html",
             "/graph.html",
+            "/feed.xml",
         ]
     _write_out(out_dir, bases, "blog" if bases.split else "www",
                "sitemap.xml", render.sitemap(sorted(set(sitemap_urls))))
