@@ -7,7 +7,7 @@
 #+slug: from-tools-to-actors
 #+tags: starintel actors agentzero skills architecture
 #+status: POST
-#+revision: 1
+#+revision: 2
 
 StarIntel started as a pile of tools: collectors, scrapers, document
 builders, a server with an HTTP API, research automation. Each tool worked.
@@ -162,13 +162,13 @@ Visible in active issues and branches, listed as work in progress and
 nothing more:
 
 1. the ingest-receipts and publisher adapters (RabbitMQ and HTTP) in
-   pro-actors, which make actor output durable and auditable end to end
+   the actor fleet, which make actor output durable and auditable end to end
 2. the server registry migration that starintel-client's roadmap is
    waiting on
 3. canonical STAR URI actor identity for target dispatch
 4. Docker-first website actors in the server repository
 5. StarLang actors, the point where the "until StarLang actors are
-   production-ready" disclaimer in the pro-actors README gets deleted
+   production-ready" disclaimer in the actor fleet's README gets deleted
 6. the Agent Zero worker and Symbolics migration tracked in the
    infrastructure work
 

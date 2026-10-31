@@ -12,7 +12,9 @@ python3 -m compileall -q \
   "$root/starintel_tutorial_gen/src" \
   "$root/site_builder/src" \
   "$root/install_skills.py" \
-  "$root/scripts/validate-web-org.py"
+  "$root/scripts/validate-web-org.py" \
+  "$root/scripts/check_links.py" \
+  "$root/scripts/check_no_private_links.py"
 
 pytest -q \
   "$root/change_fetcher/tests" \
@@ -40,6 +42,11 @@ emacs --batch -Q -l "$root/scripts/export-smoke.el"
 
 # Web-facing Org metadata must validate (blog posts + nsaspy site sources).
 python3 "$root/scripts/validate-web-org.py"
+
+# Private repositories must stay unlinked and unnamed (offline scan), and
+# every published http(s) link must actually open (2xx/3xx).
+python3 "$root/scripts/check_no_private_links.py"
+python3 "$root/scripts/check_links.py"
 
 # Site build smoke: deterministic full build without external repositories.
 site_tmp="$(mktemp -d)"

@@ -7,7 +7,7 @@
 #+slug: shipyard-001-evidence-actors-control-plane
 #+tags: starintel shipyard prolog actors quasar lisp
 #+status: POST
-#+revision: 1
+#+revision: 2
 
 StarIntel has enough moving pieces now that a normal changelog does not really explain what is happening.
 
@@ -27,7 +27,7 @@ A useful intelligence system needs a boundary between /something was observed/ a
 
 That boundary is now executable Prolog.
 
-=starintel-pro-actors= merged deterministic geographic promotion rules that convert eligible geo observations into evidence-backed claims.
+The actor fleet merged deterministic geographic promotion rules that convert eligible geo observations into evidence-backed claims.
 
 The implementation includes:
 
@@ -45,7 +45,7 @@ Instead of asking an LLM whether an observation "sounds strong enough" to become
 
 Evidence in. Rules run. Claim out.
 
-Source: [[https://github.com/lost-rob0t/starintel-pro-actors/commit/978112e0ac81c293223d6d965e377b19c806b68b][starintel-pro-actors 978112e0]]
+Source: actor-fleet commit 978112e0 (merged implementation; private repository intentionally unlinked).
 
 * Domain Hunt moved into the actor runtime
 
@@ -62,7 +62,7 @@ That matters because one-off services are steadily being pulled into the same ru
 
 The merge was accompanied by hardening and regression coverage rather than treating the actor port as a straight syntax rewrite.
 
-Source: [[https://github.com/lost-rob0t/starintel-pro-actors/commit/a5567bc983634df521533128093ddbd9c37940ab][starintel-pro-actors a5567bc9]]
+Source: actor-fleet commit a5567bc9 (merged implementation; private repository intentionally unlinked).
 
 This is where the actor architecture becomes less theoretical. Every old standalone worker that crosses this boundary gives StarIntel fewer unique failure modes to reason about.
 
