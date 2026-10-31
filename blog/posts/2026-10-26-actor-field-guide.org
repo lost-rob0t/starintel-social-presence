@@ -1,17 +1,17 @@
 :PROPERTIES:
-:ID: 1db8b971-55aa-43b8-b36b-9e68e126e0c1
+:ID: e6d46800-dcd0-41f9-86c7-67afc966a428
 :END:
 #+TITLE: A Field Guide to StarIntel Actors
-#+CREATED: [2026-10-27 Tue 19:48]
-#+LAST_MODIFIED: [2026-10-27 Tue 19:48]
+#+CREATED: [2026-10-30 Fri 23:01]
+#+LAST_MODIFIED: [2026-10-30 Fri 23:01]
 #+ROAM_SCHEMA: org-roam-meta/v1
 #+ROAM_KIND: article
 #+ROAM_VISIBILITY: public
 #+CENSOR_PROFILE: strict
-#+SOURCE: https://github.com/lost-rob0t/starintel-social-presence/blob/3d0c6f053c6237d5e5b844a8977ac6d901c59581/blog/drafts/2026-10-26-actor-field-guide.org; editor publication authorization in Codex chat, 2026-10-27
+#+SOURCE: https://github.com/lost-rob0t/starintel-social-presence/blob/3d0c6f053c6237d5e5b844a8977ac6d901c59581/blog/drafts/2026-10-26-actor-field-guide.org ; editor publication authorization in Codex chat, 2026-10-27
 #+AI_GENERATED: t
-#+AI_TAG: ai_0cde89d49cf4258c
-#+FILETAGS: :ai:ai_0cde89d49cf4258c:starintel:actors:field-guide:
+#+AI_TAG: ai_89600a1e89862eb7
+#+FILETAGS: :ai:ai_89600a1e89862eb7:starintel:actors:field-guide:
 
 #+date: [2026-10-26 Mon]
 #+description: A scoped introduction to StarIntel collection, enrichment, monitoring, and server actors, with inputs, outputs, examples, and evidence limits.

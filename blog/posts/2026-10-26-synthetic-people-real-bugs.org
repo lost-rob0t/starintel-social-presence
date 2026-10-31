@@ -1,17 +1,17 @@
 :PROPERTIES:
-:ID: 882bb812-d29c-4bd1-a349-827abb4e1736
+:ID: 8013bfb8-f914-4c5c-8a27-20a01cd05f17
 :END:
 #+TITLE: Synthetic People, Real Bugs
-#+CREATED: [2026-10-27 Tue 19:48]
-#+LAST_MODIFIED: [2026-10-27 Tue 19:48]
+#+CREATED: [2026-10-30 Fri 23:01]
+#+LAST_MODIFIED: [2026-10-30 Fri 23:01]
 #+ROAM_SCHEMA: org-roam-meta/v1
 #+ROAM_KIND: article
 #+ROAM_VISIBILITY: public
 #+CENSOR_PROFILE: strict
-#+SOURCE: https://github.com/lost-rob0t/starintel-social-presence/blob/235212868e8fb6f101a9587e9878be6b385cf61b/blog/posts/2026-10-26-synthetic-people-real-bugs.org; editor publication authorization in Codex chat, 2026-10-27
+#+SOURCE: https://github.com/lost-rob0t/starintel-social-presence/blob/235212868e8fb6f101a9587e9878be6b385cf61b/blog/posts/2026-10-26-synthetic-people-real-bugs.org ; editor publication authorization in Codex chat, 2026-10-27
 #+AI_GENERATED: t
-#+AI_TAG: ai_f0600c1fad990213
-#+FILETAGS: :ai:ai_f0600c1fad990213:starintel:synthetic-data:testing:
+#+AI_TAG: ai_c7b39d420bbd1822
+#+FILETAGS: :ai:ai_c7b39d420bbd1822:starintel:synthetic-data:testing:
 
 #+date: [2026-10-26 Mon]
 #+description: An entirely fictional StarIntel test world exposed missing collaboration evidence and channel-permission bugs before the generator merged.
