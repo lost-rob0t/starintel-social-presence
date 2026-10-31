@@ -1,26 +1,26 @@
 :PROPERTIES:
-:ID: 004ddd23-a903-45ce-b02c-8a052c7e9c03
+:ID: d2257095-915c-472a-a67c-780400b41f89
 :END:
-#+TITLE: The StarIntel Shipyard #004 — Honest Signals
-#+CREATED: [2026-10-30 Fri 14:40]
-#+LAST_MODIFIED: [2026-10-30 Fri 15:05]
+#+TITLE: The StarIntel Shipyard #005 — Honest Signals
+#+CREATED: [2026-10-30 Fri 23:00]
+#+LAST_MODIFIED: [2026-10-30 Fri 23:00]
 #+ROAM_SCHEMA: org-roam-meta/v1
-#+ROAM_KIND: blog
+#+ROAM_KIND: article
 #+ROAM_VISIBILITY: public
 #+CENSOR_PROFILE: strict
-#+SOURCE: Drafted from merged repository state on 2026-10-30; private repositories intentionally unlinked per publication policy. Publication pending user approval in the agent chat.
+#+SOURCE: User-authorized chronological reorder and publication in Codex 2026-10-30; original reviewed source and evidence retained
 #+AI_GENERATED: t
-#+AI_TAG: ai_a870c0c51a4807e8
-#+FILETAGS: :ai:ai_a870c0c51a4807e8:starintel:shipyard:rabbitmq:observability:publication:
+#+AI_TAG: ai_30d4e469cdd6532f
+#+FILETAGS: :ai:ai_30d4e469cdd6532f:starintel:shipyard:rabbitmq:observability:publication:
 
 #+date: [2026-10-30 Fri]
-#+description: StarIntel Shipyard 004: a broker restart exposed healthy-but-idle actors, so reconnects got budgets, healthchecks got heartbeats, and the spec got a hash-verifiable front door.
-#+slug: shipyard-004-honest-signals
+#+description: StarIntel Shipyard 005: a broker restart exposed healthy-but-idle actors, so reconnects got budgets, healthchecks got heartbeats, and the spec got a hash-verifiable front door.
+#+slug: shipyard-005-honest-signals
 #+tags: starintel shipyard rabbitmq observability deployment
 #+status: POST
 #+revision: 1
 
-[[https://blog.starintel.actor/blog/shipyard-003-boundaries-that-hold.html][Shipyard 003]] ended with a wishlist: follow one named-account target through a deployment, then exercise anonymous reads against approved public data. Neither ran this week. Instead a broker restart wrote the lesson for us: twelve actor services reported healthy while consuming nothing.
+[[file:2026-10-26-shipyard-004-follow-the-document.org][Shipyard #004]] examined the document handoff. The operational work here returns to [[https://blog.starintel.actor/blog/shipyard-003-boundaries-that-hold.html][Shipyard 003]] and its wishlist: follow one named-account target through a deployment, then exercise anonymous reads against approved public data. Neither ran this week. Instead a broker restart wrote the lesson for us: twelve actor services reported healthy while consuming nothing.
 
 This entry is about signals that are allowed to fail. A health signal that cannot fail is decoration.
 
