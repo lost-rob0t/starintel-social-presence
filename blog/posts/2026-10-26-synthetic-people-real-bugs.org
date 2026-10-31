@@ -1,0 +1,49 @@
+:PROPERTIES:
+:ID: 882bb812-d29c-4bd1-a349-827abb4e1736
+:END:
+#+TITLE: Synthetic People, Real Bugs
+#+CREATED: [2026-10-27 Tue 19:48]
+#+LAST_MODIFIED: [2026-10-27 Tue 19:48]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: article
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: https://github.com/lost-rob0t/starintel-social-presence/blob/235212868e8fb6f101a9587e9878be6b385cf61b/blog/posts/2026-10-26-synthetic-people-real-bugs.org; editor publication authorization in Codex chat, 2026-10-27
+#+AI_GENERATED: t
+#+AI_TAG: ai_f0600c1fad990213
+#+FILETAGS: :ai:ai_f0600c1fad990213:starintel:synthetic-data:testing:
+
+#+date: [2026-10-26 Mon]
+#+description: An entirely fictional StarIntel test world exposed missing collaboration evidence and channel-permission bugs before the generator merged.
+#+slug: synthetic-people-real-bugs
+#+tags: starintel synthetic-data testing
+#+status: POST
+#+revision: 1
+
+/Evidence snapshot: October 25, 2026/
+
+Publication note (October 26, 2026): This piece was written earlier. Publication was delayed while my machine and supporting infrastructure were down.
+
+While building and testing StarIntel with nsaspy, I wanted to answer a practical question before real people were anywhere near the workflow: could the system follow connected evidence without losing track of what was known, who could speak, and how a claim was supported?
+
+The answer needed a test world. I worked on a synthetic-data generator that seeds an entirely fictional knowledge base with places, households, roles, services, and events, then connects those records into a graph. It can also create Discord- and Telegram-style structures: communities, chats, roles, replies, mentions, posts, and reposts. Those familiar shapes make the fixture useful for exercising relationships and permissions, without collecting conversations from either platform.
+
+The point was to give the software more than a handful of disconnected sample rows. At the larger run, the generator represented 2,000 fictional people across 100,020 validated records. A separate 260-record fixture in JSONL and DOT formats gives reviewers a smaller, repeatable case to inspect. Those sizes serve different testing needs: one lets us exercise a larger synthetic population, while the compact fixture is easier to examine record by record. Validation here means the generated records passed the generator's checks; it does not make any fictional claim true or validate it against an external source.
+
+The graph and the conversation-like records let us ask different questions about the same made-up setting. A graph can represent that people, places, households, and events are connected; a channel also has roles and an author for each post. The small fixture gives a reviewer something they can trace by hand in JSONL and DOT, while the larger run gives the generator more records to validate. Neither format needs a single real message to make those boundaries visible.
+
+Every person, community, message, and event in this work is invented. The Discord- and Telegram-style structures are simulated formats, not data collected from those services. There was no production-data ingestion. That boundary matters because a test fixture should let us exercise relationships and rules without turning anyone's real conversation into our debugging material.
+
+Independent review found two real defects before the change merged. In one case, missing evidence for a collaboration event could slip past validation. In another, channel-permission logic could select an author who was not allowed to post there. The first is a reminder that absence of evidence needs an explicit test; the second shows why a plausible-looking message graph is not enough if role permissions are wrong. Both were easier to reason about in a controlled fixture: the records were invented, the relevant relationships could be inspected, and reviewers could point to the exact boundary the code should enforce.
+
+Those defects were fixed before merge. The generator change landed in [[https://github.com/lost-rob0t/star-synthdata/pull/6][PR #6]] at [[https://github.com/lost-rob0t/star-synthdata/commit/329008d1dcef1d9b896107e4a966b43cbf76f885][commit 329008d]]. The generator's 85-test suite covered Python 3.11 and 3.12, Nix, the command-line interface, and SQLite; the post-merge CI run was green. That is useful evidence about the generator and its supported paths. It is the evidence I can make a direct claim about here: the generator passed its suite and the fixes landed.
+
+I keep that result separate from downstream testing. The 85 tests are not a count for the broader actor suite, and a passing generator suite does not establish end-to-end acceptance for StarIntel. A separate downstream integration effort is still active; its test ledger distinguishes passing, blocked, skipped, and unrun checks. As of this snapshot, full end-to-end acceptance has not been established. That distinction matters: a green test run is only as broad as the system boundary it actually exercises.
+
+Synthetic data is a useful way for me to find bugs before real-world material enters the picture. It makes a scenario reproducible, lets reviewers probe missing evidence and role boundaries, and avoids turning real people's messages into test fixtures. It also has limits. A convincing fake conversation does not prove that a real source is accurate, that a real-world workflow is fair, or that the whole system is ready for production. Those questions need their own evidence and review.
+
+For now, I take the result as a modest success: a fictional world exposed two genuine defects, and both were corrected before merge. That is exactly the kind of work I want a test fixture to do. It should make assumptions visible early, while the test data is still imaginary and the bugs are still cheap to fix.
+
+#+begin_quote
+AI provenance: original draft preserved from the complete Library text, with Org formatting and an editor-authorized publication note added on October 26, 2026. The downtime note is user-reported context. The technical evidence snapshot remains October 25; this article does not report newly executed tests.
+#+end_quote
