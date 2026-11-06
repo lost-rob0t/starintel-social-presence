@@ -1,0 +1,207 @@
+#+title: StarIntel for Everyone — From Open Web to Evidence Graph
+#+slug: starintel-for-everyone
+#+topic_type: feature
+#+status: SELECTED
+#+date: 2026-09-19
+
+* Editorial angle
+
+This is the first mass-audience StarIntel introduction video.
+
+The pitch is not "look at my OSINT tools."  The pitch is:
+
+#+begin_quote
+Search gives you pages. StarIntel turns what you find into an evidence graph
+that can keep growing, keep its sources, and be operated by actors.
+#+end_quote
+
+The video must stay concrete.  It should show a real local install, a real
+actor execution against harmless public/demo input, real Auto Dig records, and
+the Quasar graph/control surface.  Avoid fictional terminal output and avoid
+describing private actor repositories as public.
+
+* Audience
+
+- curious nontechnical viewers who understand search, maps, feeds, or AI;
+- developers who want to see that StarIntel is real software;
+- OSINT/research users who care about provenance;
+- people who should leave understanding documents, actors, and graph views
+  without needing to understand Common Lisp, RabbitMQ, CouchDB, or Prolog.
+
+* Core message
+
+StarIntel is an operator system for turning observations into linked,
+source-preserving documents.
+
+Three ideas carry the entire video:
+
+1. *Documents* — facts/observations/results become typed records with source and
+   provenance fields instead of disappearing into terminal scrollback.
+2. *Actors* — bounded workers consume targets/documents and emit more documents
+   and relations.
+3. *Quasar* — the operator sees, searches, edits, and traverses the resulting
+   document graph instead of juggling tabs.
+
+Auto Dig is the proof that the same document model can also carry large,
+evidence-first research corpora.
+
+* Confirmed facts
+
+** StarIntel Server
+
+Current public repository:
+[[https://github.com/lost-rob0t/starintel-server][lost-rob0t/starintel-server]]
+
+Current documentation inspected for this video:
+
+- =README.org= — Nix/Docker stack, StarIntel service boundaries, recursive
+  document/actor dataflow.
+- =doc/actors.org= — local/external actor model and target routing.
+- =scripts/stack-test.sh= — current auth bootstrap and secret setup.
+- =schema/starintel-schema.lock.json= — current release lock.
+
+The release lock inspected on 2026-09-19 resolves:
+
+#+begin_example
+release_version = 0.9.1
+schema_version  = 0.9.0
+canonical repo  = lost-rob0t/starintel-gpt-auto-dig
+#+end_example
+
+Do not simplify that to "schema 0.9.1."  The base schema remains 0.9.0 while the
+active release/profile is 0.9.1.
+
+** Quasar
+
+Public repositories:
+
+- [[https://github.com/lost-rob0t/quasar][lost-rob0t/quasar]]
+- [[https://github.com/lost-rob0t/quasar-ui][lost-rob0t/quasar-ui]]
+
+The Quasar monorepo is the Common Lisp control plane/runtime plus the
+React/Cytoscape UI under =frontend/=.  The standalone =quasar-ui= repository is
+also useful for a lighter visual demo, but it is explicitly a subset of the
+full connected runtime.
+
+Quasar UI includes browser actors.  Current public code/docs prove:
+
+- browser actors are opt-in in Settings;
+- actors run in dedicated Web Workers;
+- they receive cloned input and return declarative transform plans;
+- =quasar.actor.target-input-expansion= runs on target creation;
+- the end-to-end test creates a target using
+  =https://example.com/research= and that actor;
+- =quasar.actor.city-legistar-calendar= can retrieve a bounded public event set
+  from an official Legistar API when the public endpoint is reachable.
+
+The recording uses =target-input-expansion= as the deterministic actor moment.
+The Legistar actor is a second optional live-network shot, never the only proof.
+
+** GPT Auto Dig
+
+Public repository:
+[[https://github.com/lost-rob0t/starintel-gpt-auto-dig][lost-rob0t/starintel-gpt-auto-dig]]
+
+The inspected README describes:
+
+- evidence-first research packets;
+- a Git-backed normalized StarIntel document database;
+- one compact document per =db/<dtype>/<id>.ndjson=;
+- a Nim validation/static-site fast path;
+- =nimble buildFast=, =nimble validate=, =nimble site=;
+- =python3 scripts/starintel.py search ...= for corpus search;
+- source auditing and an =unverifed= report for source-less records.
+
+For this video, Auto Dig is demonstrated by building/validating the public
+corpus and searching it.  Do not invent a "GPT run" command that the current
+repository does not document.
+
+* Demonstration contract
+
+The edit should show these stages in this order:
+
+1. clone StarIntel Server;
+2. create local secret files;
+3. build/load the Nix-owned images;
+4. start the local Docker stack;
+5. bootstrap one local API key;
+6. prove =/health= and authenticated =/auth/context=;
+7. launch Quasar or Quasar UI;
+8. enable actor execution;
+9. create the tested harmless target
+   =https://example.com/research= with
+   =quasar.actor.target-input-expansion=;
+10. show the generated typed document/relation projection in the graph;
+11. optionally run =quasar.actor.city-legistar-calendar= against a supported
+    public municipality if it passes rehearsal;
+12. clone GPT Auto Dig;
+13. build/validate the public corpus;
+14. run a source-backed corpus search such as =flock=;
+15. end in Quasar on a visually dense graph with a plain-English recap.
+
+* Claims to avoid
+
+- Do not say every actor is public.  Some current actor implementation/image
+  sources are private.
+- Do not present =starintel-pro-actors= or its YouTube actor as something a
+  viewer can clone from GitHub.
+- Do not say Quasar UI alone is the full StarIntel runtime.
+- Do not say Auto Dig search results are automatically true.  They are records
+  with evidence/provenance that still require evaluation.
+- Do not show a terminal result before it has been captured in rehearsal.
+- Do not imply that graph adjacency proves a relationship.
+- Do not claim the demo is a hardened Internet-facing deployment.  Keep it
+  localhost.
+- Do not expose API keys, secret files, cookies, broker credentials, or local
+  private data in the recording.
+
+* Production tone
+
+Fast, dark, practical, slightly cinematic.  No corporate voice.
+
+Use short claims:
+
+- "Tabs are temporary. Documents persist."
+- "Actors do the repetitive work."
+- "Sources stay attached."
+- "The graph is a view, not the evidence."
+- "You can inspect the code while I run it."
+
+When jargon appears, immediately translate it.
+
+Example:
+
+#+begin_quote
+RabbitMQ is just the message bus here: actors can work independently without
+sharing one giant process.
+#+end_quote
+
+* CTA
+
+Primary call to action:
+
+#+begin_quote
+Clone the public repos, run the demo locally, and build one actor or one dataset
+that matters to you.
+#+end_quote
+
+Secondary CTA: follow the public repositories and the StarIntel site for
+development logs and docs.
+
+* Source material :noexport:
+
+Inspected 2026-09-19:
+
+- [[https://github.com/lost-rob0t/starintel-server/blob/master/README.org][starintel-server README.org]]
+- [[https://github.com/lost-rob0t/starintel-server/blob/master/doc/actors.org][starintel-server actor docs]]
+- [[https://github.com/lost-rob0t/starintel-server/blob/master/scripts/stack-test.sh][starintel-server stack test]]
+- [[https://github.com/lost-rob0t/starintel-server/blob/master/schema/starintel-schema.lock.json][starintel-server schema lock]]
+- [[https://github.com/lost-rob0t/quasar/blob/main/README.md][quasar README]]
+- [[https://github.com/lost-rob0t/quasar-ui/blob/main/README.md][quasar-ui README]]
+- [[https://github.com/lost-rob0t/quasar-ui/blob/main/docs/TARGET_ACTORS.md][Quasar target actors]]
+- [[https://github.com/lost-rob0t/quasar-ui/blob/main/e2e/target-actors.spec.ts][Quasar target actor E2E]]
+- [[https://github.com/lost-rob0t/starintel-gpt-auto-dig/blob/main/README.md][GPT Auto Dig README]]
+
+The source repositories can move after this topic is committed.  Before
+recording, =demo.org= requires a fresh rehearsal and the exact captured SHAs
+must be written into its verification section.

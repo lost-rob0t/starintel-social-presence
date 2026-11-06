@@ -1,0 +1,374 @@
+#+title: StarIntel for Everyone
+#+subtitle: Turn the open web into an evidence graph
+#+slug: starintel-for-everyone
+#+topic: [[file:../../../editorial/topics/starintel-for-everyone.org][StarIntel for Everyone — From Open Web to Evidence Graph]]
+#+status: DRAFT
+#+date: 2026-09-19
+#+options: toc:nil num:nil
+
+* Search finds pages. StarIntel keeps evidence.
+
+#+begin_example
+search
+  -> page
+  -> tab
+  -> notes
+  -> where did this claim come from?
+#+end_example
+
+StarIntel turns observations into typed, source-preserving documents that can
+be linked, searched, revisited, and operated by actors.
+
+* The whole idea in three pieces
+
+#+begin_example
+DOCUMENTS  ->  ACTORS  ->  GRAPH
+ memory        work         operator view
+#+end_example
+
+- Documents keep identity, data, sources, evidence, provenance.
+- Actors consume targets/documents and emit more documents or relations.
+- Quasar projects the corpus into an investigation/operator workspace.
+
+* Documents are the memory
+
+#+begin_src json
+{
+  "_id": "starintel:example:record",
+  "dataset": "demo",
+  "dtype": "entity",
+  "schema_version": "0.9.0",
+  "version": 1,
+  "title": "Example record",
+  "sources": [],
+  "evidence": [],
+  "data": {
+    "name": "Example record"
+  }
+}
+#+end_src
+
+Active StarIntel release at planning time:
+
+#+begin_example
+release 0.9.1
+base schema 0.9.0
+#+end_example
+
+* Actors do the repetitive work
+
+#+begin_example
+target/document
+      |
+      v
+    ACTOR
+      |
+      +--> document
+      +--> relation
+      +--> target
+      `--> actor event
+#+end_example
+
+Actors can be local, browser-based, or external services.
+
+* Quasar is where the human drives
+
+#+begin_example
+documents + relations
+        |
+        v
+   QUASAR / GRAPH
+        |
+        +--> inspect
+        +--> search
+        +--> traverse
+        +--> edit
+        `--> create new work
+#+end_example
+
+The graph is a projection of the documents.
+
+The graph is not proof by itself.
+
+* Start the public StarIntel stack
+
+#+begin_src sh
+git clone https://github.com/lost-rob0t/starintel-server
+cd starintel-server
+cp .env.example .env
+#+end_src
+
+Local development only.
+
+Keep the API and broker bound to localhost.
+
+* Generate local secrets
+
+#+begin_src sh
+install -d -m 0700 secrets
+
+openssl rand -base64 32 > secrets/couchdb_password
+openssl rand -base64 48 > secrets/couchdb_secret
+openssl rand -hex 24 |
+  tr '[:lower:]' '[:upper:]' > secrets/erlang_cookie
+
+openssl rand -base64 32 > secrets/rabbitmq_password
+openssl rand -base64 32 > secrets/valkey_password
+openssl rand -base64 48 > secrets/auth_pepper
+openssl rand -base64 48 > secrets/auth_bootstrap_secret
+
+chmod 0600 secrets/*
+#+end_src
+
+* Build and launch
+
+#+begin_src sh
+nix run .#load-images
+docker compose up --detach --wait
+
+curl --fail http://127.0.0.1:5000/health
+#+end_src
+
+#+begin_example
+CAPTURE LIVE:
+- image build/load completion
+- docker compose ps
+- health response
+#+end_example
+
+* Bootstrap one local API credential
+
+#+begin_src sh
+bootstrap_secret="$(<secrets/auth_bootstrap_secret)"
+
+curl --fail --silent --show-error \
+  --request POST \
+  --header 'Content-Type: application/json' \
+  --header "X-Star-Bootstrap-Secret: $bootstrap_secret" \
+  --data '{"owner":"youtube-demo"}' \
+  --output /tmp/starintel-bootstrap.json \
+  http://127.0.0.1:5000/auth/bootstrap
+
+api_key="$(jq --exit-status -r '.api_key' /tmp/starintel-bootstrap.json)"
+test -n "$api_key"
+printf 'local StarIntel credential created\n'
+#+end_src
+
+Never show the credential value in the recording.
+
+* Prove the authenticated server is alive
+
+#+begin_src sh
+curl --fail --silent \
+  --header "Authorization: Bearer $api_key" \
+  http://127.0.0.1:5000/auth/context |
+  jq '{principal_id, principal_type, owner}'
+#+end_src
+
+#+begin_example
+CAPTURE LIVE:
+principal type / owner only
+#+end_example
+
+* Launch the public Quasar UI
+
+#+begin_src sh
+git clone https://github.com/lost-rob0t/quasar-ui
+cd quasar-ui
+
+npm ci
+npm run dev
+#+end_src
+
+Browser actor execution is opt-in.
+
+Enable it in Settings before the demo.
+
+* Run a tested public actor
+
+Create a target:
+
+#+begin_example
+actor
+  quasar.actor.target-input-expansion
+
+target
+  https://example.com/research
+#+end_example
+
+This exact harmless target/actor shape is covered by the public E2E suite.
+
+* Watch the graph grow
+
+#+begin_example
+https://example.com/research
+            |
+            v
+   target-input-expansion
+            |
+            +--> typed entity/document
+            `--> explicit relation
+#+end_example
+
+Click the resulting node.
+
+Show:
+
+- stable ID;
+- dtype;
+- dataset/data;
+- actor provenance/extension;
+- relation back to the input.
+
+* Optional: public civic data actor
+
+#+begin_example
+quasar.actor.city-legistar-calendar
+#+end_example
+
+When the public endpoint passes rehearsal:
+
+- target a supported municipality;
+- retrieve a bounded public event set;
+- show event + relation documents.
+
+If live network behavior is flaky, cut this slide from the recorded demo.
+
+* Auto Dig: evidence-first research as documents
+
+#+begin_src sh
+git clone https://github.com/lost-rob0t/starintel-gpt-auto-dig
+cd starintel-gpt-auto-dig
+
+git clone https://github.com/lost-rob0t/starintel-doc.nim \
+  .starintel-doc-nim
+
+nimble buildFast
+nimble validate
+#+end_src
+
+Validation is structure/source auditing.
+
+Validation is not a claim that every record is true.
+
+* Search the public corpus
+
+#+begin_src sh
+python3 scripts/starintel.py search flock \
+  --with-location |
+  head -n 40
+#+end_src
+
+#+begin_example
+CAPTURE LIVE:
+choose one record that visibly carries source information
+#+end_example
+
+* Render the corpus
+
+#+begin_src sh
+nimble site
+#+end_src
+
+A static research view can be generated from the same normalized records.
+
+No second hidden data model is required for the presentation.
+
+* The StarIntel loop
+
+#+begin_example
+TARGET
+  |
+  v
+ACTOR
+  |
+  v
+DOCUMENTS + RELATIONS
+  |
+  v
+QUASAR
+  |
+  +--> inspect / search / traverse
+  |
+  `--> NEW TARGETS
+#+end_example
+
+Automation expands the graph.
+
+The records remain inspectable.
+
+* Why normal people should care
+
+#+begin_example
+journalism     source-backed claims
+research       provenance that survives tool changes
+civic data     meetings -> events -> places -> organizations
+engineering    reusable collectors/transforms
+teams          machine work that is not trapped in chat logs
+#+end_example
+
+* The pitch
+
+#+begin_quote
+Not "trust the AI."
+
+Trust less.
+
+Keep more evidence.
+
+Make the machinery inspectable.
+#+end_quote
+
+* What is still rough
+
+- StarIntel is experimental.
+- Some actor implementations are private.
+- Quasar UI standalone is not the full connected runtime.
+- Some server compatibility paths are still legacy.
+- Local development is not a hardened Internet deployment.
+
+No fake polish.
+
+* Build one useful thing
+
+#+begin_example
+one source
+one typed document
+one defensible relation
+one actor that removes boring work
+#+end_example
+
+Clone it.
+
+Run it.
+
+Inspect it.
+
+Extend it.
+
+* StarIntel
+
+#+begin_example
+starintel-server
+quasar / quasar-ui
+starintel-gpt-auto-dig
+
+turn the open web into an evidence graph
+#+end_example
+
+* Provenance and production constraints :noexport:
+
+- Canonical editorial source:
+  [[file:../../../editorial/topics/starintel-for-everyone.org]]
+- Spoken copy:
+  [[file:script.org]]
+- Rehearsal/capture checklist:
+  [[file:demo.org]]
+- Every terminal result labeled =CAPTURE LIVE= must come from the final
+  rehearsal, not from invented output.
+- Pin the exact Git SHAs used in =demo.org= before recording.
+- Do not show private repositories, secret contents, API keys, cookies, or
+  broker/database credentials.
+- Keep all demo services on localhost.
+- The planning-time StarIntel lock is release 0.9.1 over base schema 0.9.0.
+  Re-check the live lock before recording.
