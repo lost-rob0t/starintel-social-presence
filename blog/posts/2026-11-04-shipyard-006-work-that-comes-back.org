@@ -1,0 +1,59 @@
+:PROPERTIES:
+:ID: 4102709b-d0ec-4663-a160-cb6541efc824
+:END:
+#+TITLE: The StarIntel Shipyard #006 — Work That Comes Back
+#+CREATED: [2026-11-04 Wed 23:28]
+#+LAST_MODIFIED: [2026-11-04 Wed 23:28]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: article
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: Codex draft 2026-11-04; Forgejo starintel-server commits e6711fb, 10b8191, 5a2a14d and 772421c Publication approved 2026-11-05 in parent OpenCode conversation: user said 'Ok its good to go' for revision7, then 'publish all of them' and 'go' for finished blog backlog including 006 and 007. Prior private-draft publication restrictions are superseded by this approval; notes, research and unfinished scaffolds remain excluded.
+#+AI_GENERATED: t
+#+AI_TAG: ai_73101650e275c497
+#+FILETAGS: :ai:ai_73101650e275c497:starintel:shipyard:actors:ingestion:reliability:
+
+#+date: [2026-11-04 Wed]
+#+description: Shipyard 006 follows recurring work across restarts and looks at what happens when ingestion sees the same document again.
+#+slug: shipyard-006-work-that-comes-back
+#+tags: starintel shipyard actors reliability ingestion
+#+status: POST
+#+revision: 1
+
+[[file:2026-10-30-shipyard-005-honest-signals.org][Shipyard 005]] was about a fleet that could look healthy while doing nothing. This time the failure has a longer tail: work can be recorded, accepted, and still not come back after a restart. And when it does come back, seeing the same document again can bring the ingestion lane down with it.
+
+Both problems turn on a small distinction. A retry is not the same thing as new work. A new observation of an existing document is not necessarily a bad document. The code has to know which is which.
+
+* A schedule needs more than a receipt
+
+The server already had a durable acceptance record for a target. The restart path needed the target itself, a way to find it, and a running schedule to reconstruct. A merged change now stores the target document alongside the acceptance record and invokes recovery during actor startup. A recurring target that has already been accepted can re-arm its in-process schedule; a completed one-shot duplicate remains a no-op.
+
+That distinction matters. If every duplicate starts work again, a retry can repeat a one-shot job. If every duplicate is discarded, a recurring job can disappear after a restart. The acceptance record and the scheduler answer different questions.
+
+The first repair was not the whole repair. Recovery originally stopped at the view's first page; the follow-up walks the pages, including a document ID in the cursor because multiple rows can have the same actor key. Another follow-up removes the database's storage revision from the recovered document before comparing its dispatch fingerprint. A database revision is evidence that storage changed; it should not by itself turn the same target into a different request. Changes to the target's actual content still matter.
+
+Sources: [[https://git.starintel.actor/starintel-labs/starintel-server/commit/e6711fb516f0616fd082f80baa8f1c66c7789ee6][target recovery]], [[https://git.starintel.actor/starintel-labs/starintel-server/commit/10b8191bf5d2d1dbe264b77ca807b5f19f7291b5][recovery pagination]], and [[https://git.starintel.actor/starintel-labs/starintel-server/commit/5a2a14dbedfaa2d246d9326a13b4d1f05922f255][storage-revision fingerprint fix]].
+
+* The document is allowed to be seen twice
+
+The ingestion repair tackles a different kind of repetition. A collector can report a document it has seen before. The server now treats an incoming =new= operation for an existing document as an update, while retaining an identity for the incoming operation so an identical redelivery can still be acknowledged as a duplicate. The emitted event says =updated=; the delivery ledger still recognizes the retry.
+
+The same change makes a repeated quarantine save return the existing quarantine record when its ID already exists. Before that, a storage conflict could escape the settlement path and stop the worker. Supervision now restarts a worker after settlement failure with bounded backoff, while the failed delivery remains available for redelivery. That is a useful combination only if we keep the boundaries straight: restart the worker, preserve the failed delivery, and do not pretend that every quarantined item has been repaired.
+
+Source: [[https://git.starintel.actor/starintel-labs/starintel-server/commit/772421c0034a795df53fc08dcfde052fa5665847][ingestion and supervision repair]].
+
+* What this establishes
+
+These are merged server changes, with regression tests in the source tree for recovery, pagination, duplicate handling, and worker supervision. I have inspected the implementation and test additions for this draft; I have not rerun the server's full test suite or independently verified the current deployment and backlog. A merged fix tells us what the code is intended to do. A completed drain, persistent schedules after a real restart, and correct downstream reads need their own evidence.
+
+The next useful check is an end-to-end one: restart with a known recurring target, observe it re-arm and execute once on schedule, then read back what it produced. For the ingestion lane, count consumers and backlog, inspect quarantine, and verify a representative document survives a repeat delivery. A green process alone cannot answer either question.
+
+#+begin_quote
+AI provenance: drafted by Mara at the user's request from the merged server commits cited above. Implementation, source tests, and live verification are distinct evidence; this draft does not claim a fresh deployment or production acceptance run.
+#+end_quote
+
+* Editorial evidence :noexport:
+
+Drafted 2026-11-04 from the Forgejo =origin/master= history, observed at =427bcb7= when fetched. The cited implementation commits are ancestors of that head. Claims are limited to the inspected code and commit history. No fresh production checks or server test runs were performed. Private infrastructure is not named or linked.
+
+Publication approval provenance (private): Publication approved 2026-11-05 in parent OpenCode conversation: user said 'Ok its good to go' for revision7, then 'publish all of them' and 'go' for finished blog backlog including 006 and 007. Prior private-draft publication restrictions are superseded by this approval; notes, research and unfinished scaffolds remain excluded.

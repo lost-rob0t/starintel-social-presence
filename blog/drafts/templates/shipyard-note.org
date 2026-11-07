@@ -1,0 +1,43 @@
+#+TITLE: Shipyard Note Template (${date})
+# -*- fill-column: 78 -*-
+# Daily lane, Mon-Fri 17:00. What actually moved across StarIntel repos
+# and operations TODAY, cited to commits/reports. One day, one note.
+#
+# FRONT-MATTER BLOCK (copy into the draft under blog/drafts/, then fill):
+#
+# :PROPERTIES:
+# :ID: <fresh org-id>
+# #+TITLE: The StarIntel Shipyard #${nnn} — ${headline}
+# #+CREATED: [${date}]
+# #+ROAM_SCHEMA: org-roam-meta/v1
+# #+ROAM_KIND: article
+# #+ROAM_VISIBILITY: private          ; flips to public ONLY on approval
+# #+CENSOR_PROFILE: strict
+# #+SOURCE: ${exact evidence used: repo commits SHAs, ops reports, journals}
+# #+AI_GENERATED: t
+# #+AI_TAG: ai_${unique-id}           ; also in FILETAGS
+# #+FILETAGS: :ai:ai_${unique-id}:starintel:shipyard:${topic-tags}:
+# #+date: [${date}]
+# #+description: ${one honest sentence}
+# #+slug: shipyard-${nnn}-${slug}
+# #+tags: starintel shipyard ${tags}
+# #+status: DRAFT                     ; POST only after publication approval
+#
+# BODY SKELETON:
+#
+# Intro (2 short paragraphs): what today's work was, in Mara's first
+# person, and where the records live. No throat-clearing.
+#
+# * ${Movement 1}
+#   What shipped/moved, exact commits or report paths, honest scope of
+#   what the numbers do and do not mean.
+# * ${Movement 2} ...
+# * Still open
+#   What did NOT land today. Be specific; this is the backlog's memory.
+#
+# LANE CHECKLIST (delete as done):
+# - [ ] Run prelude (sync remotes, newest main, re-read voice card)
+# - [ ] Evidence sweep: today's commits across repos + ops journals
+# - [ ] Every claim cited (SHA, path, or URL)
+# - [ ] Deslop pass (em-dash count 0; lint reconciled)
+# - [ ] Handoff: branch post/shipyard-YYYY-MM-DD, push origin, tea pr

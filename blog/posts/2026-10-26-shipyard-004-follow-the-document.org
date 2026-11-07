@@ -1,0 +1,75 @@
+:PROPERTIES:
+:ID: a8d2950f-367a-406c-aed4-e7ed76e3a13d
+:END:
+#+TITLE: The StarIntel Shipyard #004 — Follow the Document
+#+CREATED: [2026-10-30 Fri 23:00]
+#+LAST_MODIFIED: [2026-10-30 Fri 23:00]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: article
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: User-authorized chronological reorder and publication in Codex 2026-10-30; original reviewed source and evidence retained
+#+AI_GENERATED: t
+#+AI_TAG: ai_f93ab88c4064b46b
+#+FILETAGS: :ai:ai_f93ab88c4064b46b:starintel:shipyard:contracts:server:testing:
+
+#+date: [2026-10-26 Mon]
+#+description: A retrospective on the October 26 document-contract checkpoint: ingestion, patch validation, storage projection, and the round-trip evidence still missing.
+#+slug: shipyard-004-follow-the-document
+#+tags: starintel shipyard contracts server testing
+#+status: POST
+#+revision: 1
+
+/Evidence snapshot: October 26, 2026. Edited for publication on October 30./
+
+A producer can generate valid JSON and still send the wrong document.
+
+A collector, a Common Lisp worker, and a Python tool can agree about a document's subject while disagreeing about its envelope or field names. Once that record reaches storage, another component may start building on the disagreement.
+
+This installment records the contract checkpoint drafted on October 26. Publication was delayed during machine and infrastructure downtime, as reported by the editor. [[file:2026-10-30-shipyard-005-honest-signals.org][Shipyard #005 — Honest Signals]] follows with the October 30 operational report. No new integration run is reported here.
+
+* Validate the document a patch will create
+
+StarLang owns StarIntel's generated canonical document contract. Producers and the server consume that contract rather than maintaining competing definitions.
+
+The server work inspected for the original checkpoint brought canonical checks to ingestion and updates. A patch makes the reason concrete: a request fragment can look valid while producing an invalid document when combined with stored state. The resulting document needs validation too.
+
+Storage creates another handoff. Database bookkeeping should not become part of the producer's interchange format. Supported readback should preserve the public values the producer wrote and apply the intended public projection consistently.
+
+These are the boundaries described by the inspected implementation. They do not establish that every actor or retained document format passed through them successfully.
+
+* A delivery receipt leaves the important question open
+
+A target describes work to perform. Successful dispatch establishes delivery to a destination. Acceptance needs to follow the result through persistence and supported client readback.
+
+Replay and conflict checks matter for the same reason: a repeated request should not quietly become unrelated work. A useful record names the producer and server revisions, reproduces the fixture, and compares the result returned through the supported client path.
+
+At the October 26 checkpoint, the separate actor integration effort still recorded strict readback failures, blocked controls, skipped cases, and unrun native service checks. A server projection fix remained a candidate, with native validation and the affected actor rerun outstanding. This retrospective does not claim those later completed.
+
+Filtering a comparison until it passes would hide the boundary it was meant to exercise.
+
+* Repeatable input is one part of the proof
+
+[[file:2026-10-26-synthetic-people-real-bugs.org][Synthetic People, Real Bugs]] describes the fictional generator fixtures that supplied repeatable input. The merged generator result and its storage checks belong to that generator's exercised paths. A SQLite readback test does not establish a round trip through the StarIntel server.
+
+The original checkpoint also distinguished the merged generator change from a separate graph-validation candidate: [[https://github.com/lost-rob0t/star-synthdata/pull/8][PR #8]], inspected at [[https://github.com/lost-rob0t/star-synthdata/commit/f9efe3d873c485b3fcbbe9b9f7f75ae98f5992c2][f9efe3d8]]. On October 26 it was open and unmerged, with 86 tests recorded for the candidate. That historical count must not replace the merged generator's 85-test result or be read as its current status.
+
+[[file:2026-10-26-actor-field-guide.org][A Field Guide to StarIntel Actors]] separates collectors, enrichment workers, document-stream evaluators, server services, and projection workers. Sharing the word “actor” does not make one test matrix cover all of them.
+
+* Compatibility has to state its limits
+
+Historical records do not become canonical documents when a dependency changes. Retained compatibility paths need to state what they accept. Unsupported canonical input should fail before producing misleading output.
+
+A manifest describes an interface; readiness still needs execution evidence. A design record describes intended work; implementation and runtime results need separate support. A deterministic adapter test does not demonstrate a successful model-provider run.
+
+For this dated checkpoint, the next useful result was a representative authenticated producer-to-server test with persisted client readback, followed by replay, failure, and recovery checks wherever those guarantees were claimed. The generator supplied repeatable input. The missing acceptance result needed its own run.
+
+— *Mara*
+
+#+begin_quote
+AI provenance: edited on October 30 from the held October 26 Shipyard draft and retained as #004 at the user's request. The original source inspection and acceptance limits are retained. Linked historical results were not rerun for this article. Private implementation and infrastructure details are omitted.
+#+end_quote
+
+* Editorial provenance :noexport:
+
+Adapted from reviewed source commit 5fa11187589d45bae57f438ba6acf4ef1897293a, blog/posts/2026-10-26-shipyard-004-canonical-document-boundary.org, original Org ID d651d999-db4a-4c42-8f39-080bf108966d. User requested an edit pass and a new installment in Codex chat on 2026-10-30. The user requested chronological series order: this checkpoint remains #004 and Honest Signals becomes #005. This is a retrospective, not a fresh status report.

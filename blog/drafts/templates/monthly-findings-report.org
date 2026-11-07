@@ -1,0 +1,28 @@
+#+TITLE: Monthly Findings Report Template (${month})
+# Monthly lane, 1st of month. Aggregate the public-tenant/public-document
+# surface with full provenance. Numbers are the story; scope honestly.
+#
+# FRONT-MATTER: same block as shipyard-note.org (slug:
+# findings-${yyyy-mm}, tags include findings; status: DRAFT).
+#
+# BODY SKELETON:
+#
+# Intro: the month's public surface in two sentences.
+#
+# * Document surface
+#   Totals by dtype from the public endpoint(s), with snapshot timestamps
+#   and what each count does and does not include.
+# * What moved
+#   Datasets/targets added or grown, with provenance to ops reports.
+# * Provenance and method
+#   Exactly how each number was obtained (endpoint, query, timestamp) so
+#   the next report can be compared like-for-like.
+# * Corrections
+#   Any restatement of prior months' numbers, explicitly.
+#
+# LANE CHECKLIST:
+# - [ ] Prelude (sync, voice card)
+# - [ ] Public-surface queries re-run fresh (no stale caches)
+# - [ ] Every total has endpoint+timestamp provenance
+# - [ ] Deslop pass + lint
+# - [ ] Handoff: post/monthly-findings-${yyyy-mm}, push origin, tea pr

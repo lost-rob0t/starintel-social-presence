@@ -1,0 +1,27 @@
+#+TITLE: Weekly Article Template (${monday-date})
+# Weekly lane, Mondays (17:00 run produces daily + weekly). ONE topic done
+# properly, with reproducible steps. Not a roundup.
+#
+# FRONT-MATTER: same block as shipyard-note.org (ROAM_KIND: article,
+# slug: ${topic-slug}, tags include the topic; status: DRAFT).
+#
+# BODY SKELETON:
+#
+# Intro: the one problem this article solves and why it mattered this
+# week. State the reader's takeaway plainly.
+#
+# * The problem
+#   Concrete symptoms, observed evidence, when/where.
+# * What we did
+#   Steps in order, reproducible: commands, config, commit SHAs.
+# * What it does (and does not) do
+#   Honest scopes: measured vs inferred, shipped vs planned.
+# * Reproduce it
+#   Exact commands or references a reader can follow.
+#
+# LANE CHECKLIST:
+# - [ ] Prelude (sync, voice card)
+# - [ ] Single-topic discipline (split anything that sprawls)
+# - [ ] Repro steps verified against the repo state cited
+# - [ ] Deslop pass + lint
+# - [ ] Handoff: post/weekly-YYYY-MM-DD, push origin, tea pr

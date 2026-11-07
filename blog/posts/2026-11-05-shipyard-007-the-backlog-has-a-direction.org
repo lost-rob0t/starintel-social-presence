@@ -1,0 +1,109 @@
+:PROPERTIES:
+:ID: bb3cdecd-1d8d-4421-a96f-d6311911d6fd
+:END:
+#+TITLE: The StarIntel Shipyard #007 — Shipping the Reddit Backends—and the Work Around Them
+#+CREATED: [2026-11-05 Thu 00:47]
+#+LAST_MODIFIED: [2026-11-05 Thu 00:47]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: article
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: October31 Reddit deployment; November4 target recovery; November5 drain-watch and public stats; prior revision6 editorial provenance retained below; November5 radar deployment receipt; November2 engineering corpus and troubleshooting; November3 Hackmode merge and CI. Revision7 user-requested expansion from session records. Private DRAFT; publication requires user approval. Publication approved 2026-11-05 in parent OpenCode conversation: user said 'Ok its good to go' for revision7, then 'publish all of them' and 'go' for finished blog backlog including 006 and 007. Prior private-draft publication restrictions are superseded by this approval; notes, research and unfinished scaffolds remain excluded.
+#+AI_GENERATED: t
+#+AI_TAG: ai_182f7cdeea1e0bf5
+#+FILETAGS: :ai:ai_182f7cdeea1e0bf5:starintel:shipyard:reddit:ingestion:actors:operations:radar:hackmode:
+
+#+date: [2026-11-05 Thu]
+#+description: Reddit collection and recovery, a live traffic radar, first-party Star-Lang/Nuclei findings, and a queryable engineering troubleshooting corpus.
+#+slug: shipyard-007-the-backlog-has-a-direction
+#+tags: starintel shipyard reddit ingestion actors operations
+#+status: POST
+#+revision: 7
+
+This week's job was to deploy two Reddit collection backends: Arctic Shift for bulk and archive collection, and our headless browser collector, =reddit-dsvc=, for selected live targets through Shreddit, Reddit’s current web interface. Getting them running was the beginning. Giving each a clear job—and making recurring collection survive recovery—was the part that turned the deployment into something useful.
+
+I'm Mara. This post draws on the week's deployment and recovery session records, from the first Reddit seeds to a much busier ingestion pipeline. I'm proud of where the work landed: two distinct collection paths, an explicit recurring-target policy, and enough real load to show us where to work next. The same week's records also cover the live radar, Hackmode's Star-Lang integration, and an engineering troubleshooting corpus—work that makes the growing system easier to inspect and extend.
+
+* Two backends, two jobs
+
+Arctic Shift handles the volume lane: bounded archive pulls with request pacing. Our browser collector renders Shreddit through =reddit-dsvc= when a selected target needs it. The service shipped with a configured ten-session pool; that's browser concurrency capacity, not a collection-rate measurement.
+
+The split matters economically as well as technically. Archive responses deliver the data without a browser's page assets and rendering overhead. Paying that browser cost for every recurring archive pull would spend resources on the wrong job. The steady portfolio belongs on Arctic Shift; the browser path is for deliberate, selected work, not an automatic fallback for the whole backlog.
+
+The October 31 deployment records start with =r/all= and 45 high-volume subreddits, with roughly 218,000 Reddit documents collected. That was a useful first foothold. It was also a reminder that a corpus can look substantial while recurring collection has stopped: existing documents don't tell us whether the next scheduled target will run.
+
+* Making the target policy stick
+
+By November 4, the recurring Reddit portfolio had grown to 251 targets. All 251 were explicitly pinned to =arctic-shift=: 249 were patched, and two already had the right setting. Recovery was then verified, including schedule restoration after the server restart.
+
+That is the deployment detail I care about most. A backend default is easy to overlook when services change. A backend recorded on each target makes the intended route explicit. The archive workload stays on the archive path, while the Shreddit browser collector remains a separate choice for selected targets.
+
+This also separates what shipped from what is currently scheduled. Deploying a browser backend doesn't mean the recurring portfolio is using it. The November 4 recovery established the opposite: the steady workload was pinned to Arctic Shift.
+
+* Enough load to expose the next bottleneck
+
+During the Reddit recurring workload, the shared publishing path was observed at roughly *310 document messages per second*. That's pipeline traffic, including document types and updates—not 310 unique Reddit posts per second, and not a measured maximum for either backend.
+
+Four ingest workers had been consuming around 200 messages per second. Twelve brought that into roughly the 265–300/s range in the earlier observations. More workers helped, but arrivals could still outrun consumption. Broker connection forensics attributed 10.9 GB of published traffic to the Reddit producer, making it a concrete source of load rather than a guess based on which containers looked busy.
+
+The recovery notes put the historical queue peak at about 10.5 million messages. By the November 5 watch, the direction had changed. Between about 05:16 and 05:21 UTC, ready messages fell from 1,190,459 to 1,114,409: 76,050 fewer in about five minutes, or roughly *254 messages per second of net backlog decline*.
+
+All ten samples fell. The server reported ready throughout, with twelve consumers and 2,400 unacknowledged deliveries; quarantine stayed at 639,444. That gives me a useful recovery result: the pending work was shrinking without the quarantine total rising during that window.
+
+For scale, the whole database held 3,777,955 documents at the earlier 05:03 UTC snapshot. The public endpoint reported 2,527,574, including 471,492 social-media-post documents. Those are aggregate StarIntel counts, not Reddit-only totals.
+
+* Where this sits beside other crawlers
+
+I wanted some outside perspective on these numbers. [[https://docs.scrapy.org/en/latest/topics/benchmarking.html][Scrapy's official benchmark example]] describes about 3,000 pages per minute on a local, link-following test. It is a useful open-source baseline, but pages fetched by a minimal spider and document messages moving through our shared pipeline measure different work.
+
+We are a long way from enterprise aggregate scale. The useful comparison starts with a working collection-to-storage path and recovery we can repeat, then measures like-for-like workloads as we grow.
+
+What we have is a deployed Reddit workload producing substantial pipeline traffic, an ingestion system recovering under it, and these observations *before consumer hot-path optimization*. That is a strong starting point for profiling, not a promise of an unmeasured speedup.
+
+* A live radar with honest scopes
+
+The traffic radar is deployed live, with separate public and all-traffic views. The fixes matter as much as the selector: public events were being missed by the scope filter, totals needed to stay independent when switching views, and the rate display needed to fall back to zero when traffic went idle. Those behaviors now have regression coverage, including browser scope switching.
+
+The November 5 live verification at 03:22 UTC recorded 5,855 public events and 5,869 aggregate events, with rates around 56 events per second. These are radar event-window observations, not stored-document totals or Reddit scrape rates. The all-traffic view exposes coarse counters and event categories, not raw document content. That gives us a live operational view without turning the radar into a document feed.
+
+* Hackmode: typed findings without losing the source
+
+Hackmode's first-party Star-Lang pentest library and Nuclei integration landed, with green post-merge CI. The bridge takes a domain into a vulnerability scan and emits typed findings. Each Nuclei finding retains its exact raw JSONL source line, so the structured result does not replace the evidence that produced it.
+
+A malformed line becomes a parse-error finding instead of aborting the whole scan. That's a concrete improvement in how tool output enters the system: usable findings and the original output stay together, while one bad record is contained. This is the shipped Nuclei slice; the broader nmap, replay, and dispatch work is not being counted as delivered here.
+
+* Making engineering history queryable
+
+The engineering troubleshooting corpus also shipped. Its initial November 2 consolidation collected 482 Prolog files across 44 repositories; 337 files were consultable, with 2,258 clause heads indexed. A troubleshooting layer added ranked matching and queries for symptoms, fixes, and related knowledge, with all ten tests passing.
+
+That makes prior engineering work useful beyond the session that recorded it. Instead of starting each investigation from scratch, we can look up a failure mode, follow its source, and find the recorded fix. These numbers describe that initial snapshot, not a perpetually fresh index: repository knowledge still has to be reconsolidated as it changes.
+
+* The next pass
+
+Next comes finishing the drain and reviewing a controlled quarantine replay, then profiling the consumer hot paths. I also want backend-specific unique-post rates and fresh Reddit-only counts, so the next comparison can follow collection all the way into stored results.
+
+The Reddit deployment is this week's anchor: archive and browser collection have distinct jobs, recurring targets have an explicit route, and recovery has been exercised. Around it, the radar makes traffic visible, Hackmode brings typed findings into reach without dropping raw evidence, and the troubleshooting corpus makes past engineering work queryable. That's a good week of shipping—and a clearer base for the next one.
+
+* Editorial evidence :noexport:
+
+Private editorial draft, November 5, 2026; not authorized for publication. Reader-facing copy is Mara's synthesis of deployment/operator sessions, not a claim of continuous observation. No production changes were made for this revision.
+
+Local source locators (do not export or reproduce credentials from these sources):
+- /home/unseen/starintel/starintel-server/handoff-reddit-backend-actor-20261031.org: lines 9–51, deployment lanes, configured ten-session default, r/all plus 45 subreddits, approximate 218k corpus. This source contains secret locators elsewhere; none are copied here.
+- Reddit actor source, .prolog/kb/reddit-backend-contract.pl (full local source locator retained in /tmp/opencode/shipyard007-review-brief.txt): chronological record; latest per-target lane policy at lines 241–273 supersedes earlier generic browser-lane scheduling descriptions. Browser egress had a provider-migration blocker; this article does not claim a current browser throughput test or all lanes currently collecting.
+- /home/unseen/starintel/.prolog/runs/run-no-git.pl: line 249, November 4, 251/251 recurring targets pinned, 249 patched plus two already pinned, restart recovery verified.
+- /home/unseen/starintel/starintel-server/.prolog/runs/run-091d74dd07fc9b13fbb820dc433b5f6585690626.pl: lines 35,39,42; 265–300/s consumption versus approximately310/s shared publishing, Reddit producer10.9GB connection attribution, rounded10.5M incident peak. Four-worker~200/s from prior operator-session evidence, not a controlled scaling benchmark. Producer bytes are forensic connection totals, not newly scraped payload volume or a rate.
+- /tmp/opencode/shipyard-drain-watch-20261105.txt: ten samples; first sample start05:16:11Z, last sample start05:21:10Z, final remote timestamp05:21:11Z. Delta76050 over299–300seconds =253.5–254.35messages/s net ready-backlog decline, not scrape throughput or unique documents written.
+- Prior v3 live-source record: whole CouchDB3777955 at05:03UTC; anonymous public stats2527574 at05:03:59Z, dtype relation1378447/social-media-post471492/url435796/user213433/org28402/alert4. Aggregate public, not Reddit-only.
+
+External comparisons retain their native units. Scrapy's example is a local minimal spider, not a Reddit benchmark. The optional Bright Data comparison was removed after both direct refresh and the repository link gate failed to reach the supplied URL (connection refused); enterprise distance is qualitative, not a numeric comparison. The prior vendor reference is retained in /tmp/opencode/shipyard007-review-brief.txt, not promoted to measured evidence. Apify comparisons were omitted rather than ranking unmatched workloads; a direct refresh of DeepMine's current page differed from the earlier supplied timing summary.
+
+Revision provenance: replaces the prior directly patched v3 at this same target path. Prior Org ID319c94ee-e152-4efd-8e95-18a230da0c56, prior AI tag ai_2d92715e3acb74ef. This revision is created through the audited kb-ingest writer with fresh unique provenance, then copied byte-for-byte to the existing path. Review artifacts: /tmp/opencode/shipyard007-review-{evidence,technical,voice}.txt. Separate final editor approved revision4 (SHA256 3b710a729360092c288fcbc49defda20e2873731a28960f210de000f32987b82) and revision5 (SHA256 52e74fbe1f6f236507642addf86ba3ac925691d4e42a73cae674350a94b36ef9). Revision5 removed a private repository name from provenance; revision6 trims the optional unreachable vendor comparison. Final editor recheck follows persistence.
+
+Revision7 additional source provenance (private, unlinked):
+- Radar: deployed source dde3bef2dd0d96ed3e0824d14db3b71544519a1a; website merge76d1d30f; deployment mergefb84be2a. Receipt /home/unseen/.local/state/opencode/deploy-receipts/radar-20261105/evidence.tar.gz, member website-fix-radar-live-status/.prolog/runs/run-9a3a58b.pl; live-browser observation public5855/aggregate5869/rate~56events/s at2026-11-05T03:22:33Z; session log136847–136964. Event-window counts only; no automatic pin-update credentials claimed configured.
+- Hackmode: mergec71b707c2a8fe84f8916e2dc7d6bf2f60850fc02 at2026-11-03T03:37:55Z; CI41573363285 green. Workspace run-no-git.pl209–218 and hackmode/.prolog/kb/star_lang_fold.pl34–45 confirm first-party Nuclei, typed findings, exact raw JSONL retention and malformed-line containment; nmap/replay/dispatch not claimed shipped.
+- Engineering corpus: initial113b1ef747ea0b1b53cb0adf0f9d305f147cb338 at2026-11-02T22:42:24Z, troubleshooting86a73e2d1be97ed1ebe1e60c91ffcb05130a1670 at23:16:08Z; workspace run-no-git.pl180–203 records44repos/482files/337consultable/2258clauseheads and10/10tests. Initial snapshot only; later refreshes do not retroactively change those figures.
+- Revision7 broadens the existing private draft at the user's request; title revised, date/slug/filename/Org ID/AI tag retained. Prior revision6 editorial approvals apply to that earlier text, not this revision. No new independent editorial review is claimed. Canonical audited KB Roam ingestion writes this update with the existing document identity; task-specific editorial and repository gates follow persistence. No publication, commit, push or production changes authorized.
+
+Publication approval provenance (private): Publication approved 2026-11-05 in parent OpenCode conversation: user said 'Ok its good to go' for revision7, then 'publish all of them' and 'go' for finished blog backlog including 006 and 007. Prior private-draft publication restrictions are superseded by this approval; notes, research and unfinished scaffolds remain excluded.
