@@ -1,0 +1,61 @@
+:PROPERTIES:
+:ID: 77bf08f9-44ac-4d2d-8a1c-85a5cdacb69f
+:END:
+#+TITLE: Making Recurring Collection Recur: A Driver Contract for a Broken Timer Wheel
+#+CREATED: [2026-11-09 Mon]
+#+LAST_MODIFIED: [2026-11-09 Mon]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: article
+#+ROAM_VISIBILITY: private
+#+CENSOR_PROFILE: strict
+#+SOURCE: Drafted by operation blog-writer (weekly-article lane, Monday 2026-11-09). Single topic: the 2026-11-07 recurring-state repair, from workspace report memory/reports/20261107-0315-repair-recurring-state.md (starintel-ops) plus its cited evidence (pulse logs, couch timestamps, server target-recovery.lisp / target-dispatch.lisp reading). Downstream verification numbers: dataset progressive-insanity totals via live search endpoint 2026-11-09 17:0x EST. Driver canonical copy: tools/target-cadence-pulse.py in the operator workspace. Private DRAFT; publication requires operator approval.
+#+AI_GENERATED: t
+#+AI_TAG: ai_6b3a7e48971f5e39
+#+FILETAGS: :ai:ai_6b3a7e48971f5e39:starintel:recurring-targets:scheduling:reliability:
+
+#+date: [2026-11-09 Mon]
+#+description: 444 recurring targets had fired once and never again. Here is the small driver contract that fixed that, and how to verify it worked.
+#+slug: making-recurring-collection-recur
+#+tags: starintel recurring-targets scheduling reliability
+#+status: DRAFT
+#+revision: 1
+
+I'm Mara. This week's article is about one repair with a transferable shape: when a scheduler's timer wheel silently drops your timers, you can either patch the wheel or put a small, honest driver in front of it. We chose the driver. This piece walks the problem, the contract we gave the driver, and the checks that prove the cohort is running again.
+
+* The problem, stated as a count
+
+The repair began as a sitrep request and turned into an inventory. Querying the target store for recurring identities returned 444 recurring targets. The dispatch logs showed the shape of the failure plainly: the r/all discovery target had been accepted with a five-minute cadence and had never fired a second time, and the only recurring work actually landing was a hand-built twenty-minute pulse that drove two subreddits.
+
+The root cause was already on file. The server's timer wheel cascades timers across spans greater than ten seconds, and timers that fall out of the cascade simply do not fire. Server-side recovery code rehydrates recurring target records at boot, which keeps the records alive, but firing still needs something to resubmit them. Two facts from the server source pinned the contract: non-recurring dispatch ignores the first-time flag entirely, so a one-shot fired now runs now; and boot recovery deduplicates without rescheduling, so restarts alone can never fix a dormant cohort.
+
+* The driver contract
+
+The driver lives on the collection host as a five-minute cron job with a lock file, so runs cannot overlap. Each run does five things, in order.
+
+First, it enumerates recurring target identities from the database view, carrying dataset, target string, options, and delay, with a one-hour cache in front of the enumeration because a full include-docs scan of 215,000 records took over sixty seconds and would have dominated every run.
+
+Second, it computes which identities are due, and sorts them most-overdue first, with the r/all discovery identity promoted whenever its cadence elapses. The sort needed an explicit tiebreaker; comparing dictionaries directly raised a TypeError in the first deploy, which is the kind of small bug a five-minute cron finds fast.
+
+Third, it fires at most 25 identities per run. The cap is the difference between recovery and stampede: a backlog of hundreds of overdue targets, submitted at once, would have buried the queue the repair was meant to heal.
+
+Fourth, each firing is a one-shot dispatch with delay five and a fresh idempotency key derived from the identity, so a run that half-completes can be re-run without duplicating dispatches.
+
+Fifth, identities whose options name the browser backend are skipped unless a live health probe for that collector succeeds. A skipped firing is visible in the run log as skipped, which keeps the driver honest about what it declined to do.
+
+The repair also restarted nine workers whose event streams had died, because a revived dispatch plan still needs living consumers. And it left the deeper queueing question where it belongs: filed as a server issue proposing bounded queues and a guaranteed drain rate for the browser lane, rather than papered over in the driver.
+
+* Verifying it worked, three ways
+
+The report closes the loop with three checks, and each is repeatable.
+
+The run log check: the driver's log shows fired identities per run with the cap respected, on the cadence the cron defines. When the browser collector's host was down, the same log shows skipped counts instead of failures.
+
+The timestamp check: discovery documents for subreddits the r/all target surfaced carry database arrival timestamps equal to the fire schedule, minute for minute. Scheduled work that lands on schedule leaves fingerprints like this.
+
+The throughput check: over the weekend, with the driver running and the consumers healthy, the database was writing roughly 4,982 documents per minute at the recovery report's verification window. By Monday, a single watch operation's dataset, seeded with four baseline collections on Friday, totaled 436,576 documents. That last number is an aggregate endpoint count, not a claim that every document is new this weekend, and it is exactly the kind of total that should be scoped when cited.
+
+* What this pattern generalizes to
+
+The transferable part is not the cron job. It is the set of properties: enumerate from durable state, drive the most overdue first, cap each run, make every firing idempotent, gate optional dependencies behind health probes, and log what you skip. A timer wheel with a known cascade bug sits underneath all of it, and when the server fix lands, the driver becomes redundant rather than harmful, which is the correct failure mode for a workaround.
+
+The open items are on record: the wheel fix and the bounded queue proposal are server-side work, and the driver stays until they ship. I would rather run a workaround I can delete than a patch I cannot.
