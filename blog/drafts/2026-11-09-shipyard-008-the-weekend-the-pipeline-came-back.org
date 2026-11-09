@@ -1,0 +1,53 @@
+:PROPERTIES:
+:ID: e3cfda7b-061b-473f-b3a9-766744382741
+:END:
+#+TITLE: The StarIntel Shipyard #008 — The Weekend the Pipeline Came Back
+#+CREATED: [2026-11-09 Mon]
+#+LAST_MODIFIED: [2026-11-09 Mon]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: article
+#+ROAM_VISIBILITY: private
+#+CENSOR_PROFILE: strict
+#+SOURCE: Drafted by operation blog-writer (shipyard-daily lane, Monday 2026-11-09) from verified records: workspace reports memory/reports/20261106-1709-operate.md, 20261107-0315-repair-recurring-state.md, 20261107-1129-storage-recovery.md (starintel-ops workspace); social-presence git log (PR #14 merge 5f45a3e, commit 40df9c9); live search endpoint totals for dataset progressive-insanity queried 2026-11-09 17:0x EST (436,576 total; 113,990 social-media-post; 23,073 user). Private DRAFT; publication requires operator approval per house rules.
+#+AI_GENERATED: t
+#+AI_TAG: ai_e3feead04a453a6f
+#+FILETAGS: :ai:ai_e3feead04a453a6f:starintel:shipyard:recovery:recurring-targets:operations:
+
+#+date: [2026-11-09 Mon]
+#+description: A recurring-target driver that revived 444 dormant schedules, and a storage stall recovered with metadata intact.
+#+slug: shipyard-008-the-weekend-the-pipeline-came-back
+#+tags: starintel shipyard recovery recurring-targets operations
+#+status: DRAFT
+#+revision: 1
+
+I'm Mara. This note covers the stretch since Shipyard 007: a pinned editorial voice, a recurring-state repair, a storage failure with a clean recovery, and the first numbers from the left-wide watch operation. The records are workspace duty reports and the repositories themselves; every number below says where it came from.
+
+* The editorial voice is pinned
+
+The persona-setup phase of the blog operation landed as PR #14 and merged at commit 5f45a3e. The repository now carries a Mara voice card and three lane templates under =blog/drafts/templates/=, derived from the seven published Shipyard notes and the operator notes, with the deslop rules written in as hard constraints. That closes the loop the earlier notes were running on feel: the voice now has a written contract, and it lives in the same tree as the drafts.
+
+* Recurring targets that actually recur
+
+Saturday's repair report opens with an uncomfortable finding: of the recurring collection targets on record, 444 had never fired again after their first acceptance. The scheduler's timer wheel drops timers beyond a ten-second span, a known open issue, and nothing existed to drive the recurring cohort.
+
+The fix was a small driver on the collection host rather than another server patch. It enumerates recurring targets from the database every five minutes, fires the most overdue identities first as one-shot dispatches with fresh idempotency keys, and caps each run at 25 firings so recovery cannot stampede the queue. Identities that need the browser collector are gated on a live health probe, so a dead collector means skipped firings, not lost ones. The r/all discovery target now fires every 300 seconds, and the report shows its discovery documents arriving with timestamps that match the fire schedule.
+
+Nine workers with dead event streams were restarted along the way, and a new server issue was filed for bounded queueing on the browser lane. The driver's canonical copy is tracked in the operator workspace at =tools/target-cadence-pulse.py=.
+
+* A storage stall, recovered with the metadata intact
+
+The same day, the collection host's USB storage enclosure stalled: thirty in-flight I/O requests and zero completions, which froze the stack's processes in uninterruptible waits and took the public ingest endpoint offline with a 502.
+
+The recovery sequence is worth keeping. A USB port reset re-enumerated the enclosure as a new device and errored out the stuck writes. The thin-provisioning pool's metadata passed =thin_check= with a consistent verdict, so the pool was reactivated rather than rebuilt. Filesystem checks on all three volumes found only count drift. The last piece was the message broker, whose unclean crash left it listening on the network but not serving; one restart brought the server healthy on its next cycle. A minute of database sequence numbers settled the question of liveness: roughly 4,982 writes per minute at verification time.
+
+The report closes with an honest hazard note: that USB bridge model has stalled under sustained load before, and the durable fix is moving the volume group to SATA or NVMe backing storage. That migration has not happened yet.
+
+* The left-wide watch has data
+
+The progressive-insanity operation catalogued its watch list on Friday and submitted its first collection baselines; the Reddit publish outage that run isolated is gone, replaced by the repaired pipeline above. As of Monday's endpoint query, the operation's dataset totals 436,576 documents, of which 113,990 are social-media posts and 23,073 are user documents. Those are aggregate counts from the search endpoint, not a quality claim: cataloguing came first, and user matching against the wider index is the next phase's work.
+
+One more operation closed its arc over the weekend: the capytistas public-evidence review finished all twelve of its phases. Its deliverable is a factual packet separating announced plans from documented actions, built for human review rather than automated conclusions.
+
+* Still open
+
+The browser-lane queueing issue is filed, not fixed. The storage migration off the USB enclosure is recommended, not done. And the reverse proxy host that fronts the public ingest endpoint was still unreachable at the last report, which is why some external views lag the database's actual state. Next Monday's note should be able to say which of these moved.
