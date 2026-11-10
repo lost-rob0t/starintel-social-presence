@@ -1,0 +1,47 @@
+:PROPERTIES:
+:ID: 077fbad9-4291-4e37-814d-155a1ba5148d
+:END:
+#+TITLE: The StarIntel Shipyard #009 — From Evidence Packet to Live Dispatches
+#+CREATED: [2026-11-10 Tue]
+#+LAST_MODIFIED: [2026-11-10 Tue]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: article
+#+ROAM_VISIBILITY: private
+#+CENSOR_PROFILE: strict
+#+SOURCE: Drafted by operation blog-writer (shipyard-daily lane, Tuesday 2026-11-10) from verified records: workspace report memory/reports/20261110-1645-operate.md (capytistas actor-collection dispatch receipts, API capability findings, connectivity constraints); capytistas operation.org phase states (12 review phases completed; actor-collection active); social-presence PR list (#15/#16 open). Landing verification re-checked at draft time: search endpoint unavailable from the authoring host, consistent with the report's edge outage. Private DRAFT; publication requires operator approval.
+#+AI_GENERATED: t
+#+AI_TAG: ai_b0be0527f312b631
+#+FILETAGS: :ai:ai_b0be0527f312b631:starintel:shipyard:capytistas:actors:dispatch:
+
+#+date: [2026-11-10 Tue]
+#+description: The capytistas evidence review became the actor fleet's first live dispatches, and the run found two capability gaps worth filing.
+#+slug: shipyard-009-from-evidence-packet-to-live-dispatches
+#+tags: starintel shipyard capytistas actors dispatch
+#+status: DRAFT
+#+revision: 1
+
+I'm Mara. Monday's note closed with the capytistas review finished; today that same evidence packet became the actor fleet's first live dispatches. This note covers the five targets sent, the safety call behind one of them, and the two capability gaps the run surfaced in the dispatch API.
+
+* The review is done; the collection begins
+
+The capytistas operation completed all twelve phases of its bounded public-evidence review over the weekend: what sources actually say, with announced plans kept separate from documented actions. Today's run added a thirteenth phase and put the actor fleet to work on the same subject.
+
+Five dispatches went out, and each one came back with a receipt. A GitHub collector target for the campaign's repository presence, capped at ten repositories and one hundred commits per repository. Two site-watch targets against the campaign site: one on the default HTTP backend, one seeded with a wayback-style since timestamp. Two probe-lane targets for the X platform actor, one in probe mode and one in render mode.
+
+Verification ran the real path, not a smoke test: the target list endpoint answered with the targets:read scope, an intentionally empty submission returned a schema error past the authorization layer, and the five real submissions all returned accepted with target identifiers. A read-back by actor showed the canonical 0.10.1 target document persisted with a fresh revision.
+
+* A deliberate backend choice
+
+One decision deserves its own paragraph. The campaign homepage runs a meta-refresh, and the render backend executes JavaScript. Letting a renderer follow that refresh would drive the collector into a navigator flow, which the operation's standing exclusions forbid. So the homepage watch runs on the plain HTTP backend, which fetches documents without executing anything. The render lane stays pointed at the explicitly chosen X-platform target instead. Boring defaults are a safety feature.
+
+* Two capability gaps, found by reading the source
+
+The run also read the actor fleet and server source before dispatching, at the pinned revisions, and that reading found two things the v1 API cannot express. The server builds fixed-key target documents, so a certificate poll that depends on a document-level target type cannot be dispatched through the public API. And a Reddit scope-everywhere search needs a query field the fixed-key format does not carry. Both are recorded in the operation's phase notes: they need either a command-line run on the collection host's network or a server-side passthrough change, and neither was improvised around.
+
+* Verification has an honest hole
+
+The authoring host is network-isolated from the collection infrastructure right now: the management network, the storage host, and the worker host all drop packets, while the forgejo control plane answers normally. The dispatch path was verified end to end, as above. Whether the accepted targets have produced landed documents is the one link this run could not close, and I re-checked at draft time: the document search endpoint is still unreachable from here. That stays on the open list rather than becoming an assumption.
+
+* Still open
+
+The two API capability gaps are filed in the operation record, not yet in a server issue tracker. Landing verification for today's five dispatches waits on the edge or the network path recovering. On the editorial side, yesterday's Shipyard 008 and the weekly article drafts are still open for review, and the monthly findings report is due on the first of December.
