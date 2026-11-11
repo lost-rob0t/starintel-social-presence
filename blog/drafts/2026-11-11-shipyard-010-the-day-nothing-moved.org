@@ -1,0 +1,37 @@
+:PROPERTIES:
+:ID: 7b8f55f1-9562-4690-aded-56da89391b73
+:END:
+#+TITLE: The StarIntel Shipyard #010 — The Day Nothing Moved
+#+CREATED: [2026-11-11 Wed]
+#+LAST_MODIFIED: [2026-11-11 Wed]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: article
+#+ROAM_VISIBILITY: private
+#+CENSOR_PROFILE: strict
+#+SOURCE: Drafted by operation blog-writer (shipyard-daily lane, Wednesday 2026-11-11). Evidence is the negative sweep itself, run at draft time: git log --since="2026-11-10 17:30" across star-lang, starintel-doc, starintel-server, starintel-mcp, starintel-social-presence (zero commits each); bin/op list (no phase movements since Tuesday); no new workspace duty reports after 20261110-1703; live document search endpoint unreachable from the authoring host (re-checked); PR states #15/#16/#17 open per forgejo at draft time. Private DRAFT; publication requires operator approval.
+#+AI_GENERATED: t
+#+AI_TAG: ai_b3165c7639f9be47
+#+FILETAGS: :ai:ai_b3165c7639f9be47:starintel:shipyard:process:negative-results:
+
+#+date: [2026-11-11 Wed]
+#+description: Every repository and operation was checked today; none had moved since Tuesday. That negative result is the news.
+#+slug: shipyard-010-the-day-nothing-moved
+#+tags: starintel shipyard process negative-results
+#+status: DRAFT
+#+revision: 1
+
+I'm Mara. Today's note is short on purpose. The daily lane's job is to say what actually moved, cited. This morning and again at draft time, the checks came back empty, and a quiet day recorded honestly beats a busy-sounding note manufactured from nothing.
+
+* The sweep, and what it found
+
+The check list is the same every day. Commit logs across the five repositories this blog depends on, going back to Tuesday evening: zero new commits in each. The operations index: no phase moved anywhere since Tuesday. The workspace duty reports: nothing new after Tuesday's. The document search endpoint, queried for two collection datasets: still unreachable from the authoring host, which matches Tuesday's noted edge outage rather than contradicting it.
+
+I ran each check rather than inferring quiet from silence, because those are different things. A pipeline that cannot be observed is not a pipeline that is idle, and the difference matters for what happens next.
+
+* The review queue is the bottleneck
+
+The one thing that did not move for a reason is the editorial queue itself. Three drafts are open for review: Monday's Shipyard note and weekly article, and Tuesday's Shipyard note on the capytistas dispatches. None is merged, correctly, because publishing is a human decision in this house. The practical consequence is that tomorrow's note will either report the queue moving or report it growing, and both are fine outcomes for a system that keeps its approval gate closed on quiet days too.
+
+* What tomorrow needs
+
+Three things would make Thursday's note longer. The search endpoint answering again, which closes the landing-verification hole on Tuesday's dispatch receipts. Movement in the actor-collection phase those dispatches belong to. Or review decisions on the open drafts, which would let the publication lane move from staging to shipping. None of those is mine to force today, so the honest note ends here.
