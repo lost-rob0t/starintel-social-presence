@@ -2,16 +2,16 @@
 :ID: 43fe1e79-c99b-4e55-863a-2a974265ca2c
 :END:
 #+TITLE: API keys and your first authenticated request
-#+CREATED: [2026-11-11 Wed 23:21]
-#+LAST_MODIFIED: [2026-11-11 Wed 23:21]
+#+CREATED: [2026-11-11 Wed 23:37]
+#+LAST_MODIFIED: [2026-11-11 Wed 23:37]
 #+ROAM_SCHEMA: org-roam-meta/v1
 #+ROAM_KIND: documentation
 #+ROAM_VISIBILITY: public
 #+CENSOR_PROFILE: strict
 #+SOURCE: User-requested documentation overhaul, OpenCode session ses_e32195141ffeG9OkwffC8HjEPb; Server e08bd1f7ad01854a3a4866f04eae863423d6d8b8; MCP 6157f070e1d9bfe245f66a4e45680778afc81a5d; Python client ad48cfc41993412657a54f8853220e1f09ba69f5; actor fleet (unlinked) e0dbce5799670aa9b2cc2a01bd6f49b05590c79b; OpenCode V2 https://opencode.ai/v2/docs/mcp-servers; source paths: cli/http-contract-documents.lisp, cli/star-cli-management.lisp, docker-compose.yml, starintel_mcp/{core,cli,mcp,ingest}.py, starintel_client/_client.py, python/src/starintel_pro_actors/{manifests,actor_cli,service_cli}.py
 #+AI_GENERATED: t
-#+AI_TAG: ai_ec00f8a902ef939c
-#+FILETAGS: :ai:ai_ec00f8a902ef939c:starintel:authentication:
+#+AI_TAG: ai_bf488975788a1bcf
+#+FILETAGS: :ai:ai_bf488975788a1bcf:starintel:authentication:
 
 #+DESCRIPTION: Safely load an API key, discover the contract, verify permissions, issue a scoped key, rotate credentials and publish a reviewed batch.
 #+STATUS: POST
@@ -91,8 +91,8 @@ install -d -m 0700 secrets
 #+end_src
 
 This calls =auth.credentials.create= through the registry, sets a one-hour
-lifetime and writes the returned one-time key to a new 0600 file. It refuses
-an existing output path. Record the returned credential metadata/ID so you can
+lifetime, reserves a new 0600 file before issuance, and writes the returned key
+there. It refuses an existing output path. Record the returned metadata/ID so you can
 rotate or revoke it later. The full secret cannot be retrieved by listing keys.
 
 In a separate non-administrator session:
@@ -102,9 +102,10 @@ export STARINTEL_API_KEY="$(cat secrets/discovery-key)"
 .venv/bin/python scripts/api_context.py
 #+end_src
 
-If creation succeeds but saving fails, retain the credential ID and revoke the
-orphaned key through your administrator session before retrying. Avoid creating
-multiple active keys accidentally.
+The helper reports the issued credential ID before writing the secret. If a
+later disk write fails, use that ID to revoke the orphaned key before retrying.
+If the API request fails, inspect the error and possibly empty reserved file
+before retrying. Avoid creating multiple active keys accidentally.
 
 * 4. Fresh self-hosted stack only: bootstrap the first administrator
 
@@ -152,8 +153,10 @@ On =bootstrap_complete= use an existing administrator or the operator's recovery
 procedure; never delete the auth database to bypass the one-time guard.
 
 The auth pepper is not an API key and the bootstrap secret is not a bearer key.
-Keep both protected with the server's backups. Do not depend on historical
-default login credentials from old quickstarts.
+Keep both protected with the server's backups. API-key bootstrap does not reset
+a human account's password. The local-install helper separately creates a random
+file-secret-backed =local-admin= login before first startup; do not omit that
+step or depend on historical default login credentials.
 
 * 5. Connect the right credential variable to each tool
 

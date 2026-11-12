@@ -3,12 +3,6 @@ import argparse
 import os
 from pathlib import Path
 
-def save_secret(path: Path, value: str) -> None:
-    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    with os.fdopen(descriptor, "w") as output:
-        output.write(value + "\n")
-
-
 def main() -> None:
     from starintel_client import StarIntelClient
 
@@ -17,16 +11,14 @@ def main() -> None:
     parser.add_argument("--scope", action="append", required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    if args.output.exists():
-        parser.error("output exists; refusing to issue another key")
-    if not args.output.parent.is_dir():
-        parser.error("create the private output directory first")
-    with StarIntelClient(os.environ["STAR_SERVER_URL"], api_key=os.environ["STARINTEL_API_KEY"]) as client:
-        client.discover()
-        key = client.create_credential(args.owner, "api_client", args.scope, expires_in_seconds=3600)
-        save_secret(args.output, key.api_key)
-        print("Saved a one-time key to", args.output)
-        print("Credential metadata:", key.credential)
+    descriptor = os.open(args.output, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, "w") as output:
+        with StarIntelClient(os.environ["STAR_SERVER_URL"], api_key=os.environ["STARINTEL_API_KEY"]) as client:
+            client.discover()
+            key = client.create_credential(args.owner, "api_client", args.scope, expires_in_seconds=3600)
+            print("Credential ID:", key.credential.id, flush=True)
+            output.write(key.api_key + "\n")
+    print("Saved a one-time key to", args.output)
 
 
 if __name__ == "__main__":

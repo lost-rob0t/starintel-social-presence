@@ -2,16 +2,16 @@
 :ID: d1735cc0-91e1-4d8d-a231-c309b223c81a
 :END:
 #+TITLE: Complete local StarIntel installation
-#+CREATED: [2026-11-11 Wed 23:21]
-#+LAST_MODIFIED: [2026-11-11 Wed 23:21]
+#+CREATED: [2026-11-11 Wed 23:37]
+#+LAST_MODIFIED: [2026-11-11 Wed 23:37]
 #+ROAM_SCHEMA: org-roam-meta/v1
 #+ROAM_KIND: documentation
 #+ROAM_VISIBILITY: public
 #+CENSOR_PROFILE: strict
 #+SOURCE: User-requested documentation overhaul, OpenCode session ses_e32195141ffeG9OkwffC8HjEPb; Server e08bd1f7ad01854a3a4866f04eae863423d6d8b8; MCP 6157f070e1d9bfe245f66a4e45680778afc81a5d; Python client ad48cfc41993412657a54f8853220e1f09ba69f5; actor fleet (unlinked) e0dbce5799670aa9b2cc2a01bd6f49b05590c79b; OpenCode V2 https://opencode.ai/v2/docs/mcp-servers; source paths: cli/http-contract-documents.lisp, cli/star-cli-management.lisp, docker-compose.yml, starintel_mcp/{core,cli,mcp,ingest}.py, starintel_client/_client.py, python/src/starintel_pro_actors/{manifests,actor_cli,service_cli}.py
 #+AI_GENERATED: t
-#+AI_TAG: ai_e1edfc22fb59fb4a
-#+FILETAGS: :ai:ai_e1edfc22fb59fb4a:starintel:selfhosting:
+#+AI_TAG: ai_e02b0c83d5a1acf4
+#+FILETAGS: :ai:ai_e02b0c83d5a1acf4:starintel:selfhosting:
 
 #+DESCRIPTION: Bring up the full local server dependency stack, prepare every required secret, bootstrap auth, verify discovery, add clients and actors, and stop without deleting data.
 #+STATUS: POST
@@ -38,6 +38,7 @@ Complete [[file:getting-started.org][the starter setup]], then run from =starint
 #+begin_src sh
 python3 scripts/fetch_sources.py starintel-server
 python3 scripts/prepare_server.py vendor/starintel-server
+python3 scripts/configure_local_server.py vendor/starintel-server
 cd vendor/starintel-server
 #+end_src
 
@@ -55,6 +56,20 @@ credentials. It creates a private secrets directory and these required files:
 | =valkey_password= | Cache authentication |
 | =auth_pepper= | Server credential verification |
 | =auth_bootstrap_secret= | One-time initial administrator bootstrap |
+
+The mandatory =configure_local_server.py= step then creates an eighth private
+file, =secrets/local_admin_password=, for the initial human =local-admin= account.
+It verifies the pinned startup files, generates a nonsecret trusted init and
+=docker-compose.override.yml=, and persists a random =COMPOSE_PROJECT_NAME= in
+the prepared =.env=. Run it before editing that file or starting any service.
+If configuration is refused or interrupted, stop and inspect; do not start the
+base stack without this override.
+
+The generated init sets the human username/password before the pinned runtime's
+=ensure-initial-user= call. A root wrapper reads the 0600 password file, then
+the unchanged image entrypoint drops privilege before launching Server. This
+avoids the upstream default human login rather than merely warning about it.
+No password value is written into =.env=, the init, the override or terminal output.
 
 Files are 0600 and their directory 0700. Do not commit or print their contents.
 The auth files are essential; older five-secret quickstarts are incomplete for
@@ -79,14 +94,22 @@ host port in =.env= and carry the new API URL into every client. Container-to-
 container connections use service names, not the host's loopback address.
 
 Do not assume setting a variable in =.env= forwards it into a container: the
-Compose =environment= map controls that. In particular, the pinned model does
-not forward every initial-user variable shown in its =.env.example=. Do not
-rely on a historical =star:intel= login or consider a sample password secure.
-Use bootstrap and the maintained credential/user APIs deliberately.
+Compose =environment= map controls that. The base model does not forward every
+initial-user variable shown in =.env.example=, which is why this guide requires
+the local override. API-key bootstrap is a separate operation and does not
+reset human passwords. Do not remove the override or substitute the historical
+=star:intel= login. For an existing deployment, use its maintained credential/
+user-management procedure; this helper is strictly for a new credential database.
+
+The generated project name isolates Compose resources from other deployments.
+Do not override its project or init settings. Clear inherited Compose selection
+variables before the commands below so the reviewed local files win.
 
 * 3. Validate, build and start
 
 #+begin_src sh
+python3 scripts/check-starintel-schema-lock.py schema/starintel-schema.lock.json
+unset COMPOSE_PROJECT_NAME COMPOSE_FILE COMPOSE_PROFILES COMPOSE_ENV_FILES COMPOSE_DISABLE_ENV_FILE
 docker compose config --quiet
 nix run .#load-images
 docker compose up --detach --wait
@@ -170,6 +193,7 @@ own checkout and configuration; neither is required to verify this API. See
 
 #+begin_src sh
 cd vendor/starintel-server
+unset COMPOSE_PROJECT_NAME COMPOSE_FILE COMPOSE_PROFILES COMPOSE_ENV_FILES COMPOSE_DISABLE_ENV_FILE
 docker compose down
 docker compose up --detach --wait
 #+end_src
@@ -177,7 +201,9 @@ docker compose up --detach --wait
 =down= stops/removes containers while keeping named volumes. Never append
 =--volumes= unless you intend to delete persisted documents, broker/cache state
 and indexes. Keep a tested private backup of database volumes and required file
-secrets. The auth pepper must remain paired with its credential store.
+secrets, including =local_admin_password=, the local init and override. The auth
+pepper must remain paired with its credential store. Keep the persisted Compose
+project name for stop/restart; using another name addresses different volumes.
 
 For an upgrade, record the current source/image pins, back up, review the new
 consumer schema lock and migration instructions, then build/load and test the

@@ -12,3 +12,4 @@ claude-mcp.json
 .prolog/facts.kb
 .prolog/verify.pl
 .prolog/result.json
+.prolog/.facts.lock

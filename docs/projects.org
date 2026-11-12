@@ -2,16 +2,16 @@
 :ID: dab74a00-d7e2-417b-b2cc-5303fb9be917
 :END:
 #+TITLE: Choose your StarIntel projects
-#+CREATED: [2026-11-11 Wed 23:21]
-#+LAST_MODIFIED: [2026-11-11 Wed 23:21]
+#+CREATED: [2026-11-11 Wed 23:37]
+#+LAST_MODIFIED: [2026-11-11 Wed 23:37]
 #+ROAM_SCHEMA: org-roam-meta/v1
 #+ROAM_KIND: documentation
 #+ROAM_VISIBILITY: public
 #+CENSOR_PROFILE: strict
 #+SOURCE: User-requested documentation overhaul, OpenCode session ses_e32195141ffeG9OkwffC8HjEPb; Server e08bd1f7ad01854a3a4866f04eae863423d6d8b8; MCP 6157f070e1d9bfe245f66a4e45680778afc81a5d; Python client ad48cfc41993412657a54f8853220e1f09ba69f5; actor fleet (unlinked) e0dbce5799670aa9b2cc2a01bd6f49b05590c79b; OpenCode V2 https://opencode.ai/v2/docs/mcp-servers; source paths: cli/http-contract-documents.lisp, cli/star-cli-management.lisp, docker-compose.yml, starintel_mcp/{core,cli,mcp,ingest}.py, starintel_client/_client.py, python/src/starintel_pro_actors/{manifests,actor_cli,service_cli}.py
 #+AI_GENERATED: t
-#+AI_TAG: ai_8f472ed2cbbafdd2
-#+FILETAGS: :ai:ai_8f472ed2cbbafdd2:starintel:architecture:
+#+AI_TAG: ai_8ce9ab141e0ebc82
+#+FILETAGS: :ai:ai_8ce9ab141e0ebc82:starintel:architecture:
 
 #+DESCRIPTION: Understand what each StarIntel project owns, which configuration it reads, what to try first and which tutorial to follow next.
 #+STATUS: POST
@@ -120,6 +120,22 @@ and add actors only when you are ready to run authorized collection.
 - *Configuration:* local checkout paths in ignored environment configuration,
   publication controls and the pinned site build.
 - *Next:* [[file:desk/change-facts.org][change facts]] and [[file:desk/tutorials.org][tutorial generation]].
+
+* Supporting libraries and external recon workers
+
+These are not extra servers every beginner must install:
+
+| Component | Role | First useful action |
+|-----------+------+---------------------|
+| =star-cl= | Common Lisp document/specification adapters used by Server | Follow the consuming server's pin and generated schema boundary |
+| =cl-couch= | CouchDB client dependency used by the Lisp runtime | Read its imported library reference when changing database integration |
+| =star-bbpd= | External recon actor service, separate from Server and the browser UI | Follow its own authorized-source setup and actor/broker instructions |
+
+Use the imported, revision-pinned reference pages for these libraries/services.
+Do not expose database credentials to a browser or treat an external worker's
+installed binary as proof that its server capability is registered and available.
+Other imported workflow/agent projects remain optional integrations, not implied
+dependencies of the beginner local workspace.
 
 * If a project is missing or an example disagrees
 

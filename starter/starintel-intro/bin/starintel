@@ -2,4 +2,5 @@
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export STARINTEL_WORKSPACE="${STARINTEL_WORKSPACE:-$root/workspace}"
+unset STARINTEL_INGEST_HOSTS
 exec "$root/.venv/bin/python" "$root/vendor/starintel-mcp/bin/starintel-mcp" "$@"

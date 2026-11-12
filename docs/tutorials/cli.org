@@ -2,16 +2,16 @@
 :ID: e9f03dd2-ab2f-4d71-853a-a827d51475f9
 :END:
 #+TITLE: CLI: from a local document to a reviewed export
-#+CREATED: [2026-11-11 Wed 23:21]
-#+LAST_MODIFIED: [2026-11-11 Wed 23:21]
+#+CREATED: [2026-11-11 Wed 23:37]
+#+LAST_MODIFIED: [2026-11-11 Wed 23:37]
 #+ROAM_SCHEMA: org-roam-meta/v1
 #+ROAM_KIND: documentation
 #+ROAM_VISIBILITY: public
 #+CENSOR_PROFILE: strict
 #+SOURCE: User-requested documentation overhaul, OpenCode session ses_e32195141ffeG9OkwffC8HjEPb; Server e08bd1f7ad01854a3a4866f04eae863423d6d8b8; MCP 6157f070e1d9bfe245f66a4e45680778afc81a5d; Python client ad48cfc41993412657a54f8853220e1f09ba69f5; actor fleet (unlinked) e0dbce5799670aa9b2cc2a01bd6f49b05590c79b; OpenCode V2 https://opencode.ai/v2/docs/mcp-servers; source paths: cli/http-contract-documents.lisp, cli/star-cli-management.lisp, docker-compose.yml, starintel_mcp/{core,cli,mcp,ingest}.py, starintel_client/_client.py, python/src/starintel_pro_actors/{manifests,actor_cli,service_cli}.py
 #+AI_GENERATED: t
-#+AI_TAG: ai_bb3a062eb125fd1d
-#+FILETAGS: :ai:ai_bb3a062eb125fd1d:starintel:cli:
+#+AI_TAG: ai_59565f68a51f4327
+#+FILETAGS: :ai:ai_59565f68a51f4327:starintel:cli:
 
 #+DESCRIPTION: A complete local CLI exercise: operation, note, revision history, saved view, target planning, export and deliberate server publication.
 #+STATUS: POST
@@ -39,7 +39,7 @@ bash bin/starintel op create cli-lab \
   --mission 'Learn the document lifecycle with synthetic data' \
   --phase 'review=Inspect and export a training record'
 bash bin/starintel op show cli-lab
-bash bin/starintel op phase cli-lab state review active
+bash bin/starintel op phase state cli-lab review active
 #+end_src
 
 An operation is the unit of local isolation. Phases describe work; they do not
@@ -111,7 +111,7 @@ See [[file:actors.org][the actor tutorial]] for the separate worker/dispatch lif
 #+begin_src sh
 bash bin/starintel doc export cli-lab training
 bash bin/starintel ingest submit cli-lab training --host local
-bash bin/starintel op phase cli-lab state review completed
+bash bin/starintel op phase state cli-lab review completed
 #+end_src
 
 The JSON output tells you where the JSONL batch was written. Inspect that exact

@@ -107,6 +107,9 @@ export STARINTEL_API_KEY="$(cat secrets/discovery-key)"
 .venv/bin/python scripts/api_context.py
 ```
 
+The output file is reserved before issuance, and the credential ID is reported
+without the secret so you can revoke it if a later disk write fails. If the API
+call fails, inspect its error and the reserved empty file before retrying.
 The learning key expires after one hour. `actors:read` grants discovery only,
 not document writes or target execution. Request only capabilities your task
 needs. Keep administrator credentials separate, retain credential IDs, and
@@ -129,7 +132,9 @@ the job status defined by the returned contract before claiming persistence.
 
 The pinned MCP version's own `ingest submit` defaults to **live** and constructs
 a fixed bulk URL. This starter config exposes only `local` by default, so an
-unqualified ingest fails rather than publishing accidentally. To intentionally
+unqualified ingest fails rather than publishing accidentally. The starter launcher
+and generated MCP config also clear inherited `STARINTEL_INGEST_HOSTS`, which
+would otherwise override that file. To intentionally
 enable it, review `config/workspace-connected.json.example`, edit the URL, then
 install it as `workspace/starintel-mcp.json`, export `STAR_SERVER_TOKEN`, and run:
 
@@ -143,6 +148,9 @@ bash bin/starintel ingest submit intro-demo training --host live
 Prefer `publish_batch.py` when registry-driven interoperability is required.
 The MCP child must inherit credentials from the process launching it; changing
 variables in an unrelated terminal will not update an already-running process.
+Check its discovered `ingest_hosts` tool as well as CLI output. `authReady`
+means only that a token variable is nonempty, not that the server accepted it;
+dry-run skips authentication and authorization checks entirely.
 
 ## 5. Full local server installation (optional)
 
@@ -154,7 +162,10 @@ ports, not an existing production deployment.
 ```sh
 python3 scripts/fetch_sources.py starintel-server
 python3 scripts/prepare_server.py vendor/starintel-server
+python3 scripts/configure_local_server.py vendor/starintel-server
 cd vendor/starintel-server
+python3 scripts/check-starintel-schema-lock.py schema/starintel-schema.lock.json
+unset COMPOSE_PROJECT_NAME COMPOSE_FILE COMPOSE_PROFILES COMPOSE_ENV_FILES COMPOSE_DISABLE_ENV_FILE
 docker compose config --quiet
 nix run .#load-images
 docker compose up --detach --wait
@@ -162,10 +173,21 @@ docker compose ps
 curl --fail http://127.0.0.1:5000/health
 ```
 
-The helper creates **all seven required base-stack secrets**, including auth
+Preparation creates **all seven required base-stack secrets**, including auth
 pepper and bootstrap secret missing from older upstream quickstarts. It refuses
 existing `.env` or secret directories rather than rotating credentials silently.
-It starts no services. Keep loopback bindings; do not expose CouchDB, RabbitMQ,
+The second helper verifies the pinned startup sources, persists a unique
+`COMPOSE_PROJECT_NAME`, and adds a file-secret-backed initial human account
+`local-admin` with a random password in `secrets/local_admin_password`. It writes
+a trusted local init and Compose override; neither contains the password value.
+The image's normal entrypoint still drops privilege before starting the server.
+Run this helper **before editing `.env` or starting any service**, and stop if it
+refuses configuration. Do not remove the override or change the project/init
+settings. The fresh stack must never start with the upstream `star:intel` default.
+The commands clear inherited Compose selection variables so the generated local
+project and override are used. Repeat that precaution in a new terminal before
+stop/restart; never use a different project name against the same intended stack.
+Neither helper starts services. Keep loopback bindings; do not expose CouchDB, RabbitMQ,
 Valkey, or this development-shaped API to the Internet.
 
 For a brand-new credential store, return to the starter root and bootstrap an
@@ -185,9 +207,12 @@ export STARINTEL_API_KEY="$(cat secrets/admin-key)"
 Bootstrap reserves a new 0600 output file before requesting the one-time key.
 If the call fails, inspect the error and possibly empty file before retrying.
 On `bootstrap_complete`, use the existing administrator; never delete the auth DB.
-Do not rely on the historical `star:intel` initial user. The pinned Compose
-model does not forward every initial-user variable in `.env.example`; configure
-passwords through the actual auth API before using user login.
+API-key bootstrap is separate from human login: it does not change a user's
+password. The pinned base Compose model does not forward every initial-user
+variable in `.env.example`; the mandatory local override explicitly supplies the
+private initial password before user creation. Do not reuse this new-stack
+helper on an existing credential database; use the actual user-management API
+for existing accounts. Include the local override/init and extra secret in backups.
 
 Verify discovery and `scripts/api_context.py` before installing actors. The base
 stack contains CouchDB, Clouseau, RabbitMQ, Valkey, Star Server and a telemetry

@@ -2,16 +2,16 @@
 :ID: ab9c1121-feff-4352-b78c-e9384c82baf6
 :END:
 #+TITLE: Configure StarIntel MCP
-#+CREATED: [2026-11-11 Wed 23:21]
-#+LAST_MODIFIED: [2026-11-11 Wed 23:21]
+#+CREATED: [2026-11-11 Wed 23:37]
+#+LAST_MODIFIED: [2026-11-11 Wed 23:37]
 #+ROAM_SCHEMA: org-roam-meta/v1
 #+ROAM_KIND: documentation
 #+ROAM_VISIBILITY: public
 #+CENSOR_PROFILE: strict
 #+SOURCE: User-requested documentation overhaul, OpenCode session ses_e32195141ffeG9OkwffC8HjEPb; Server e08bd1f7ad01854a3a4866f04eae863423d6d8b8; MCP 6157f070e1d9bfe245f66a4e45680778afc81a5d; Python client ad48cfc41993412657a54f8853220e1f09ba69f5; actor fleet (unlinked) e0dbce5799670aa9b2cc2a01bd6f49b05590c79b; OpenCode V2 https://opencode.ai/v2/docs/mcp-servers; source paths: cli/http-contract-documents.lisp, cli/star-cli-management.lisp, docker-compose.yml, starintel_mcp/{core,cli,mcp,ingest}.py, starintel_client/_client.py, python/src/starintel_pro_actors/{manifests,actor_cli,service_cli}.py
 #+AI_GENERATED: t
-#+AI_TAG: ai_f6b418f3ff2daa4b
-#+FILETAGS: :ai:ai_f6b418f3ff2daa4b:starintel:mcp:
+#+AI_TAG: ai_875b21455c449ba4
+#+FILETAGS: :ai:ai_875b21455c449ba4:starintel:mcp:
 
 #+DESCRIPTION: Connect a local StarIntel workspace to OpenCode V2 or Claude, verify tools, and safely enable optional authenticated remote ingest.
 #+STATUS: POST
@@ -41,6 +41,10 @@ python3 scripts/mcp_config.py opencode
 #+end_src
 
 The host list should expose =local= and no writable remote destination. The
+starter launcher and generated configuration clear =STARINTEL_INGEST_HOSTS= so
+an inherited host map cannot override the reviewed workspace configuration.
+Direct upstream invocations do not have this safeguard: inspect/unset that
+variable before using them. The
 configuration generator prints absolute paths to this checkout's Python,
 upstream launcher and workspace. Move the checkout only if you will regenerate
 the configuration afterward. An editor's current directory must not decide
@@ -64,7 +68,8 @@ Do not replace existing providers, servers or permissions. The shape is:
           "serve"
         ],
         "environment": {
-          "STARINTEL_WORKSPACE": "/absolute/starintel-intro/workspace"
+          "STARINTEL_WORKSPACE": "/absolute/starintel-intro/workspace",
+          "STARINTEL_INGEST_HOSTS": ""
         }
       }
     }
@@ -107,6 +112,9 @@ The source tool catalog includes =op_list=, =search=, =document_get= and
 =document_history=. Clients may prefix these names or expose them through Code
 Mode. Use your client's actual discovered catalog, not a guessed tool spelling.
 Compare the returned note with =bash bin/starintel doc get ...= from step 1.
+Also call the discovered =ingest_hosts= tool inside the MCP child and check its
+destinations. A separate CLI shell's environment is not proof of the child's
+actual configuration.
 
 Local tools also include writes, tombstones, target creation, saved views and
 ingest. Connecting a local server gives it filesystem access under the launching
@@ -143,14 +151,17 @@ explicit reference can be added under the server's =environment=:
 
 The source variable must be present in the launching service's environment;
 an unrelated terminal's environment is not shared. Check =ingest hosts= for
-=authReady= without printing the token. First exercise export-only and dry-run:
+=authReady= without printing the token. This flag means only that a token
+variable is nonempty; it does not authenticate or verify scopes/dataset grants.
+It is always true for a local export host. First exercise export-only and dry-run:
 
 #+begin_src sh
 bash bin/starintel ingest submit intro-demo training --host local
 bash bin/starintel ingest submit intro-demo training --host live --dry-run
 #+end_src
 
-A dry-run writes an export but sends no HTTP request. The pinned MCP ingest
+A dry-run writes an export but sends no HTTP request and validates no remote
+credential or authorization. The pinned MCP ingest
 implementation constructs its bulk endpoint directly; it does not discover
 all server operations. Verify compatibility with your deployment before using
 =--host live= without =--dry-run=. For contract-registry-driven publication,

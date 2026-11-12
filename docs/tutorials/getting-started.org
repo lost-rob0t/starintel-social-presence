@@ -2,16 +2,16 @@
 :ID: 76af2cff-e34f-42c8-b92b-189e71015bfd
 :END:
 #+TITLE: Your first StarIntel workspace
-#+CREATED: [2026-11-11 Wed 23:21]
-#+LAST_MODIFIED: [2026-11-11 Wed 23:21]
+#+CREATED: [2026-11-11 Wed 23:37]
+#+LAST_MODIFIED: [2026-11-11 Wed 23:37]
 #+ROAM_SCHEMA: org-roam-meta/v1
 #+ROAM_KIND: documentation
 #+ROAM_VISIBILITY: public
 #+CENSOR_PROFILE: strict
 #+SOURCE: User-requested documentation overhaul, OpenCode session ses_e32195141ffeG9OkwffC8HjEPb; Server e08bd1f7ad01854a3a4866f04eae863423d6d8b8; MCP 6157f070e1d9bfe245f66a4e45680778afc81a5d; Python client ad48cfc41993412657a54f8853220e1f09ba69f5; actor fleet (unlinked) e0dbce5799670aa9b2cc2a01bd6f49b05590c79b; OpenCode V2 https://opencode.ai/v2/docs/mcp-servers; source paths: cli/http-contract-documents.lisp, cli/star-cli-management.lisp, docker-compose.yml, starintel_mcp/{core,cli,mcp,ingest}.py, starintel_client/_client.py, python/src/starintel_pro_actors/{manifests,actor_cli,service_cli}.py
 #+AI_GENERATED: t
-#+AI_TAG: ai_cd291c3c5ba10c3a
-#+FILETAGS: :ai:ai_cd291c3c5ba10c3a:starintel:onboarding:
+#+AI_TAG: ai_987a3a83ba7891d6
+#+FILETAGS: :ai:ai_987a3a83ba7891d6:starintel:onboarding:
 
 #+DESCRIPTION: Install a pinned starter, create your first operation, inspect a synthetic note and export it without a server or API key.
 #+STATUS: POST

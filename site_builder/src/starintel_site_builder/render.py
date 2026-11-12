@@ -179,7 +179,7 @@ def meta_row(doc: SourceDoc) -> str:
         badges.append(f'<span class="badge badge--rev">rev {esc(doc.revision)}</span>')
     if doc.date:
         badges.append(f'<time class="meta-text" datetime="{esc(doc.date)}">{esc(doc.date)}</time>')
-    tags_base = vbase("www")
+    tags_base = vbase("blog")
     for tag in doc.tags:
         if tag.lower() == "human":
             continue
@@ -191,7 +191,7 @@ def meta_row(doc: SourceDoc) -> str:
 
 def post_card(doc: SourceDoc, kicker: str = "") -> str:
     kicker_html = f'<span class="card__kicker">{esc(kicker)}</span>' if kicker else ""
-    tags_base = vbase("www")
+    tags_base = vbase("blog")
     tags = "".join(
         f'<a class="badge badge--tag" href="{tags_base}/tags/{esc(t.lower())}.html">#{esc(t)}</a>'
         for t in doc.tags[:4]
@@ -352,7 +352,7 @@ def home_page(model: SiteModel, docs_model: SiteModel) -> str:
 def tag_index(tags: dict[str, list[SourceDoc]]) -> str:
     entries = sorted(tags.items(), key=lambda kv: (-len(kv[1]), kv[0]))
     cloud = "".join(
-        f'<a href="/tags/{esc(tag.lower())}.html">#{esc(tag)} '
+        f'<a href="{vbase("blog")}/tags/{esc(tag.lower())}.html">#{esc(tag)} '
         f'<span class="count">{len(docs)}</span></a>'
         for tag, docs in entries
     )
@@ -371,7 +371,7 @@ def tag_page(tag: str, docs: list[SourceDoc]) -> str:
     cards = [post_card(d) for d in docs]
     body = (
         '<div class="shell">'
-        + breadcrumbs([("Home", home_url()), ("Tags", f"{vbase('www')}/tags/index.html"), (f"#{tag}", None)])
+        + breadcrumbs([("Home", home_url()), ("Tags", f"{vbase('blog')}/tags/index.html"), (f"#{tag}", None)])
         + f'<h1 class="page-title">#{esc(tag)}</h1>'
         + f'<p class="page-lead">{len(docs)} page(s) tagged #{esc(tag)}.</p>'
         + card_list(cards)

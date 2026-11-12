@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 import secrets
 import shutil
@@ -11,7 +12,7 @@ def prepare(root: Path) -> None:
     if not (root / "docker-compose.yml").is_file():
         raise ValueError("Expected the pinned StarIntel server checkout")
     secret_dir = root / "secrets"
-    if secret_dir.exists() or (root / ".env").exists():
+    if os.path.lexists(secret_dir) or os.path.lexists(root / ".env"):
         raise ValueError("Existing .env or secrets directory; inspect it manually, nothing was changed")
     secret_dir.mkdir(mode=0o700)
     for name in ("couchdb_password", "couchdb_secret", "rabbitmq_password", "valkey_password", "auth_pepper", "auth_bootstrap_secret"):
@@ -23,8 +24,10 @@ def prepare(root: Path) -> None:
     with cookie.open("x") as output:
         cookie.chmod(0o600)
         output.write(secrets.token_hex(24).upper() + "\n")
-    shutil.copyfile(root / ".env.example", root / ".env")
-    (root / ".env").chmod(0o600)
+    descriptor = os.open(root / ".env", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, "wb") as output:
+        with (root / ".env.example").open("rb") as source:
+            shutil.copyfileobj(source, output)
     print("Prepared private file secrets. Review .env; no service was started.")
 
 
