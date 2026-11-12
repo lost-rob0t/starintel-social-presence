@@ -1,55 +1,77 @@
 :PROPERTIES:
 :ID: docs-index
 :END:
-#+title: Documentation
-#+description: Operational documentation for StarIntel components, the editorial desk's own adapters, and aggregated external repositories.
-#+slug: docs-index
-#+filetags: :docs:index:
-#+status: POST
-#+revision: 3
+#+TITLE: StarIntel documentation
+#+CREATED: [2026-11-11 Wed 23:21]
+#+LAST_MODIFIED: [2026-11-11 Wed 23:21]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: documentation
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: User-requested documentation overhaul, OpenCode session ses_e32195141ffeG9OkwffC8HjEPb; Server e08bd1f7ad01854a3a4866f04eae863423d6d8b8; MCP 6157f070e1d9bfe245f66a4e45680778afc81a5d; Python client ad48cfc41993412657a54f8853220e1f09ba69f5; actor fleet (unlinked) e0dbce5799670aa9b2cc2a01bd6f49b05590c79b; OpenCode V2 https://opencode.ai/v2/docs/mcp-servers; source paths: cli/http-contract-documents.lisp, cli/star-cli-management.lisp, docker-compose.yml, starintel_mcp/{core,cli,mcp,ingest}.py, starintel_client/_client.py, python/src/starintel_pro_actors/{manifests,actor_cli,service_cli}.py
+#+AI_GENERATED: t
+#+AI_TAG: ai_4181e97343443c1b
+#+FILETAGS: :ai:ai_4181e97343443c1b:starintel:onboarding:
 
-This section documents how StarIntel components work today, as far as the
-editorial desk can verify them. Documentation pages carry a revision badge
-and, for aggregated pages, the source repository and revision they came
-from.
+#+DESCRIPTION: Choose a learning path: local workspace, API keys, MCP, CLI, Pro actors, or a complete local server installation.
+#+STATUS: POST
+#+REVISION: 4
 
-* Server
+StarIntel turns collected material into typed documents with traceable sources.
+Start with a small synthetic workspace, learn the tools, then connect a server
+or add collectors when you need them. You do not need to deploy the whole stack
+to learn the document workflow.
 
-- [[id:docs-server-overview][StarIntel Server overview]] — the Common Lisp runtime: CouchDB,
-  RabbitMQ, Sento actors, and the HTTP API.
-- [[id:docs-server-ingest][Ingest and dataflow recursion]] — how a document moves through the
-  pipeline and how actors expand the graph.
-- [[id:docs-server-actors][Actors and supervision]] — TELL versus topic routes, isolation.
-- [[id:docs-server-quickstart][Server quick start]] — Compose stack, secrets, first document.
+* Choose your starting point
 
-* Documents
+| I want to… | Start here | What I need |
+|-----------+------------+-------------|
+| Learn without a server | [[file:tutorials/getting-started.org][Your first StarIntel workspace]] | Python 3.12+, Git, source access |
+| Use the key I was given | [[file:tutorials/api-keys.org][API keys, scopes and your first authenticated request]] | Server URL and scoped API key |
+| Connect an AI assistant | [[file:tutorials/mcp.org][Configure StarIntel MCP]] | Local tools and an MCP client |
+| Work from a terminal | [[file:tutorials/cli.org][CLI workflow from document to export]] | Local tools; server only for publication |
+| Run collection workers | [[file:tutorials/actors.org][Pro actors: from a reviewed target to a running worker]] | Fleet access, broker, authorized source |
+| Host my own backend | [[file:tutorials/local-install.org][Complete local installation]] | Linux, Nix flakes, Docker Compose |
 
-- [[id:docs-documents-schema][The v0.9 document model]] — typed documents and design invariants.
-- [[id:docs-documents-provenance][Provenance and evidence]] — why claims stay separable from sources.
+* Recommended learning path
 
-* The editorial desk
+1. [[file:tutorials/getting-started.org][Create a local operation and a synthetic note]]. Nothing is collected or published.
+2. [[file:tutorials/cli.org][Read, revise, search and export it]] from the terminal.
+3. [[file:tutorials/mcp.org][Connect the same workspace to an assistant]]. The CLI and MCP see the same data.
+4. [[file:tutorials/api-keys.org][Authenticate to a server]], inspect your capabilities and publish only when authorized.
+5. [[file:tutorials/actors.org][Add one actor]] after the server and broker are healthy.
 
-Documentation for this repository's own deterministic adapters:
+* Which project do I need?
 
-- [[id:docs-desk-change-facts][Change facts]] — normalized Git records via =change_fetcher=.
-- [[id:docs-desk-findings][Auto Dig findings]] — read-only candidate extraction.
-- [[id:docs-desk-research-status][Research status]] — Auto Research states, promotion rules.
-- [[id:docs-desk-tutorials][Tutorial pipeline]] — one plan, three renderers.
+[[file:projects.org][The project guide]] explains each component's purpose, first action,
+configuration boundary and next tutorial. In short:
 
-* External repositories
+- =starintel-mcp=: local operations engine, MCP stdio server, CLI and local web UI.
+- =starintel-client=: maintained Python HTTP client, driven by the server's registry.
+- StarIntel Server: durable backend, authorization, ingest, search and scheduling.
+- Pro actors: optional collection/enrichment workers, not an alternate server.
+- StarLang and =starintel-doc=: generated document contract and language consumers.
+- Quasar: connected control/runtime and presentation; not a replacement for storage.
+- Auto Dig and Auto Research: separate corpus and research workflows.
 
-Every public StarIntel repository is aggregated here, read-only and
-revision-pinned: each contributes its README as a landing page plus its
-=docs/= and =doc/= Org trees where present — the server's generated API
-reference included. The current set covers StarIntel Server, Quasar, Auto
-Research, Auto Dig, Star-Lang, starintel-doc, a0-symbolics, star-cl,
-cl-couch, star-bbpd, starintel-client, and RAGE; the sidebar lists
-whatever the build pulled in.
+* Starter checkout
 
-* Scope and authority
+=starintel-intro= contains pinned source references, setup, an offline demo,
+MCP configuration generators, key handling examples and a local-server preparation
+helper. In the documentation source checkout it lives at =starter/starintel-intro/=.
+See [[file:tutorials/getting-started.org][the first tutorial]] for obtaining it. Source access and server
+access are separate permissions; no API key or private dataset is bundled.
 
-StarIntel Server remains the runtime authority for its own behavior; these
-pages summarize its documented design and link to the canonical sources.
-When the server documentation changes, aggregated pages on this site carry
-the revision they were taken from, and the editorial desk re-verifies
-hand-written pages before bumping their revision.
+* Reference and compatibility
+
+- [[file:server/overview.org][Server architecture]], [[file:server/ingest-dataflow.org][ingest/dataflow]], [[file:server/actors.org][actor supervision]].
+- [[file:documents/star-lang-0.10.1.org][Current document shape and version authority]].
+- [[file:documents/schema-v9.org][Historical v0.9 compatibility]]; do not start new producers from old examples.
+- [[file:documents/provenance.org][Provenance and evidence]].
+- Editorial adapters: [[file:desk/change-facts.org][change facts]], [[file:desk/findings.org][findings]], [[file:desk/research-status.org][research status]],
+  and [[file:desk/tutorials.org][tutorial generation]].
+
+Imported repository documentation is reference material tied to a source revision.
+Use these task-oriented tutorials first; check your deployment's own
+=/client-manifest.json= and =/openapi.json= for available HTTP operations.
+An operation being documented does not grant your key permission to call it.

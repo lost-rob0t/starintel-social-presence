@@ -1,0 +1,174 @@
+:PROPERTIES:
+:ID: e9f03dd2-ab2f-4d71-853a-a827d51475f9
+:END:
+#+TITLE: CLI: from a local document to a reviewed export
+#+CREATED: [2026-11-11 Wed 23:21]
+#+LAST_MODIFIED: [2026-11-11 Wed 23:21]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: documentation
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: User-requested documentation overhaul, OpenCode session ses_e32195141ffeG9OkwffC8HjEPb; Server e08bd1f7ad01854a3a4866f04eae863423d6d8b8; MCP 6157f070e1d9bfe245f66a4e45680778afc81a5d; Python client ad48cfc41993412657a54f8853220e1f09ba69f5; actor fleet (unlinked) e0dbce5799670aa9b2cc2a01bd6f49b05590c79b; OpenCode V2 https://opencode.ai/v2/docs/mcp-servers; source paths: cli/http-contract-documents.lisp, cli/star-cli-management.lisp, docker-compose.yml, starintel_mcp/{core,cli,mcp,ingest}.py, starintel_client/_client.py, python/src/starintel_pro_actors/{manifests,actor_cli,service_cli}.py
+#+AI_GENERATED: t
+#+AI_TAG: ai_bb3a062eb125fd1d
+#+FILETAGS: :ai:ai_bb3a062eb125fd1d:starintel:cli:
+
+#+DESCRIPTION: A complete local CLI exercise: operation, note, revision history, saved view, target planning, export and deliberate server publication.
+#+STATUS: POST
+#+REVISION: 1
+
+* Choose the right command-line tool
+
+StarIntel has different CLIs for different jobs:
+
+| Tool | Job | Storage/connection |
+|------+-----+--------------------|
+| =starintel-mcp= | Local operations, documents, targets, views, exports | Local workspace; optional remote ingest |
+| =star-cli= | Server commands and credential administration | StarIntel Server HTTP API |
+| =sa-<actor>= | One actor's scriptable target request or JSONL transform | Offline by default unless configured for a server |
+
+The starter's =bash bin/starintel= launcher runs the pinned =starintel-mcp= CLI
+with a predictable interpreter and workspace. It is a launcher, not a second
+engine. This tutorial uses a new operation name so it does not overwrite the
+first exercise. Complete [[file:getting-started.org][setup]] first; no key is needed yet.
+
+* 1. Create an operation and learning phase
+
+#+begin_src sh
+bash bin/starintel op create cli-lab \
+  --mission 'Learn the document lifecycle with synthetic data' \
+  --phase 'review=Inspect and export a training record'
+bash bin/starintel op show cli-lab
+bash bin/starintel op phase cli-lab state review active
+#+end_src
+
+An operation is the unit of local isolation. Phases describe work; they do not
+launch collectors. Phase dependencies must name existing phase IDs. Reusing an
+operation name produces an error instead of overwriting its data.
+
+* 2. Create and retrieve a note
+
+#+begin_src sh
+bash bin/starintel hints --dtype document
+bash bin/starintel doc submit cli-lab training document \
+  --id cli-note --data @examples/note.json
+bash bin/starintel doc get cli-lab cli-note --dataset training
+bash bin/starintel dataset show cli-lab training
+#+end_src
+
+=--data @FILE= reads a JSON object. The engine adds/validates the canonical
+envelope and creates the dataset manifest on its first write. Dtype-specific
+fields stay at the document root, not in an invented =data= envelope. Use
+=hints= for a new dtype rather than guessing required fields.
+
+The returned record includes =id=, =dataset=, =dtype=, =schemaVersion= and
+revision metadata. These tools' pins select release/base 0.10.1; check another
+consumer's schema lock before exchanging documents with it.
+
+* 3. Revise without losing history
+
+#+begin_src sh
+bash bin/starintel doc update cli-lab cli-note --dataset training \
+  --patch '{"rawContent":"Synthetic training note: reviewed locally."}'
+bash bin/starintel doc history cli-lab cli-note --dataset training
+bash bin/starintel search reviewed --op cli-lab --dataset training --dtype document
+#+end_src
+
+Updates append another revision. Search returns the latest live version,
+while history retains the previous content. A failed schema validation must
+be fixed at the input; do not disable validation to force a write.
+
+* 4. Save a repeatable view
+
+#+begin_src sh
+bash bin/starintel view create training-notes --op cli-lab \
+  --match '{"dataset":"training","dtype":"document"}'
+bash bin/starintel view list --op cli-lab
+bash bin/starintel view use training-notes --op cli-lab
+#+end_src
+
+Views are named searches, not copied datasets. An operation-scoped view lives
+with that operation. Use explicit operation/dataset filters to avoid reading
+the wrong investigation when your workspace grows.
+
+* 5. Plan a target without dispatching it
+
+#+begin_src sh
+bash bin/starintel hints --actor web
+bash bin/starintel target create cli-lab training \
+  https://example.org web --options '{}'
+bash bin/starintel target list --op cli-lab --dataset training
+#+end_src
+
+This creates a local target document. It does not prove the server recognizes
+that actor ID, schedule a remote target or perform collection. =example.org=
+is illustrative, not blanket permission to crawl it. Before live execution,
+check the server's actor catalog, source permissions and per-actor options.
+See [[file:actors.org][the actor tutorial]] for the separate worker/dispatch lifecycle.
+
+* 6. Export before connecting a server
+
+#+begin_src sh
+bash bin/starintel doc export cli-lab training
+bash bin/starintel ingest submit cli-lab training --host local
+bash bin/starintel op phase cli-lab state review completed
+#+end_src
+
+The JSON output tells you where the JSONL batch was written. Inspect that exact
+file. It may contain the note and the target you just planned. Publishing a
+target to a server may make it executable there: remove unintended work from
+the batch through supported document operations before submitting it.
+
+For an inert publication exercise, export the original =intro-demo/training=
+dataset containing only a synthetic note. With a scoped write key loaded:
+
+#+begin_src sh
+.venv/bin/python scripts/publish_batch.py /absolute/path/to/reviewed-batch.jsonl
+# This second command is a real remote write:
+.venv/bin/python scripts/publish_batch.py /absolute/path/to/reviewed-batch.jsonl --submit
+#+end_src
+
+See [[file:api-keys.org][API keys]] for setup and response interpretation. Never treat a
+queue receipt as proof that a record is searchable or that an actor completed.
+The pinned MCP CLI defaults its own ingest host to =live=; always name =local=
+when you intend an offline export. The starter additionally disables =live=
+until you configure it explicitly.
+
+* 7. Learn server administration with star-cli
+
+Build/run =star-cli= from an authorized Server checkout, not a guessed pip
+package. The server flake exposes it as =.#star-cli=. From that checkout:
+
+#+begin_src sh
+nix run .#star-cli -- --help
+nix run .#star-cli -- auth --help
+# STAR_SERVER_URL and STAR_SERVER_TOKEN must be exported first.
+nix run .#star-cli -- auth context
+nix run .#star-cli -- admin credential --help
+#+end_src
+
+Use =STAR_SERVER_TOKEN= or =STAR_SERVER_API_KEY= for this tool. Even though a
+token argument exists, prefer the environment so secrets do not enter shell
+history/process arguments. Read =--help= for your installed revision before
+using administrative subcommands. =star-cli= and =starintel-mcp= are not aliases.
+
+The maintained management commands use typed registry-backed client operations.
+Exit codes distinguish validation (2), not found (3), authentication (4),
+authorization (5), conflict (6) and transport (7). Do not hide nonzero exits in
+automation. Older command examples may describe compatibility surfaces; prefer
+the current registry and maintained client for new integrations.
+
+* Troubleshooting, cleanup and next steps
+
+If the command exits nonzero, preserve stderr and check the failed boundary:
+local errors usually concern workspace paths, duplicate IDs or schema input;
+server errors require checking the URL, credential lifetime and advertised
+capabilities. An empty local view is not evidence that a remote dataset is empty.
+
+To practice deletion, run =doc delete cli-lab cli-note --dataset training
+--reason 'Training exercise complete'=, then inspect history. This appends a
+tombstone; it does not wipe prior contents. Keep the workspace private and back
+it up before removing local files. No running service needs to be stopped unless
+you started =web= or =serve= separately.
+
+Continue with [[file:mcp.org][MCP]] or [[file:local-install.org][local server installation]].

@@ -1,0 +1,14 @@
+{
+  "starintel-mcp": {
+    "url": "ssh://forgejo@git.starintel.actor/starintel-labs/starintel-mcp.git",
+    "commit": "6157f070e1d9bfe245f66a4e45680778afc81a5d"
+  },
+  "starintel-client": {
+    "url": "ssh://forgejo@git.starintel.actor/starintel-labs/starintel-client.git",
+    "commit": "ad48cfc41993412657a54f8853220e1f09ba69f5"
+  },
+  "starintel-server": {
+    "url": "ssh://forgejo@git.starintel.actor/starintel-labs/starintel-server.git",
+    "commit": "e08bd1f7ad01854a3a4866f04eae863423d6d8b8"
+  }
+}

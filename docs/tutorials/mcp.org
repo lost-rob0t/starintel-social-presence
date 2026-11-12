@@ -1,0 +1,174 @@
+:PROPERTIES:
+:ID: ab9c1121-feff-4352-b78c-e9384c82baf6
+:END:
+#+TITLE: Configure StarIntel MCP
+#+CREATED: [2026-11-11 Wed 23:21]
+#+LAST_MODIFIED: [2026-11-11 Wed 23:21]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: documentation
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: User-requested documentation overhaul, OpenCode session ses_e32195141ffeG9OkwffC8HjEPb; Server e08bd1f7ad01854a3a4866f04eae863423d6d8b8; MCP 6157f070e1d9bfe245f66a4e45680778afc81a5d; Python client ad48cfc41993412657a54f8853220e1f09ba69f5; actor fleet (unlinked) e0dbce5799670aa9b2cc2a01bd6f49b05590c79b; OpenCode V2 https://opencode.ai/v2/docs/mcp-servers; source paths: cli/http-contract-documents.lisp, cli/star-cli-management.lisp, docker-compose.yml, starintel_mcp/{core,cli,mcp,ingest}.py, starintel_client/_client.py, python/src/starintel_pro_actors/{manifests,actor_cli,service_cli}.py
+#+AI_GENERATED: t
+#+AI_TAG: ai_f6b418f3ff2daa4b
+#+FILETAGS: :ai:ai_f6b418f3ff2daa4b:starintel:mcp:
+
+#+DESCRIPTION: Connect a local StarIntel workspace to OpenCode V2 or Claude, verify tools, and safely enable optional authenticated remote ingest.
+#+STATUS: POST
+#+REVISION: 1
+
+* What MCP connects
+
+=starintel-mcp= is a local operations engine exposed through a stdio MCP server,
+a CLI and a local web UI. It stores documents in operation-scoped JSONL files.
+It is not an unrestricted remote proxy for every StarIntel Server API. Local
+search reads this workspace, not all documents on your remote server.
+
+You will connect the workspace created in [[file:getting-started.org][the first tutorial]] to an
+MCP client and verify that it can read your synthetic note. You do not need an
+API key until you intentionally enable remote ingest. Prerequisites: the starter
+setup, its =intro-demo= operation and either OpenCode V2 or a stdio-capable client.
+
+* 1. Verify the executable and workspace first
+
+From the starter checkout:
+
+#+begin_src sh
+bash bin/starintel op list
+bash bin/starintel doc get intro-demo intro-note --dataset training
+bash bin/starintel ingest hosts
+python3 scripts/mcp_config.py opencode
+#+end_src
+
+The host list should expose =local= and no writable remote destination. The
+configuration generator prints absolute paths to this checkout's Python,
+upstream launcher and workspace. Move the checkout only if you will regenerate
+the configuration afterward. An editor's current directory must not decide
+which investigation an assistant silently reads.
+
+* 2. Configure OpenCode V2
+
+Merge the generator's =starintel= object into your existing =opencode.json(c)=.
+Do not replace existing providers, servers or permissions. The shape is:
+
+#+begin_src json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "starintel": {
+        "type": "local",
+        "command": [
+          "/absolute/starintel-intro/.venv/bin/python",
+          "/absolute/starintel-intro/vendor/starintel-mcp/bin/starintel-mcp",
+          "serve"
+        ],
+        "environment": {
+          "STARINTEL_WORKSPACE": "/absolute/starintel-intro/workspace"
+        }
+      }
+    }
+  }
+}
+#+end_src
+
+Use the generated real paths, not the literal =/absolute/= placeholders.
+OpenCode V2 uses =mcp.servers=; older direct =mcp.starintel= examples are not the
+configuration taught here. Save the file, then run =opencode mcp list= or open
+=/mcps=. Configuration reloads on save; =/reload= can force a reload. A configured
+entry is not a verified connection until its status says connected.
+
+* 3. Configure a Claude-style stdio client instead
+
+#+begin_src sh
+python3 scripts/mcp_config.py claude
+#+end_src
+
+Merge the generated entry into the client's =mcpServers= map. This format has
+a string =command=, an =args= array and an =env= map; it is not interchangeable
+with OpenCode's format. Follow that client's configuration-location/reload
+instructions. Keep the interpreter and launcher paths absolute.
+
+The upstream pinned server uses a classic MCP initialization handshake and
+newline-delimited JSON-RPC over stdin/stdout. =serve= opens no TCP listener.
+The web UI on port 8777 is not an MCP endpoint. Do not invent a remote URL for it.
+
+* 4. Verify a read-only task
+
+Ask your assistant:
+
+#+begin_example
+Use StarIntel to list operations. Search notes in operation intro-demo and
+dataset training. Read intro-note and summarize its revision history.
+Do not modify documents, create targets, ingest remotely, or collect anything.
+#+end_example
+
+The source tool catalog includes =op_list=, =search=, =document_get= and
+=document_history=. Clients may prefix these names or expose them through Code
+Mode. Use your client's actual discovered catalog, not a guessed tool spelling.
+Compare the returned note with =bash bin/starintel doc get ...= from step 1.
+
+Local tools also include writes, tombstones, target creation, saved views and
+ingest. Connecting a local server gives it filesystem access under the launching
+user. Set client permissions deliberately; a prompt alone is not an access-control
+boundary. Start with synthetic data and no remote credential in the child process.
+
+* 5. Optionally enable a remote ingest host
+
+Skip this until you have completed [[file:api-keys.org][the API-key tutorial]]. The starter uses
+a local-only host map specifically because upstream =ingest submit= defaults to
+=live=. Review =config/workspace-connected.json.example=, set an approved URL
+and install the result as =workspace/starintel-mcp.json=:
+
+#+begin_src json
+{
+  "ingestHosts": {
+    "local": {"local": true},
+    "live": {
+      "url": "http://127.0.0.1:5000",
+      "tokenEnv": "STAR_SERVER_TOKEN"
+    }
+  }
+}
+#+end_src
+
+Only the variable name goes into =tokenEnv=, never the secret. For a remote
+deployment use its HTTPS URL. Export =STAR_SERVER_TOKEN= from your approved
+secret source into the process that launches the MCP child. In OpenCode an
+explicit reference can be added under the server's =environment=:
+
+#+begin_src json
+{"STAR_SERVER_TOKEN": "{env:STAR_SERVER_TOKEN}"}
+#+end_src
+
+The source variable must be present in the launching service's environment;
+an unrelated terminal's environment is not shared. Check =ingest hosts= for
+=authReady= without printing the token. First exercise export-only and dry-run:
+
+#+begin_src sh
+bash bin/starintel ingest submit intro-demo training --host local
+bash bin/starintel ingest submit intro-demo training --host live --dry-run
+#+end_src
+
+A dry-run writes an export but sends no HTTP request. The pinned MCP ingest
+implementation constructs its bulk endpoint directly; it does not discover
+all server operations. Verify compatibility with your deployment before using
+=--host live= without =--dry-run=. For contract-registry-driven publication,
+prefer the starter's =scripts/publish_batch.py= in [[file:api-keys.org][the API tutorial]].
+
+* Troubleshooting and finish
+
+- Process exits immediately: run the configured Python and launcher with
+  =--help=; check the interpreter, dependency and full source checkout.
+- Connected but no notes: compare the configured =STARINTEL_WORKSPACE= to the
+  CLI's workspace and filters. Remote documents are not local workspace files.
+- Missing schema: do not install/copy only =starintel_mcp/= without its pinned
+  source resources; rerun the starter setup.
+- No =live= host: safe default. Add a reviewed host config, not a bypass.
+- 401/403 on ingest: check key validity versus scopes/dataset grants separately.
+- Stdout protocol errors: do not wrap =serve= with shell startup messages or
+  debug prints; diagnostics belong on stderr.
+
+Disconnect or remove the entry in the client when finished. Revoking remote
+credentials does not remove local data or stop an already running local process.
+Continue with [[file:cli.org][the CLI tutorial]] or [[file:actors.org][Pro actors]].

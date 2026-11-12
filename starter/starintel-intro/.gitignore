@@ -1,0 +1,14 @@
+.venv/
+vendor/
+workspace/
+.env
+secrets/
+receipts/
+__pycache__/
+*.pyc
+opencode.json
+claude-mcp.json
+.prolog/runs/
+.prolog/facts.kb
+.prolog/verify.pl
+.prolog/result.json

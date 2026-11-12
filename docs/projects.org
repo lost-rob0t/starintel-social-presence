@@ -1,0 +1,130 @@
+:PROPERTIES:
+:ID: dab74a00-d7e2-417b-b2cc-5303fb9be917
+:END:
+#+TITLE: Choose your StarIntel projects
+#+CREATED: [2026-11-11 Wed 23:21]
+#+LAST_MODIFIED: [2026-11-11 Wed 23:21]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: documentation
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: User-requested documentation overhaul, OpenCode session ses_e32195141ffeG9OkwffC8HjEPb; Server e08bd1f7ad01854a3a4866f04eae863423d6d8b8; MCP 6157f070e1d9bfe245f66a4e45680778afc81a5d; Python client ad48cfc41993412657a54f8853220e1f09ba69f5; actor fleet (unlinked) e0dbce5799670aa9b2cc2a01bd6f49b05590c79b; OpenCode V2 https://opencode.ai/v2/docs/mcp-servers; source paths: cli/http-contract-documents.lisp, cli/star-cli-management.lisp, docker-compose.yml, starintel_mcp/{core,cli,mcp,ingest}.py, starintel_client/_client.py, python/src/starintel_pro_actors/{manifests,actor_cli,service_cli}.py
+#+AI_GENERATED: t
+#+AI_TAG: ai_8f472ed2cbbafdd2
+#+FILETAGS: :ai:ai_8f472ed2cbbafdd2:starintel:architecture:
+
+#+DESCRIPTION: Understand what each StarIntel project owns, which configuration it reads, what to try first and which tutorial to follow next.
+#+STATUS: POST
+#+REVISION: 1
+
+* Choose components by the job they own
+
+You do not need every repository to use StarIntel. For learning, use the starter
+and local MCP engine. For an existing server, add the Python HTTP client and a
+scoped key. Install the backend only when you need to host storage/scheduling,
+and add actors only when you are ready to run authorized collection.
+
+* starintel-intro: the learning checkout
+
+- *Owns:* pinned source references, safe templates and runnable tutorial examples.
+- *First action:* =bash scripts/setup.sh=, then =bash scripts/local-demo.sh=.
+- *Configuration:* ignored workspace, optional exported server URL/key, no bundled secrets.
+- *Does not own:* a second API implementation or another scheduler.
+- *Next:* [[file:tutorials/getting-started.org][your first workspace]]. The template is maintained under
+  =starter/starintel-intro/= in the documentation source repository.
+
+* starintel-mcp: local operations, MCP, CLI and web UI
+
+- *Owns:* operation-scoped JSONL state, latest-revision search, saved views,
+  target planning and exports, exposed through one engine.
+- *First action:* =bash bin/starintel op list= from the starter.
+- *Configuration:* =STARINTEL_WORKSPACE=; remote hosts use a =tokenEnv= reference,
+  normally =STAR_SERVER_TOKEN=. Local use needs no API key.
+- *Does not own:* all remote server capabilities or the server's durable target scheduler.
+- *Next:* [[file:tutorials/mcp.org][MCP setup]] and [[file:tutorials/cli.org][the CLI workflow]].
+
+* starintel-client: maintained Python HTTP client
+
+- *Owns:* discovery/cross-checking of =/client-manifest.json= and =/openapi.json=,
+  bearer auth, correlation propagation and normalized API errors.
+- *First action:* =.venv/bin/python scripts/api_context.py= in the starter.
+- *Configuration:* the examples pass =STAR_SERVER_URL= and =STARINTEL_API_KEY=
+  explicitly to the client. Library users choose their own secret source.
+- *Does not own:* a parallel route registry or permission to call unadvertised APIs.
+- *Next:* [[file:tutorials/api-keys.org][API keys, scopes and publication]].
+
+* StarIntel Server and star-cli: the backend and its terminal client
+
+- *Owns:* HTTP authorization/contract registry, durable ingest/storage/query,
+  actor routing and recurring-target control. The server's =star-cli= is a
+  terminal client, not the local MCP workspace engine.
+- *First action:* for an existing server, authenticate; for a fresh install,
+  prepare all file secrets before starting Compose.
+- *Configuration:* server Compose/init settings and file secrets; =star-cli=
+  uses =STAR_SERVER_URL= with =STAR_SERVER_TOKEN= or =STAR_SERVER_API_KEY=.
+- *Does not own:* browser presentation or every external collector implementation.
+- *Next:* [[file:tutorials/local-install.org][complete local installation]] and [[file:server/overview.org][architecture]].
+
+* Pro actors: optional collectors and enrichers
+
+- *Owns:* source-specific work, shared broker consumers, canonical output and
+  exactly one scriptable =sa-<actor>= surface per advertised actor.
+- *First action:* inspect the installed inventory and emit an offline request.
+- *Configuration:* actor-specific provider credentials, broker connection, and
+  =STARINTEL_API_KEY= only for explicit HTTP submission.
+- *Does not own:* direct CouchDB writes, a second recurring scheduler or permission
+  to collect from any source just because an actor exists.
+- *Next:* [[file:tutorials/actors.org][the complete Pro actors tutorial]]. Fleet source/package access
+  is separately authorized; public docs do not expose a private repository link.
+
+* StarLang and starintel-doc: document authority and language consumers
+
+- *Owns:* authored/generated contract and its lock-pinned language consumers.
+- *First action:* inspect the actual consumer's =schema/starintel-schema.lock.json=
+  and run its repository-native checker.
+- *Configuration:* release/base version, canonical repository/commit and artifact hashes.
+- *Does not own:* inventing a current release from an old schema filename.
+- *Next:* [[file:documents/star-lang-0.10.1.org][document shape and lock authority]], then
+  [[file:documents/schema-v9.org][historical compatibility]] only when handling old data.
+
+* Quasar: control/runtime and presentation
+
+- *Owns:* its control/runtime boundary and connected presentation workflows;
+  the browser UI is distinct from privileged/persistent service operations.
+- *First action:* choose standalone versus connected mode using Quasar's own
+  capability discovery and current checkout documentation.
+- *Configuration:* its own runtime/service endpoints and credentials; do not
+  copy server secrets into browser assets.
+- *Does not own:* replacing the StarIntel backend or making standalone mode
+  equivalent to a connected deployment.
+- *Next:* use the imported Quasar reference after verifying its revision and mode.
+
+* Auto Dig and Auto Research: corpus versus research state
+
+- *Auto Dig owns:* its corpus and provenance-preserving record workflow, not
+  the canonical document schema. Start by identifying its pinned consumer and
+  local corpus layout before ingestion.
+- *Auto Research owns:* research/design status and approval semantics. Read its
+  explicit status before treating a design as approved implementation.
+- *Configuration:* repository paths, corpus roots and each project's own runtime
+  settings; no shared magic credential enables every subsystem.
+- *Next:* the editorial desk's [[file:desk/findings.org][read-only findings adapter]] and
+  [[file:desk/research-status.org][research-status adapter]] document their narrow integrations.
+
+* Editorial desk: documentation and source-preserving adapters
+
+- *Owns:* these Org sources, publication tooling and deterministic change/
+  findings/research adapters. It does not redefine the components it documents.
+- *First action:* follow a tutorial, then inspect the corresponding imported
+  reference when you need exact source-level details.
+- *Configuration:* local checkout paths in ignored environment configuration,
+  publication controls and the pinned site build.
+- *Next:* [[file:desk/change-facts.org][change facts]] and [[file:desk/tutorials.org][tutorial generation]].
+
+* If a project is missing or an example disagrees
+
+Treat the actual runtime/consumer lock and advertised registry as authority.
+Report the component, exact source revision, sanitized command/error and
+correlation ID where relevant. Do not paste API keys or private datasets.
+Imported READMEs are references, not a guarantee that every capability is installed
+or authorized on your deployment.

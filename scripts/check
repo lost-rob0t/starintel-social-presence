@@ -23,6 +23,10 @@ pytest -q \
   "$root/starintel_tutorial_gen/tests" \
   "$root/site_builder/tests"
 
+# Starter checks stay offline; downloads/services are explicit operator actions.
+python3 -m unittest discover -s "$root/starter/starintel-intro/tests" -v
+python3 -m compileall -q "$root/starter/starintel-intro/scripts"
+
 python3 "$root/install_skills.py" --list
 skill_tmp="$(mktemp -d)"
 trap 'rm -rf "$skill_tmp"' EXIT

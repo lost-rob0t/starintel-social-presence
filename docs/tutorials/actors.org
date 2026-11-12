@@ -1,0 +1,222 @@
+:PROPERTIES:
+:ID: 36df6880-e0f3-4b5b-bb6e-f3efad90f9ef
+:END:
+#+TITLE: Pro actors: from request to running worker
+#+CREATED: [2026-11-11 Wed 23:21]
+#+LAST_MODIFIED: [2026-11-11 Wed 23:21]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: documentation
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: User-requested documentation overhaul, OpenCode session ses_e32195141ffeG9OkwffC8HjEPb; Server e08bd1f7ad01854a3a4866f04eae863423d6d8b8; MCP 6157f070e1d9bfe245f66a4e45680778afc81a5d; Python client ad48cfc41993412657a54f8853220e1f09ba69f5; actor fleet (unlinked) e0dbce5799670aa9b2cc2a01bd6f49b05590c79b; OpenCode V2 https://opencode.ai/v2/docs/mcp-servers; source paths: cli/http-contract-documents.lisp, cli/star-cli-management.lisp, docker-compose.yml, starintel_mcp/{core,cli,mcp,ingest}.py, starintel_client/_client.py, python/src/starintel_pro_actors/{manifests,actor_cli,service_cli}.py
+#+AI_GENERATED: t
+#+AI_TAG: ai_dfc1d797110b68e1
+#+FILETAGS: :ai:ai_dfc1d797110b68e1:starintel:actors:
+
+#+DESCRIPTION: Install an authorized actor fleet, inspect capabilities, review an offline request, run one broker-connected worker and verify dispatch without confusing acceptance with completion.
+#+STATUS: POST
+#+REVISION: 1
+
+* What an actor does—and what this exercise will not do
+
+Pro actors collect or enrich material and return StarIntel documents. Python
+workers run with Pykka; optional Common Lisp plugins run inside Star Server.
+The server owns recurring targets, leases, fencing, retries and recovery.
+Workers are not a second scheduler and must not write directly to CouchDB.
+
+This tutorial walks from installing an authorized fleet checkout to reviewing a
+one-shot request, starting one worker and checking the execution chain. Live
+collection requires permission for the source, an approved target and any
+provider credentials. No live scrape is silently performed by the offline steps.
+
+Prerequisites:
+
+- A working server and RabbitMQ, as in [[file:local-install.org][the local-install tutorial]].
+- Access to the actor fleet checkout/package supplied by your administrator.
+  It is separately distributed; a server API key does not grant source access.
+- Python 3.12+, Git and the native/browser dependencies of your selected actor.
+- A broker account for the intended exchange/vhost and an API key authorized
+  for the target operation and dataset. These are different credentials.
+
+* 1. Choose the correct actor surface
+
+Every advertised actor has a manifest describing its service mode and a
+scriptable =sa-<actor-id>= executable. The executable name fixes actor identity;
+do not pass another actor ID as the first positional argument.
+
+| Service mode | Continuous runtime | One-shot behavior |
+|--------------+--------------------+-------------------|
+| Target consumer | Shared RabbitMQ transport | Print or submit a target request |
+| Document stream | Continuous document consumer | Transform JSONL from stdin/file |
+| Server plugin | Common Lisp host inside Star Server | Submit a target; do not start another Lisp server |
+
+For example, =sa-user-hunt= builds a target request; =sa-watchlist= consumes
+documents using an explicit rules file. They do not have the same arguments.
+Use manifests and the installed commands' =--help= as the inventory authority,
+not an old README's hard-coded actor count.
+
+* 2. Install the authorized fleet
+
+Set =ACTOR_FLEET_DIR= to the actual authorized checkout path. From its root:
+
+#+begin_src sh
+cd "$ACTOR_FLEET_DIR"
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -e . -e './python[dev,amqp,server]'
+starintel-actor-service list
+starintel-actor-manifests --help
+sa-user-hunt --help
+#+end_src
+
+The root mapping package and Python fleet package are both needed. The =amqp=
+extra installs broker publication dependencies; =server= installs the maintained
+HTTP client for explicit submission. Actor-specific provider extras and browser
+installation remain separate. Do not install every credentialed collector just
+to run a username-generation or synthetic test.
+
+For Nix users, the authorized fleet's =nix develop= supplies its native/runtime
+environment. The source's own install guide lists per-output builds. Do not
+assume entering a shell installs every executable globally.
+
+* 3. Review an offline target request
+
+First remove the implicit actor-server URL from this shell so omission of
+=--server= cannot accidentally submit through an inherited environment variable:
+
+#+begin_src sh
+unset STARINTEL_SERVER_URL
+sa-user-hunt intro_example_not_a_real_account \
+  --dataset training --once --delay 1 \
+  --idempotency-key intro-user-hunt-001 > request.json
+python -m json.tool request.json
+#+end_src
+
+With no server configured, this emits deterministic =targets.create= request
+JSON and does not contact providers. Review the actor, dataset, target, cadence
+and options. This is a request body, not proof of a registered actor or completed
+collection. Treat files with real selectors/targets as private operational state.
+
+For actor-specific options, use repeated =--option KEY=JSON= values. Quote JSON
+strings, arrays and objects correctly. Never place provider tokens directly in
+options; use the documented runtime credential reference instead.
+
+* 4. Verify server capabilities and actor registration
+
+With the server URL and API key loaded according to [[file:api-keys.org][the API-key tutorial]],
+use the maintained Python client in a separate client environment:
+
+#+begin_src python
+import os
+from starintel_client import StarIntelClient
+
+with StarIntelClient(os.environ["STAR_SERVER_URL"],
+                     api_key=os.environ["STARINTEL_API_KEY"]) as client:
+    registry = client.discover()
+    print("targets.create available:", registry.has_operation("targets.create"))
+    for op in registry.operations:
+        if "actor" in op.operation_id or op.operation_id == "targets.create":
+            print(op.operation_id, op.scopes)
+#+end_src
+
+Use the catalog operation actually advertised by your server to inspect actor
+manifests and bounded availability. =actors:read= can discover actors but cannot
+invoke them. A locally installed executable, a manifest document and a healthy
+continuous worker are separate facts. Resolve any missing capability before
+submitting work; do not use a legacy target route as a fallback.
+
+* 5. Start exactly one continuous worker
+
+This example chooses =user-hunt=, which uses the pinned canonical SDK and must
+not be given a legacy =--schema=. Configure a private broker connection:
+
+#+begin_src bash
+export RABBITMQ_HOST=127.0.0.1
+export RABBITMQ_PORT=5672
+export RABBITMQ_VHOST=/
+export RABBITMQ_USER=starintel
+read -r -s -p 'Broker password: ' RABBITMQ_PASSWORD
+echo
+export RABBITMQ_PASSWORD
+starintel-actor-service user-hunt
+#+end_src
+
+Run it in a dedicated terminal/service under your chosen supervision. Use the
+operator-issued broker password; the API key is not that password. The canonical
+service boundary selects its SDK automatically. Other actor families may
+explicitly require a compatibility schema artifact or provider credentials;
+follow the selected actor's guide rather than supplying an arbitrary schema.
+
+The Python fleet's Compose stack can run managed workers too, but it has its
+own broker setup. Do not accidentally start a second isolated broker and then
+send server targets to the first one. Align exchange, vhost, credentials and
+network routing. In a container, =127.0.0.1= means that container, not the host.
+
+* 6. Submit only an approved target
+
+Replace the training selector only after obtaining source authorization and
+reviewing the actor's behavior, provider limits and allowed dataset. This command
+is a real server request and can trigger collection:
+
+#+begin_src sh
+sa-user-hunt "$APPROVED_USERNAME" --dataset "$APPROVED_DATASET" \
+  --once --delay 1 --idempotency-key "$APPROVED_REQUEST_ID" \
+  --server "$STAR_SERVER_URL"
+#+end_src
+
+=STARINTEL_API_KEY= supplies the bearer credential. The maintained client
+discovers =targets.create= and fails if unavailable. An idempotency key identifies
+the intended logical request; do not reuse one for different targets. Start with
+=--once=; recurring schedules require an explicit cadence and operational owner.
+
+* 7. Verify the complete chain
+
+Check each boundary independently:
+
+1. HTTP receipt: the target request was accepted; retain its correlation ID.
+2. Server state: the target exists in the intended dataset and is eligible.
+3. Dispatch: Star Server routes the remote target over the =documents= exchange
+   using =documents.target.dispatch.<actor>=.
+4. Consumption: the worker receives/validates it and performs the authorized work.
+5. Publication: output returns through =documents.ingest.<dtype>= with publisher
+   confirmation, or the maintained contracted HTTP publisher.
+6. Persistence/read-back: retrieve emitted document IDs through registry-backed
+   read operations, then verify indexing separately if your workflow needs search.
+
+Only after required outputs are confirmed should the worker ACK the input. A
+provider timeout or publish failure must follow its retry/NACK policy, not be
+hidden as success. Keep source/evidence references; a username-check result is
+not proof that accounts belong to the same person.
+
+* 8. Plugins, JSONL utilities and customization
+
+Common Lisp plugins are loaded into the server's trusted init/ASDF environment;
+do not launch another standalone host for each =sa-*= command. Build/test them in
+the authorized fleet environment, make the ASDF system available to the server,
+then load it through the documented init lifecycle. Restart only under your
+deployment procedure. A file on your host is not automatically in the server image.
+
+Document-stream utilities accept JSONL instead of a selector. Inspect
+=sa-watchlist --help= and =sa-username-targets --help=; provide validated rules
+and =--target-actor= where required. Their output is data, not an instruction to
+automatically execute every emitted target.
+
+When adding an actor, update its manifest, exactly one executable, shared
+continuous registration and focused conformance tests together. Reuse the shared
+transport and server scheduler; do not invent another queue owner or control plane.
+
+* Troubleshooting and safe shutdown
+
+- Request JSON but no work: offline emission is expected without =--server=.
+- Accepted target but idle worker: check registration, identity, broker/vhost,
+  routing and eligible target state before retrying.
+- Provider error: verify its credentials and rate limits; a server key does not
+  authenticate to a third-party provider.
+- Schema failure: check the actor's canonical/compatibility boundary and lock.
+- Duplicate work: inspect request IDs and server lease/retry state; do not add
+  an actor-owned scheduler as a workaround.
+
+Stop the worker gracefully with Ctrl-C or its supervisor. Ending a worker does
+not cancel recurring targets stored on the server. Inspect and stop those through
+the registry-backed target controls, then verify no future dispatch is expected.
+Revoke temporary keys and remove temporary provider sessions when finished.

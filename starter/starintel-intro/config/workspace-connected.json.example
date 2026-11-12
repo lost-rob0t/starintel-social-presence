@@ -1,0 +1,9 @@
+{
+  "ingestHosts": {
+    "local": {"local": true},
+    "live": {
+      "url": "http://127.0.0.1:5000",
+      "tokenEnv": "STAR_SERVER_TOKEN"
+    }
+  }
+}

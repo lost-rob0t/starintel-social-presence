@@ -1,0 +1,140 @@
+:PROPERTIES:
+:ID: 76af2cff-e34f-42c8-b92b-189e71015bfd
+:END:
+#+TITLE: Your first StarIntel workspace
+#+CREATED: [2026-11-11 Wed 23:21]
+#+LAST_MODIFIED: [2026-11-11 Wed 23:21]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: documentation
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: User-requested documentation overhaul, OpenCode session ses_e32195141ffeG9OkwffC8HjEPb; Server e08bd1f7ad01854a3a4866f04eae863423d6d8b8; MCP 6157f070e1d9bfe245f66a4e45680778afc81a5d; Python client ad48cfc41993412657a54f8853220e1f09ba69f5; actor fleet (unlinked) e0dbce5799670aa9b2cc2a01bd6f49b05590c79b; OpenCode V2 https://opencode.ai/v2/docs/mcp-servers; source paths: cli/http-contract-documents.lisp, cli/star-cli-management.lisp, docker-compose.yml, starintel_mcp/{core,cli,mcp,ingest}.py, starintel_client/_client.py, python/src/starintel_pro_actors/{manifests,actor_cli,service_cli}.py
+#+AI_GENERATED: t
+#+AI_TAG: ai_cd291c3c5ba10c3a
+#+FILETAGS: :ai:ai_cd291c3c5ba10c3a:starintel:onboarding:
+
+#+DESCRIPTION: Install a pinned starter, create your first operation, inspect a synthetic note and export it without a server or API key.
+#+STATUS: POST
+#+REVISION: 1
+
+* Outcome and prerequisites
+
+You will create a local operation containing one synthetic note, search it,
+append a revision and export a JSONL batch. No remote server, provider account
+or API key is needed. Nothing in this exercise collects real-world material.
+
+Use Linux or macOS with Git, Python 3.12 or newer, =venv= and pip. Initial setup
+downloads dependencies and pinned source checkouts. You need an authorized
+Forgejo account and SSH key for restricted source repositories. A StarIntel API
+key does not grant Git access; ask your administrator for the starter/source
+bundle if you cannot access a required repository.
+
+* 1. Obtain starintel-intro
+
+If you were given a =starintel-intro= checkout, open that directory. Otherwise
+obtain the documentation source and copy its self-contained starter directory:
+
+#+begin_src sh
+git clone ssh://forgejo@git.starintel.actor/starintel-labs/starintel-social-presence.git
+cp -R starintel-social-presence/starter/starintel-intro ./starintel-intro
+cd starintel-intro
+#+end_src
+
+The starter is maintained with the docs, not a claim that a separate public
+starter repository already exists. Read =sources.json= before installing: its
+full commit IDs pin MCP, the Python client and the optional server. If your
+Forgejo requires authentication, use the SSH clone URL supplied by your operator.
+
+* 2. Install tools, not services
+
+#+begin_src sh
+python3 --version
+git --version
+bash scripts/setup.sh
+#+end_src
+
+Setup creates =.venv/=, checks out pinned sources under =vendor/=, installs the
+Python client and MCP's schema validator, verifies MCP's schema lock and writes
+a local-only ingest configuration. It does not start Docker or a collector.
+Keep the MCP checkout intact: its launcher needs the vendored schema and hints.
+
+If =python3= is too old, choose an installed newer interpreter explicitly:
+=PYTHON=python3.12 bash scripts/setup.sh=. Do not use =sudo pip=.
+
+* 3. Run the complete offline example
+
+#+begin_src sh
+bash scripts/local-demo.sh
+#+end_src
+
+Read the JSON after each action. The script:
+
+1. Creates operation =intro-demo= with a learning phase.
+2. Creates dataset =training= on first write.
+3. Stores note =intro-note= with clearly synthetic content.
+4. Reads and searches that note, then creates and uses a saved view.
+5. Appends a new revision and displays history.
+6. Exports the current documents with =--host local=, which makes no HTTP request.
+
+The output includes generated IDs, revision metadata and an export path. These
+values are produced at runtime; do not expect a fixed timestamp or byte-for-byte
+copy of another user's output. Existing operation names are not overwritten.
+For another run, use =bash scripts/local-demo.sh intro-demo-2=.
+
+* 4. Inspect the workspace yourself
+
+#+begin_src sh
+bash bin/starintel op list
+bash bin/starintel op show intro-demo
+bash bin/starintel dataset list --op intro-demo
+bash bin/starintel doc get intro-demo intro-note --dataset training
+bash bin/starintel doc history intro-demo intro-note --dataset training
+bash bin/starintel search synthetic --op intro-demo --dtype document
+#+end_src
+
+An operation groups one investigation or task. A dataset names a collection
+within it. A dtype is the document kind. Our note uses dtype =document= and the
+=rawContent= field; =note= is not a canonical dtype. Local files are stored under:
+
+#+begin_example
+workspace/operations/intro-demo/
+  operation.json
+  operation.org
+  db/training/manifest.json
+  db/training/document/documents.ndjson
+  views/training-notes.json
+  out/...
+#+end_example
+
+Search selects the latest live revision of each ID. History retains older
+revisions; deletion is a tombstone, not physical removal of previous content.
+Do not put secrets in notes or target options.
+
+* 5. Open the optional local web UI
+
+#+begin_src sh
+bash bin/starintel web
+#+end_src
+
+Open =http://127.0.0.1:8777=. The CLI, web UI and MCP share the local engine and
+workspace. Ctrl-C stops the web process. This UI is not the StarIntel server,
+not Quasar and not an HTTP MCP endpoint. Keep it bound to localhost.
+
+* Checkpoint and recovery
+
+You should be able to retrieve =intro-note=, see more than one history entry and
+find the JSONL file reported by the export step. If search is empty, check the
+operation name, dataset and =STARINTEL_WORKSPACE=. The launcher defaults to this
+checkout's =workspace/=; an exported variable overrides it.
+
+If setup reports a dirty or wrong-revision vendor checkout, inspect it rather
+than resetting it. If an install fails, keep its error output but redact secrets
+before asking for support. Setup's private workspace and source directories are
+ignored by Git. Back up the entire workspace somewhere private before deleting it.
+
+* Next steps
+
+- [[file:cli.org][Continue with the full CLI tutorial]].
+- [[file:mcp.org][Give an assistant access to this workspace]].
+- [[file:api-keys.org][Use your API key]] when you are ready for an existing server.
+- [[file:local-install.org][Install a complete local server]] only if you need to host one.

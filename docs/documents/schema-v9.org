@@ -1,63 +1,51 @@
 :PROPERTIES:
 :ID: docs-documents-schema
 :END:
-#+title: StarIntel v0.9 document contract
-#+date: [2026-10-25 Sun]
-#+description: How the StarIntel v0.9 document contract separates its release profile from the immutable base schema.
-#+slug: documents/schema-v9
-#+filetags: :docs:documents:schema:
-#+status: POST
-#+revision: 3
+#+TITLE: Historical v0.9 compatibility
+#+CREATED: [2026-11-11 Wed 23:21]
+#+LAST_MODIFIED: [2026-11-11 Wed 23:21]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: documentation
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: User-requested documentation overhaul, OpenCode session ses_e32195141ffeG9OkwffC8HjEPb; Server e08bd1f7ad01854a3a4866f04eae863423d6d8b8; MCP 6157f070e1d9bfe245f66a4e45680778afc81a5d; Python client ad48cfc41993412657a54f8853220e1f09ba69f5; actor fleet (unlinked) e0dbce5799670aa9b2cc2a01bd6f49b05590c79b; OpenCode V2 https://opencode.ai/v2/docs/mcp-servers; source paths: cli/http-contract-documents.lisp, cli/star-cli-management.lisp, docker-compose.yml, starintel_mcp/{core,cli,mcp,ingest}.py, starintel_client/_client.py, python/src/starintel_pro_actors/{manifests,actor_cli,service_cli}.py
+#+AI_GENERATED: t
+#+AI_TAG: ai_30c06c5f84201e16
+#+FILETAGS: :ai:ai_30c06c5f84201e16:starintel:compatibility:
 
-StarIntel consumers do not all select the same document release. This page
-describes the v0.9 contract selected by the main-site consumer lock in
-=starintel-labs/website/packages/starintel-doc/schemas/starintel-schema.lock.json=.
-That lock records *release/profile 0.9.1* and *base schema 0.9.0*.
+#+DESCRIPTION: Historical v0.9 compatibility, not the current onboarding contract; use the selected consumer lock and preserve explicit version boundaries.
+#+STATUS: POST
+#+REVISION: 4
 
-Those numbers describe different things. The release profile identifies the
-consumer contract, while the base schema identifies the immutable wire-schema
-family. A consumer can therefore use release 0.9.1 while continuing to
-validate documents against the 0.9.0 base schema and its additive profile.
+* Historical compatibility—not a new-producer starting point
 
-* What the contract provides
+This URL is retained for readers handling historical v0.9 records. The current
+Server and MCP source pins used by these tutorials select release/base 0.10.1
+from StarLang. The website's current consumer lock also selects 0.10.1; the
+older statement that its active release was v0.9 is no longer current.
 
-The contract gives producers and consumers a shared structure for typed
-documents, including their identity, dataset, sources, evidence, and
-assessment. Type-specific fields are checked against the selected schema.
-Consumers pin the lock and validate against that exact contract instead of
-choosing a version from a filename or a documentation title.
+Start new workflows with [[file:star-lang-0.10.1.org][the current document-shape guide]] and the
+actual consuming repository's lock. A document's version, an API client's
+package version and a deployed server's version are not interchangeable.
 
-For the StarIntel v0.9 family:
+* Preserve the historical contract
 
-- The website lock selects release/profile =0.9.1=.
-- The same lock identifies base schema =0.9.0=.
-- The immutable schema filename remains =starintel-doc-v0.9.0.schema.json=.
-- Additive profile changes do not rename or replace that base schema.
+In the additive v0.9 family, a release/profile could advance while its immutable
+base-schema version and filename remained unchanged. That is why a v0.9.0
+filename cannot tell you which release a consumer selected.
 
-* Why another page mentions 0.10.1
+- Resolve =release_version= and =schema_version= from the relevant consumer lock.
+- Follow its canonical repository/commit and run its native checker.
+- Keep explicitly historical records on their documented compatibility path.
+- Do not rename =_id= to =id= or edit =schemaVersion= merely to pass validation.
+- Migrate through an explicit supported migration and validate the result.
 
-StarLang 0.10.1 is a separate contract used by the Auto Dig findings adapter.
-It is not the release selected by the website's v0.9 lock. The adapter page
-describes that consumer and its own version boundary:
-
-- [[https://docs.starintel.actor/documents/star-lang-0.10.1.html][StarLang 0.10.1 findings-adapter input]]
-
-Keep the consumer and its lock beside every version claim. The string
-=0.10.1= is not a replacement for the website's pinned v0.9 profile.
-
-The lock's canonical source is
-=lost-rob0t/starintel-gpt-auto-dig@6479c0a9dc88ce9fed183515fc4df5d245de0b3a=.
-
-* Compatibility rules
-
-- Validate with the consumer's pinned lock.
-- Keep =release_version= distinct from =schema_version=.
-- Treat schema filenames as immutable artifact names, not release selectors.
-- Make migrations explicit; do not relabel old records to pass validation.
-- Keep source, evidence, and uncertainty attached to derived conclusions.
+Some actor families still have explicit historical boundaries while others use
+the canonical SDK. Check the selected actor's guide; never feed every worker
+the same arbitrary schema file. See [[file:../tutorials/actors.org][Pro actors]].
 
 * Related
 
-- [[https://nsaspy.starintel.actor/projects/starintel.html][StarIntel project overview]]
-- [[https://docs.starintel.actor/documents/star-lang-0.10.1.html][StarLang 0.10.1 findings-adapter input]]
-- [[id:docs-server-ingest][Ingest and dataflow recursion]]
+- [[file:star-lang-0.10.1.org][Current document shape and authority]]
+- [[file:provenance.org][Provenance and evidence]]
+- [[file:../tutorials/api-keys.org][Contract discovery before HTTP publication]]

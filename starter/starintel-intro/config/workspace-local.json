@@ -1,0 +1,5 @@
+{
+  "ingestHosts": {
+    "local": {"local": true}
+  }
+}

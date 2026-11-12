@@ -1,0 +1,198 @@
+:PROPERTIES:
+:ID: d1735cc0-91e1-4d8d-a231-c309b223c81a
+:END:
+#+TITLE: Complete local StarIntel installation
+#+CREATED: [2026-11-11 Wed 23:21]
+#+LAST_MODIFIED: [2026-11-11 Wed 23:21]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: documentation
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: User-requested documentation overhaul, OpenCode session ses_e32195141ffeG9OkwffC8HjEPb; Server e08bd1f7ad01854a3a4866f04eae863423d6d8b8; MCP 6157f070e1d9bfe245f66a4e45680778afc81a5d; Python client ad48cfc41993412657a54f8853220e1f09ba69f5; actor fleet (unlinked) e0dbce5799670aa9b2cc2a01bd6f49b05590c79b; OpenCode V2 https://opencode.ai/v2/docs/mcp-servers; source paths: cli/http-contract-documents.lisp, cli/star-cli-management.lisp, docker-compose.yml, starintel_mcp/{core,cli,mcp,ingest}.py, starintel_client/_client.py, python/src/starintel_pro_actors/{manifests,actor_cli,service_cli}.py
+#+AI_GENERATED: t
+#+AI_TAG: ai_e1edfc22fb59fb4a
+#+FILETAGS: :ai:ai_e1edfc22fb59fb4a:starintel:selfhosting:
+
+#+DESCRIPTION: Bring up the full local server dependency stack, prepare every required secret, bootstrap auth, verify discovery, add clients and actors, and stop without deleting data.
+#+STATUS: POST
+#+REVISION: 1
+
+* Installation scope and prerequisites
+
+This installs a production-shaped *local development stack*: StarIntel Server,
+CouchDB, Clouseau full-text search, RabbitMQ, Valkey and the configured telemetry
+sidecar. It is not a hardened public deployment. Local MCP/client tools and Pro
+actors are separate layers, added after the backend is healthy.
+
+Reference environment: Linux with Nix flakes, Docker Engine, Compose v2, Git,
+Python 3.12+, curl and jq. Initial builds need network access, disk and time.
+The pinned images/dependencies may impose architecture constraints; this guide
+does not claim ARM or every desktop Docker variant has been tested. Use a new
+Compose project with free local ports, not an existing deployment or production
+data directory. Source access may require an authorized Forgejo SSH account.
+
+* 1. Prepare the starter and pinned source
+
+Complete [[file:getting-started.org][the starter setup]], then run from =starintel-intro=:
+
+#+begin_src sh
+python3 scripts/fetch_sources.py starintel-server
+python3 scripts/prepare_server.py vendor/starintel-server
+cd vendor/starintel-server
+#+end_src
+
+The source fetcher verifies the exact commit in =sources.json= and refuses to
+reset dirty/mismatched existing checkouts. The preparation helper refuses an
+existing =.env= or =secrets/= so it cannot silently rotate a running deployment's
+credentials. It creates a private secrets directory and these required files:
+
+| Secret | Purpose |
+|--------+---------|
+| =couchdb_password= | Database authentication |
+| =couchdb_secret= | CouchDB internal secret |
+| =erlang_cookie= | CouchDB/Clouseau shared Erlang cookie |
+| =rabbitmq_password= | Broker authentication |
+| =valkey_password= | Cache authentication |
+| =auth_pepper= | Server credential verification |
+| =auth_bootstrap_secret= | One-time initial administrator bootstrap |
+
+Files are 0600 and their directory 0700. Do not commit or print their contents.
+The auth files are essential; older five-secret quickstarts are incomplete for
+the pinned authenticated Compose model. Optional actor profiles may require
+additional secrets and are not enabled in this base-stack exercise.
+
+* 2. Review loopback bindings and configuration
+
+Inspect =.env= and =docker-compose.yml= without revealing secrets. Keep all host
+bindings at =127.0.0.1=. Default endpoints are:
+
+| Service | Local endpoint |
+|---------+----------------|
+| Server API | =http://127.0.0.1:5000= |
+| CouchDB | =http://127.0.0.1:5984= |
+| RabbitMQ AMQP | =127.0.0.1:5672= |
+| RabbitMQ management | =http://127.0.0.1:15672= |
+| Valkey | =127.0.0.1:6379= |
+
+Clouseau is internal. If a port is already occupied, change the appropriate
+host port in =.env= and carry the new API URL into every client. Container-to-
+container connections use service names, not the host's loopback address.
+
+Do not assume setting a variable in =.env= forwards it into a container: the
+Compose =environment= map controls that. In particular, the pinned model does
+not forward every initial-user variable shown in its =.env.example=. Do not
+rely on a historical =star:intel= login or consider a sample password secure.
+Use bootstrap and the maintained credential/user APIs deliberately.
+
+* 3. Validate, build and start
+
+#+begin_src sh
+docker compose config --quiet
+nix run .#load-images
+docker compose up --detach --wait
+docker compose ps
+curl --fail --silent --show-error http://127.0.0.1:5000/health
+#+end_src
+
+The flake builds/loads the project-owned OCI images; do not substitute
+unverified similarly named registry images. =--wait= waits for configured
+health checks, not a completed end-to-end ingest/indexing workflow. Telemetry
+is off by default; the sidecar's existence does not mean signals are exported.
+
+If startup fails, inspect the failing service before restarting everything:
+
+#+begin_src sh
+docker compose ps
+docker compose logs --tail=100 star-server couchdb clouseau rabbitmq valkey
+#+end_src
+
+Check missing file secrets, port conflicts, image load/build failures and each
+service's health. Redact credentials, provider material and dataset content
+before sharing logs. Do not disable authentication to get past a startup error.
+
+* 4. Bootstrap and verify authenticated access
+
+Return to the starter root and set the API URL:
+
+#+begin_src sh
+cd ../..
+export STAR_SERVER_URL='http://127.0.0.1:5000'
+#+end_src
+
+Run the complete one-time bootstrap helper, described in [[file:api-keys.org][the API-key tutorial]].
+It reads the server's separate bootstrap secret and writes the returned
+administrator key to a new private file:
+
+#+begin_src sh
+install -d -m 0700 secrets
+.venv/bin/python scripts/bootstrap.py \
+  --secret-file vendor/starintel-server/secrets/auth_bootstrap_secret \
+  --output secrets/admin-key
+export STARINTEL_API_KEY="$(cat secrets/admin-key)"
+.venv/bin/python scripts/api_context.py
+#+end_src
+
+Success means discovery contracts were cross-checked and an authenticated
+context request succeeded. Health alone was not enough. On =bootstrap_complete=
+use the existing administrator; never remove credential data to bypass it.
+Issue a scoped non-administrator learning key before connecting an assistant.
+
+* 5. Verify an end-to-end document workflow
+
+Run the offline demo to obtain an inert synthetic-note export. Load an approved
+write-capable key, review the batch and publish with the maintained client as
+shown in [[file:api-keys.org][API keys]]. Inspect bulk failure counts or asynchronous job state,
+then read back the returned document IDs through an operation advertised by
+the registry. Check indexing separately if search matters to your workflow.
+
+Do not use direct database writes to prove that the public ingest path works.
+Do not claim full-text search works merely because CouchDB answers a health
+check. The server's =scripts/stack-test.sh= is a separate integration acceptance
+tool that builds/starts services and exercises recovery; inspect its resource
+and isolation behavior before running it on a machine with other deployments.
+
+* 6. Add MCP, CLI and one actor—not every optional service
+
+- [[file:mcp.org][Connect MCP]] to the starter's private local workspace.
+- [[file:cli.org][Use CLI tools]] and the explicit publication path.
+- [[file:actors.org][Install and connect one Pro actor]] with its own broker/provider credentials.
+
+The server Compose file's optional =actors= profile is *not* the complete Pro
+fleet. Do not run it expecting every collector to be installed or configured.
+The authorized fleet's Compose stack also has a broker: avoid accidentally
+starting a separate isolated broker instead of connecting to this server's one.
+
+Quasar is optional for this backend exercise. Its UI/control runtime has its
+own checkout and configuration; neither is required to verify this API. See
+[[file:../projects.org][the project guide]] to choose additional components intentionally.
+
+* 7. Persistence, backup and upgrades
+
+#+begin_src sh
+cd vendor/starintel-server
+docker compose down
+docker compose up --detach --wait
+#+end_src
+
+=down= stops/removes containers while keeping named volumes. Never append
+=--volumes= unless you intend to delete persisted documents, broker/cache state
+and indexes. Keep a tested private backup of database volumes and required file
+secrets. The auth pepper must remain paired with its credential store.
+
+For an upgrade, record the current source/image pins, back up, review the new
+consumer schema lock and migration instructions, then build/load and test the
+candidate in a separate environment. The starter fetcher intentionally refuses
+to move an existing vendor checkout to another revision. It is not an upgrader.
+
+* Final acceptance checklist
+
+- Base services are healthy and listening only where intended.
+- Registry discovery and an authenticated context request work.
+- A scoped key cannot perform unrelated administrator operations.
+- A reviewed synthetic batch is accepted, read back and, separately, indexed.
+- A restart preserves documents; backup/restore has its own verification.
+- Optional actor work is authorized, registered and observed independently.
+
+These are operator acceptance checks, not claims that every service was tested
+by generating this documentation. If a step fails, retain sanitized evidence and
+resolve that boundary before continuing.

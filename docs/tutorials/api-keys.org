@@ -1,0 +1,209 @@
+:PROPERTIES:
+:ID: 43fe1e79-c99b-4e55-863a-2a974265ca2c
+:END:
+#+TITLE: API keys and your first authenticated request
+#+CREATED: [2026-11-11 Wed 23:21]
+#+LAST_MODIFIED: [2026-11-11 Wed 23:21]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: documentation
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: User-requested documentation overhaul, OpenCode session ses_e32195141ffeG9OkwffC8HjEPb; Server e08bd1f7ad01854a3a4866f04eae863423d6d8b8; MCP 6157f070e1d9bfe245f66a4e45680778afc81a5d; Python client ad48cfc41993412657a54f8853220e1f09ba69f5; actor fleet (unlinked) e0dbce5799670aa9b2cc2a01bd6f49b05590c79b; OpenCode V2 https://opencode.ai/v2/docs/mcp-servers; source paths: cli/http-contract-documents.lisp, cli/star-cli-management.lisp, docker-compose.yml, starintel_mcp/{core,cli,mcp,ingest}.py, starintel_client/_client.py, python/src/starintel_pro_actors/{manifests,actor_cli,service_cli}.py
+#+AI_GENERATED: t
+#+AI_TAG: ai_ec00f8a902ef939c
+#+FILETAGS: :ai:ai_ec00f8a902ef939c:starintel:authentication:
+
+#+DESCRIPTION: Safely load an API key, discover the contract, verify permissions, issue a scoped key, rotate credentials and publish a reviewed batch.
+#+STATUS: POST
+#+REVISION: 1
+
+* What you will accomplish
+
+You will authenticate through the maintained Python client and inspect the
+capabilities granted to your key. Administrators can then issue a separate
+short-lived learning key. The final section covers deliberate publication and
+credential rotation. Ordinary users do not need administrator credentials.
+
+Prerequisites: the =starintel-intro= tools from [[file:getting-started.org][the first tutorial]],
+your server's base URL, an issued API key and the dataset access your task needs.
+For a remote server use HTTPS or an operator-approved private tunnel. Plain HTTP
+below is only for a loopback development stack.
+
+* 1. Load your key without putting it in history
+
+Run in Bash from the starter checkout. Turn off shell tracing first if enabled.
+
+#+begin_src bash
+set +x
+export STAR_SERVER_URL='http://127.0.0.1:5000'
+read -r -s -p 'API key: ' STARINTEL_API_KEY
+echo
+export STARINTEL_API_KEY
+.venv/bin/python scripts/api_context.py
+#+end_src
+
+The script discovers =/client-manifest.json= and =/openapi.json=, cross-checks
+them and calls =auth.context.get= through the published registry. It prints
+available operation IDs, your auth context and a correlation ID, never the key.
+Discovery and health can be public; fetching them alone does not authenticate you.
+
+Do not put keys in command arguments, URLs, Git, issue bodies, chat or screenshots.
+Environment variables are not a vault: use an approved secret manager for durable
+storage, and avoid sharing a user/session with untrusted processes.
+
+* 2. Understand the permissions before making requests
+
+The registry describes operations the server implements; your key authorizes
+only a subset. Inspect an operation's scopes rather than guessing names:
+
+#+begin_src python
+import os
+from starintel_client import StarIntelClient
+
+with StarIntelClient(os.environ["STAR_SERVER_URL"],
+                     api_key=os.environ["STARINTEL_API_KEY"]) as client:
+    registry = client.discover()
+    for operation in registry.operations:
+        print(operation.operation_id, operation.authority, operation.scopes)
+    print(client.auth_context().correlation_id)
+#+end_src
+
+Save this as a local Python script and run it with =.venv/bin/python=. Keep
+dataset access distinct from scopes. =actors:read= grants actor discovery, not
+target invocation. Never grant an assistant administrator authority merely to
+make an authorization error disappear.
+
+| Result | Meaning | Next action |
+|--------+---------+-------------|
+| 401 | Missing, invalid, expired, disabled or revoked credential | Check the key's source and lifecycle with the issuer |
+| 403 | Authenticated, but missing capability or dataset grant | Request the smallest required grant |
+| Unknown operation | Your server does not advertise the operation | Check deployment version; do not fall back to a legacy route |
+| Connection/TLS error | Wrong URL, network, listener or certificate | Fix the connection; do not disable certificate checks |
+
+* 3. Administrator only: issue a learning credential
+
+Keep your administrator key in a separate terminal/session. From that session:
+
+#+begin_src sh
+install -d -m 0700 secrets
+.venv/bin/python scripts/issue_key.py --owner intro-discovery \
+  --scope actors:read --output secrets/discovery-key
+#+end_src
+
+This calls =auth.credentials.create= through the registry, sets a one-hour
+lifetime and writes the returned one-time key to a new 0600 file. It refuses
+an existing output path. Record the returned credential metadata/ID so you can
+rotate or revoke it later. The full secret cannot be retrieved by listing keys.
+
+In a separate non-administrator session:
+
+#+begin_src sh
+export STARINTEL_API_KEY="$(cat secrets/discovery-key)"
+.venv/bin/python scripts/api_context.py
+#+end_src
+
+If creation succeeds but saving fails, retain the credential ID and revoke the
+orphaned key through your administrator session before retrying. Avoid creating
+multiple active keys accidentally.
+
+* 4. Fresh self-hosted stack only: bootstrap the first administrator
+
+Skip this section on an existing hosted deployment. Bootstrap uses a distinct
+server-side bootstrap secret and works only while the credential store is empty.
+After [[file:local-install.org][preparing and starting a fresh local server]], run this from
+the starter checkout with the local API URL exported. The starter includes the
+complete runnable helper:
+
+#+begin_src sh
+install -d -m 0700 secrets
+.venv/bin/python scripts/bootstrap.py \
+  --secret-file vendor/starintel-server/secrets/auth_bootstrap_secret \
+  --output secrets/admin-key
+#+end_src
+
+For clarity, the helper performs this sequence using the maintained client;
+do not run both versions on the same store:
+
+#+begin_src python
+import os
+from pathlib import Path
+from starintel_client import StarIntelClient
+
+path = Path("secrets/admin-key")
+path.parent.mkdir(mode=0o700, exist_ok=True)
+# Reserve the file before making the one-time request; never overwrite a key.
+fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+with os.fdopen(fd, "w") as output:
+    bootstrap_secret = Path(
+        "vendor/starintel-server/secrets/auth_bootstrap_secret"
+    ).read_text().strip()
+    with StarIntelClient(os.environ["STAR_SERVER_URL"]) as client:
+        client.discover()
+        result = client.bootstrap("local-operator", bootstrap_secret=bootstrap_secret)
+        output.write(result.api_key + "\n")
+        print("Administrator credential:", result.credential.id)
+#+end_src
+
+If adapting the Python example instead of the helper, use an ignored local
+script with the starter's interpreter. Check that the private file is nonempty, then load it into
+your administrator session without displaying it. Bootstrap errors may leave
+an empty reserved output file: inspect that file and the error before retrying.
+On =bootstrap_complete= use an existing administrator or the operator's recovery
+procedure; never delete the auth database to bypass the one-time guard.
+
+The auth pepper is not an API key and the bootstrap secret is not a bearer key.
+Keep both protected with the server's backups. Do not depend on historical
+default login credentials from old quickstarts.
+
+* 5. Connect the right credential variable to each tool
+
+| Tool | URL configuration | Key configuration |
+|------+-------------------+-------------------|
+| Starter Python examples | =STAR_SERVER_URL= | =STARINTEL_API_KEY= |
+| Actor =sa-*= commands | =--server URL= | =STARINTEL_API_KEY= |
+| MCP remote ingest | =STAR_SERVER_URL= or configured ingest host | =STAR_SERVER_TOKEN= by default |
+| =star-cli= | =STAR_SERVER_URL= | =STAR_SERVER_TOKEN= or =STAR_SERVER_API_KEY= |
+
+For the same deliberately scoped key, an explicit alias is:
+=export STAR_SERVER_TOKEN="$STARINTEL_API_KEY"=. A key in the wrong variable is
+not read automatically. MCP receives environment from its launching process;
+setting a variable in another terminal does not update an existing child.
+Never embed the key value into a committed MCP configuration.
+
+* 6. Publish only after reviewing the local batch
+
+Use the JSONL path returned by the [[file:cli.org][CLI export tutorial]]. The first command
+only reads/counts records; the second explicitly performs a server write:
+
+#+begin_src sh
+.venv/bin/python scripts/publish_batch.py /absolute/path/to/batch.jsonl
+.venv/bin/python scripts/publish_batch.py /absolute/path/to/batch.jsonl --submit
+#+end_src
+
+The maintained client discovers =documents.bulk.create= instead of assuming a
+route. Use an approved write-capable key and dataset. A successful HTTP response
+may contain failures or asynchronous job acceptance: inspect =failed= and
+=succeeded=, or the advertised job status. It does not prove search indexing or
+collector completion. Keep correlation IDs and sanitized receipts for support.
+
+* 7. Rotate, test, then revoke
+
+Administrators use the maintained client's lifecycle operations:
+
+#+begin_src python
+# With an administrator client and the selected credential ID:
+replacement = client.rotate_credential(credential_id, overlap_seconds=300)
+# Save replacement.api_key privately; record replacement.credential.id.
+# Deploy it to the intended consumer, then verify auth_context with that key.
+# Once all consumers have moved, revoke the old credential explicitly:
+client.revoke_credential(credential_id)
+#+end_src
+
+This is a lifecycle excerpt, not a script that chooses a credential for you.
+Choose an overlap allowed by your server; zero overlap invalidates the old key
+immediately. Never print the replacement secret or revoke the only working
+administrator before testing its replacement. If a key leaks, revoke it and
+issue another; deleting it from Git history is not sufficient.
+
+When finished, =unset STARINTEL_API_KEY STAR_SERVER_TOKEN STAR_SERVER_API_KEY=.
+This removes variables from that shell, not from processes already launched.
