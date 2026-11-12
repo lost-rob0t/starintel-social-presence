@@ -1,0 +1,104 @@
+:PROPERTIES:
+:ID: 4ef99683-390d-42a4-8617-e1a11e13e9b0
+:END:
+#+TITLE: The StarIntel Shipyard #008: The CouchDB Cutover
+#+CREATED: [2026-11-11 Wed 21:04]
+#+LAST_MODIFIED: [2026-11-11 Wed 21:04]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: article
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: User-requested private next-post draft, 2026-11-11; cross-repository subagent audit of available histories since public Shipyard007 and discovered Prolog trees, with coverage limits retained in noexport. Editorial base 5f45a3e0563313657314a1c0febbf65235d31fed; cluster front 6afa99cace5dca4f182a16365d9417ba3d6f7b94; dated release 86db78488c1989a5939dfea5cd0b794bf6467fcd; actors main 37884d2717862861e7d595a8b20698cad2b6a9f7; research main 7bfd9d8b31a6ea8978bf116679a10f991e326ed5; learning GitHub-only 68e18bcd0aacf75fc71443ce487701fc48b5db1c. Historical operations and source implementations distinguished; no publication approval. Revision 5: user requested plain prose and no host-file links; independent editor shortened the article and factual review checked the rewrite. Original document identity and AI tag retained. Publication approval: user explicitly instructed Publish after the revision-5 plain-language rewrite in this OpenCode conversation. That approval supersedes prior private-draft restrictions for this post only; other drafts remain excluded.
+#+AI_GENERATED: t
+#+AI_TAG: ai_8994696a1decb58a
+#+FILETAGS: :ai:ai_8994696a1decb58a:starintel:shipyard:storage:actors:search:research:
+
+#+date: [2026-11-11 Wed]
+#+description: The CouchDB cutover, an unfinished production rollout, new collector implementations, and repairs to search and research publication.
+#+slug: shipyard-008-the-cluster-cutover
+#+tags: starintel shipyard couchdb ingestion actors search research
+#+status: POST
+#+revision: 5
+
+At 07:20 UTC on November 11, StarIntel's production writes moved to a three-node CouchDB cluster. Actor output still travels through RabbitMQ and the server's ingest bridge. HAProxy now sits between that bridge and the database nodes.
+
+The migration also broke document full-text search. That failure survived the basic health checks and remained unresolved in the latest indexing record.
+
+* Moving the database
+
+The old arrangement put maintenance and incoming writes in competition. One operational snapshot showed about 282 messages arriving each second against roughly 26 acknowledgments. Storage contention needed investigation alongside worker capacity.
+
+The cluster uses eight shards and three replicas, with a distinct backing disk for each node. All three nodes share the same virtualization environment. HAProxy gives clients a stable entry point, with authenticated backend checks and access restricted to the intended clients. Deliberate node-failure testing and sustained post-cutover throughput measurements are still outstanding.
+
+Getting the nodes to agree took several repairs. SSH was consuming a convergence loop's member-list input, causing later nodes to be skipped. The firewall peer rules needed an active backend. Resetting one node locally was insufficient when surviving peers could gossip phantom shard membership back into it.
+
+Fresh-cluster reinitialization preceded migration. A stale-branch deployment regressed membership at 01:01 UTC; recovery at 01:09 resumed replication without another wipe. This happened before the 07:20 cutover, while migration was still running.
+
+The cutover journal records advancing writes and cross-node reads. Later database snapshots reached roughly *6.3 million aggregate stored documents*. That total includes migrated material; it supplies neither a newly collected count nor a Reddit collection rate.
+
+* Shipping the image, finding the missing indexer
+
+Authentication at the new database front exposed a faulty readiness probe. Anonymous checks received a 401 even while authenticated writes continued. The [[https://git.starintel.actor/starintel-labs/starintel-server/commit/024459c99065902f6eca07c1224cc0816c7a0bd4][server repair]] supplies the configured credentials without relaxing database authentication. The later clean image was recorded healthy from 17:21 UTC, after the storage cutover.
+
+The first date-versioned production release, =v2026.11.11=, pinned that later server revision. At 17:55 UTC, the rollout had four targets committed and six in flight. Persistent-profile mismatches and stale failed-unit gates complicated deployment: a healthy running system could still differ from the profile selected for its next boot.
+
+Document search had a separate cause. The cutover omitted Clouseau, which builds the full-text indexes. The synthetic stack used for checks included it, so those checks missed the production omission. Adding Clouseau across the three database nodes started 24 shard-indexing tasks. The latest relevant record still showed early progress and document-search timeouts.
+
+Meanwhile, the [[https://search.starintel.actor/][public search facade]] has a live YaCy web-search slice. Activation checks returned HTTP 200 for an anonymous query, with zero hits. Public mode applies per-IP limits, fails closed around proxy trust, and excludes private billing, crawl and document-management routes. YaCy availability does not establish recovery of the document-search path.
+
+* When a running container stops collecting
+
+The fleet also stalled independently of the database move. An AMQP reset led into blocking consumer shutdown; an actor timeout could leave the process hanging. Containers stayed up, but heartbeats went stale and traffic stopped. The restart policy saw a living main process.
+
+After a fleet restart, one observation recorded 18 healthy containers and about 134 events per second. A host-local check now restarts unhealthy actor containers every two minutes. It covers actors only; the server consumer needs separate handling for a similar wedge.
+
+An invalid username-target stream was stopped and more than half a million queued items removed. Those were unusable documents, excluded from useful-ingestion totals. Completed quarantine replay is still unconfirmed.
+
+* More specific collection jobs
+
+The following implementations have merged; production scheduling is a separate deployment step.
+
+The GitHub collector accepts bounded user, organization and repository jobs. It collects commits and activity with explicit fork and authorship relations, retaining public commit-email provenance and distinguishing noreply markers. The bounds keep a repository request from expanding indefinitely through connected accounts.
+
+Site-watch persists page snapshots and compares status, title and link structure to produce deltas and alerts. Restarting the actor preserves the comparison history. Wayback CDX and certificate-transparency polling provide additional sources; browser rendering is a target option. An unchanged-page regression fixture checks against alerts caused merely by another visit.
+
+The search actor normalizes provider results into URL records and can submit URLs to YaCy. Deterministic query and URL job identifiers help recognize repeated work. Its HTTP acceptance receipt confirms submission, not completed crawling or indexing.
+
+The scraper designer fetches and sanitizes an HTTPS sample, then requests a definition using a pinned vocabulary. Proposed manifests must stay on the sampled origin. Execution uses a restricted Docker network and an allowlisted provider proxy; reserved actor identifiers are rejected. Injection-marker scanning adds a limited check. The output remains a proposed definition requiring validation.
+
+Anonymous X support is narrower: HTTP handle probing and logged-out rendered profiles. Automatic backend selection chooses the probe when no session accounts are configured. Neither anonymous backend collects posts, threads or search results, and this selection is not dynamic failover.
+
+* Learning code and a repaired research site
+
+The November 8 learning changes merged on GitHub but have not reached canonical Forgejo main. They implement bounded symbolic concept discovery and [[https://github.com/starintel-labs/star-kb/commit/68e18bcd0aacf75fc71443ce487701fc48b5db1c][passage discovery with evidence planning]].
+
+The metadata path proposes operational definitions from repeated scalar equivalences. Evaluation requires separately recorded annotations and held-out positive and negative pairs with source separation. It retains confusion counts and finite-sample uncertainty.
+
+Passage discovery defaults to exact repeated six-word windows, preserving source spans and normalized digests. Text and cached-window limits bound the work. A quotation or shared upstream source can explain the same match, so the next step is to collect evidence that distinguishes those explanations.
+
+The resulting plan records the evidence needed to distinguish competing explanations, alongside missing collector inputs. Selecting a collector in the plan does not grant access or start a run.
+
+The research site had its own delivery failure: it was stuck on an October 30 branch snapshot. Corrected source discovery now feeds an immutable Nix build, activated through an atomic current-link switch and a persistent refresh timer. Web activation was recorded after the repair.
+
+The [[https://git.starintel.actor/starintel-labs/starintel-auto-research/commit/5754e6fe1b48b86b4f6f6564061325d89e609086][backlog cleanup]] archived 97 stale, unapproved documents and repaired links around the moves, reducing the pending set from 105 to eight. The old proposals remain available in the archive. Changed-document validation cleared; legacy full-corpus issues remain.
+
+* Accounts and operator tools
+
+Account integration remains on unmerged branches. The backend implements an OIDC relying party with a server-side, single-use PKCE verifier, account and key responses, and logout. Dashboard work adds console views and reveal-once keys. The Quasar branch selects password or OIDC mode at runtime and handles the return destination and authentication errors. Identity-authority infrastructure merged, but deployment still had a discovery failure after an address mismatch. A deployed sign-in and logout round trip remains undemonstrated.
+
+A previously unreported November 4 addition gave the infrastructure expert queryable diagnostic tables and an adapter for recorded incident remedies. The tables identify response choices and authorization requirements; they do not run repairs. Pi's separate feature branch adds shared Prolog state and background-completion events. Its completion gate is advisory: requirements can be removed, and a continuation limit eventually permits settlement with failures. Merge and live acceptance are pending.
+
+The next production work is to finish indexing and verify document-search results, converge the six in-flight release targets and their boot profiles, and test a node interruption under writes. Quarantine replay and backend-specific unique-post measurements still need runs; account integration still needs its deployed round trip.
+
+* Source notes :noexport:
+
+Revision 5, November 11 editorial date. Publication approved by the user's explicit Publish instruction for revision 5. Sources distinguish implementation, historical operator observations and pending acceptance. No fresh production checks or source-suite results are claimed here. Later UTC observations extend into November 12.
+
+- Storage: authenticated front 6afa99cace5dca4f182a16365d9417ba3d6f7b94; =modules/couchdb-front.nix=, =inventory/couchdb-cluster.nix=. Operational journals =.prolog/runs/run-c1e74ba-233-cluster-resume.pl= and =.prolog/runs/run-aa5e8e4b392f05885b17ff2088fb920ca2f174de.pl= establish pre-cutover recovery, 07:20Z cutover and fleet observations. Later aggregate snapshots: 6,299,535 and 6,309,898 documents; the latter at 2026-11-12T01:11:23Z in =.cluster-ops/ops/couchdb-migration.json=. Neither is a novelty or rate measurement.
+- Release: tag =v2026.11.11= at 86db78488c1989a5939dfea5cd0b794bf6467fcd pins server 024459c99065902f6eca07c1224cc0816c7a0bd4. Release =.prolog/handoff.pl= records clean-image health since 17:21Z and four committed/six in flight at 17:55Z. Standby retirement is unconfirmed. Indexing journal =.prolog/runs/run-cluster-clouseau.pl= records 24 tasks at 0–17%, still timing out; repair 4e1a74078d9837ad436284ad2aa91450786748da.
+- Actors: GitHub 61c7b8f7829be659cb608db9cad8308ad0c6f127; site-watch 74785deb9598236a2725117f87f0861f9acbf3d1; search 95336f3b365b999c9960cf415dd5384adb0172e5; designer 13ca384ded38fba8be9467e742aa81ef073b19e6; anonymous X 3a442831070441fd58942877ae10205852d1b4de. Sources: =github_actor.py=, =site_watch.py=, =search/runtime.py=, =scraper_designer/designer.py=, =x_actor.py= and corresponding tests. Source/test inspection establishes implementation only.
+- Public facade: 1672bc6460a08efb9c529ddf52eb76b9d5eebe2b, =public_mode.py=. Route journal =.prolog/runs/run-search-public-route.pl= and =.prolog/kb/search_route.pl= record homepage/query availability, including 23:35Z HTTP 200 and zero query hits. No document-search recovery follows from those observations.
+- Learning: November 8 concept merge 480ff0d6fd619d3d9798055350d70bfe1b771d0a and passage merge 68e18bcd0aacf75fc71443ce487701fc48b5db1c absent from canonical Forgejo main 3bbbc2d869ee236372828d89402ee2aaaca35b0c. Sources =star_kb_learning/discovery.py=, =passages.py=, =planning.py=, =kb/core/star_learning.pl=. Exact overlap does not establish coordination or independent corroboration. No production learning result is established; the synthetic demonstration lacks a run receipt and public-data retrieval was blocked.
+- Research: archive 5754e6fe1b48b86b4f6f6564061325d89e609086, =scripts/archive-research.py=; immutable build da4227822ca0790fcefa420736970296733399bf. Journal =.prolog/runs/run-d8c69c4c0ccc99504a4f2ac058030a2d0f9c34a1.pl= records 97 archived, 105-to-eight pending and remaining corpus debt.
+- Branch sources: account backend 9d9dc96ff50e70f8d25c493c223c330618014dab; dashboard fc7b740bc1bb4692e6e7924fedc255334ff17568; Quasar 51eb40a95670d6e79c21077f573dfe97ef8c6bfc, =frontend/src/app/hosted-session.ts=. No deployed authenticated round trip established.
+- Operator tools: dotfiles expert b73d774282f054cac40372817194a9b691752d19, =.zara/experts/arch/kb/expert.pl=, predates #007. Pi remote =feature/pi-rlm-ops= at 5a3c95fd48db48300975df9909346214107c2421, =pi/agent/extensions/rlm-ops/index.ts= and =gate_driver.pl=; advisory completion behavior, merge/live acceptance unconfirmed.

@@ -1,10 +1,20 @@
 :PROPERTIES:
 :ID: nsaspy-project-starintel
 :END:
-#+title: StarIntel
+#+TITLE: StarIntel
+#+CREATED: [2026-11-11 Wed 22:29]
+#+LAST_MODIFIED: [2026-11-11 Wed 22:29]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: project
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: Existing project copy at canonical main 5f45a3e0563313657314a1c0febbf65235d31fed preserved; AI edit is limited to the user-approved Explore-link correction. User approved the two existing broken-link repairs while publishing Shipyard008; body prose otherwise preserved. Unavailable Shipyard002 permalink was de-linked; missing repository-tour link replaced by the verified published Actor Field Guide.
+#+AI_GENERATED: t
+#+AI_TAG: ai_3edd510d923b2772
+#+FILETAGS: :ai:ai_3edd510d923b2772:nsaspy:projects:starintel:
+
 #+description: An intelligence platform that turns sourced information into typed records, investigations, and reviewable conclusions.
 #+slug: starintel
-#+filetags: :nsaspy:projects:starintel:
 
 * StarIntel
 
@@ -67,4 +77,4 @@ records read by the social-presence findings adapter.
 * Explore
 
 - [[https://docs.starintel.actor/][Documentation]]
-- [[https://blog.starintel.actor/llm-repo-tour.html][Repository tour]]
+- [[https://blog.starintel.actor/blog/starintel-actor-field-guide.html][Actor field guide]]

@@ -2,13 +2,13 @@
 :ID: 92c15c2e-f4ff-4fb0-a35c-f76fd2a9d2b4
 :END:
 #+TITLE: The StarIntel Shipyard #003 — Boundaries That Hold
-#+CREATED: [2026-10-25 Sun 00:37]
-#+LAST_MODIFIED: [2026-10-25 Sun 00:37]
+#+CREATED: [2026-11-11 Wed 22:29]
+#+LAST_MODIFIED: [2026-11-11 Wed 22:29]
 #+ROAM_SCHEMA: org-roam-meta/v1
 #+ROAM_KIND: blog
 #+ROAM_VISIBILITY: public
 #+CENSOR_PROFILE: strict
-#+SOURCE: User-approved publication in Codex, 2026-10-25; source references and factual scope retained from the reviewed Mara draft.
+#+SOURCE: User-approved publication in Codex, 2026-10-25; source references and factual scope retained from the reviewed Mara draft. User approved the two existing broken-link repairs while publishing Shipyard008; body prose otherwise preserved. Unavailable Shipyard002 permalink was de-linked; missing repository-tour link replaced by the verified published Actor Field Guide.
 #+AI_GENERATED: t
 #+AI_TAG: ai_43906b79b6fdf0ec
 #+FILETAGS: :ai:ai_43906b79b6fdf0ec:starintel:shipyard:actors:security:publication:
@@ -18,13 +18,13 @@
 #+slug: shipyard-003-boundaries-that-hold
 #+tags: starintel shipyard actors security publication
 #+status: POST
-#+revision: 4
+#+revision: 5
 
 I want to be able to inspect a failed actor target without finding a bot token in it.
 
 Targets get queued, logged, retried, and read back while somebody works out what went wrong. A credential tucked into the target travels along for all of that. Selecting an account by name gives the worker a way to get what it needs without putting the secret in the job.
 
-That is the most useful thread I found for this Shipyard. Since [[https://blog.starintel.actor/blog/shipyard-002-contracts-telemetry-research.html][Shipyard 002]], StarIntel has merged account selection for actors, narrower anonymous reads, and a check on what the site builder exports. Each change gives us a particular boundary to inspect.
+That is the most useful thread I found for this Shipyard. Since Shipyard 002, StarIntel has merged account selection for actors, narrower anonymous reads, and a check on what the site builder exports. Each change gives us a particular boundary to inspect.
 
 * Name the account in the target
 
