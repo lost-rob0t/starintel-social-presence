@@ -1,0 +1,104 @@
+:PROPERTIES:
+:ID: f92a5835-825a-4548-b65e-93c9ebc316e7
+:END:
+#+TITLE: Engineering Memory You Can Query
+#+CREATED: [2026-11-12 Thu 00:54]
+#+LAST_MODIFIED: [2026-11-12 Thu 00:54]
+#+ROAM_SCHEMA: org-roam-meta/v1
+#+ROAM_KIND: blog
+#+ROAM_VISIBILITY: public
+#+CENSOR_PROFILE: strict
+#+SOURCE: User-directed article: local Git history and project Prolog source reviewed 2026-11-12; historical outcomes are source-reported, not live-reverified; private sources deliberately unnamed.
+#+AI_GENERATED: t
+#+AI_TAG: ai_26c48c485467f36f
+#+FILETAGS: :ai:ai_26c48c485467f36f:starintel:prolog:engineering:debugging:
+
+#+date: [2026-11-12 Thu]
+#+description: Recent StarIntel engineering work, told through real Prolog facts about restart recovery, worker failures, and a knowledge index that dropped clauses.
+#+slug: engineering-memory-you-can-query
+#+tags: starintel prolog engineering debugging
+#+status: POST
+#+revision: 1
+
+A server restarts, but its recurring work does not resume. Another service reports that its workers are unhealthy, yet nothing restarts them. Later, a shared knowledge index lists a source file while omitting some of the facts inside it.
+
+Recent StarIntel knowledge-base updates record all three investigations. They offer a more concrete explanation of the Prolog workflow than saying it makes an assistant smarter: they preserve the details that a short handoff would otherwise lose.
+
+* What the recent activity contains
+
+The recent local Git history for =.prolog/= directories includes runtime recovery fixes, public-data access boundaries, and build or testing lessons. Other updates concern cross-project indexing and handoffs that distinguish completed work from remaining blockers.
+
+These changes are evidence of engineering records being added or revised. A KB commit alone does not prove that a feature is currently deployed. The examples below separate historical outcomes recorded in those files from queries executed while preparing this article. Private components and operational identifiers are omitted.
+
+* Recovering schedules after a restart
+
+One server kept recurring schedules in an in-memory dispatch wheel. Startup did not rebuild that wheel from persisted records. The process could be running while recurring collection had stopped.
+
+The project KB records the repair in these exact clauses:
+
+#+begin_src prolog
+fix(recurring_rehydration, 'runtime-lifecycle start-actors calls recover-persisted-targets at boot; failure fails boot loudly, not silently').
+fix(recurring_duplicate_rearm, 'process-target-dispatch-envelope re-arms recurring schedules on :duplicate; register-target-schedule keeps in-process retries idempotent').
+resolved(target_schedules_not_durable).
+#+end_src
+
+The second clause captures a separate problem. Even after startup invoked recovery, the dispatch path recognized previously accepted work as a duplicate and returned without restoring its schedule. Recurring duplicates needed to re-arm the wheel; repeated requests within the running process still needed to remain idempotent.
+
+The investigation also found pagination limiting the recovery query and a storage revision being mistaken for a content change. Those required follow-up fixes. According to the recorded rollout, recurring schedules were eventually recovered with no invalid records in the final startup summary. Older acceptance-only records still required a one-time reseed.
+
+That is a historical result reported in the source KB, not a deployment check performed for this article.
+
+A small query retrieves the recorded resolution:
+
+#+begin_src prolog
+?- resolved(target_schedules_not_durable).
+true.
+#+end_src
+
+This lookup establishes that the KB contains the resolution fact. It does not establish that today's running image contains the fix, or that every older record has been migrated.
+
+* An honest healthcheck was not enough
+
+Another investigation concerned workers that stopped after broker or downstream failures. The KB contains this invariant verbatim:
+
+#+begin_src prolog
+invariant(readiness_is_consumer_aware,
+    "runtime-ready-p requires every runtime consumer :running AND
+consumer-running-p; /health and /ready return 503 otherwise. Honesty
+exists at the HTTP layer; recovery does not (Docker does not restart
+unhealthy containers) - that is why in-process reconnect is required.").
+#+end_src
+
+The healthcheck could report failure correctly without triggering recovery. An unhealthy status does not, by itself, cause Docker to restart a container.
+
+Reconnection also needed a narrower boundary than an error-name classifier. A transport failure while waiting for a delivery could be retried. A settlement failure, after receiving a delivery, had to preserve the stop-for-redelivery behavior.
+
+The recorded regression test exposed the difference: an error raised during settlement happened to have a name matching the transport classifier. The resulting reconnect loop timed out. The correction classified the error by where it originated, rather than treating its name as permission to reconnect.
+
+The KB also records a later incident in which workers stopped after downstream failures. The earlier transport-reconnect fix did not restart those terminally stopped workers. Supervised recovery remained a separate gap in that record.
+
+This is why retaining limitations matters. A handoff saying only “reconnect fixed” would invite the next engineer to assume a broader guarantee than the implementation provided.
+
+* When the knowledge index lost knowledge
+
+The consolidated engineering KB had a failure of its own. Multiple collected files defined a shared predicate. Without the appropriate clause-sharing arrangement, loading a later file replaced earlier definitions.
+
+The recorded investigation found that a troubleshooting query could reach only part of the collected clauses, even though provenance still listed the source containing the missing facts. Finding a file in the index was not proof that its facts participated in the query.
+
+A blanket =multifile= change restored the missing clauses but also combined collected definitions with predicates belonging to the query layer. Another query then failed. The KB records the workaround as unsafe to ship without a more selective policy.
+
+That is a recorded failure and rejected repair, not a claim that =multifile= is generally wrong. Nor does this historical entry establish the current repair status. The lesson is specific: clause accumulation needs an ownership policy when an index loads independently authored Prolog files.
+
+* What the assistant actually gets from Prolog
+
+Most of the code shown here is structured memory. It stores causes and fixes under stable predicates. The =resolved/1= query is a lookup, not a proof that recovery succeeded.
+
+That still changes how an investigation starts. An assistant can retrieve the schedule-recovery fix, find the distinction between transport and settlement failures, or discover a warning that a cross-project query may omit facts. It has concrete claims to compare against current code instead of reconstructing them from conversation summaries.
+
+The reasoning depends on the inputs. A stale resolution fact stays stale even when Prolog returns =true=. A successful query can be incomplete if the loader discarded clauses. Tests and deployment observations supply evidence that the knowledge base cannot generate for itself.
+
+The useful outcome is a better starting point for the next investigation: a recorded repair with its remaining limitation, and enough structure to find both.
+
+#+begin_quote
+AI provenance: prepared from recent local Git history and project Prolog sources reviewed on November 12, 2026. Operational outcomes are historical observations reported by those sources and were not independently rechecked live for this article. Source excerpts are verbatim; the resolution lookup was checked locally. Private repository names, deployment identifiers, and operational counts are omitted.
+#+end_quote
