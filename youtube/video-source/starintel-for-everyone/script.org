@@ -1,0 +1,521 @@
+#+title: StarIntel for Everyone — script
+#+slug: starintel-for-everyone
+#+topic: [[file:../../../editorial/topics/starintel-for-everyone.org][StarIntel for Everyone — From Open Web to Evidence Graph]]
+#+status: DRAFT
+#+date: 2026-09-19
+#+options: toc:nil
+
+* Cold open — 0:00–0:35
+
+[VISUAL: black screen. Three browser tabs pop in: a search result, a PDF, a
+social post. Smash cut to a dense Quasar graph.]
+
+Search is great at finding pages.
+
+It is terrible at remembering what those pages meant together.
+
+You open twenty tabs. You copy a few notes. You lose which claim came from
+which source. Then tomorrow you start over.
+
+StarIntel is my attempt to fix that.
+
+Instead of treating the web like a pile of tabs, it turns what you collect into
+typed documents, keeps the sources attached, links related records, and lets
+small workers — actors — keep expanding the graph.
+
+And I am not going to explain it with a fake animation.
+
+I am going to install the public stack, run it, fire a real actor, inspect real
+Auto Dig data, and finish inside Quasar.
+
+[ON SCREEN TEXT: "public repos · localhost · live demo"]
+
+* The one-minute mental model — 0:35–1:30
+
+[VISUAL: dslide with DOCUMENTS → ACTORS → GRAPH]
+
+There are only three ideas you need.
+
+First: *documents*.
+
+A StarIntel document is a record with a type, an ID, a dataset, timestamps,
+data, and room for sources, evidence, provenance, relations, and other metadata.
+
+That sounds boring. Boring is good. Boring means a result can move between
+tools without becoming mystery JSON.
+
+Second: *actors*.
+
+An actor is a worker that consumes a target or a document and can emit more
+documents or relations. One actor can normalize something. Another can fetch a
+public source. Another can enrich a record. They do not all need to live in one
+process.
+
+Third: *Quasar*.
+
+Quasar is the operator surface. The graph you see is a projection of the
+documents. It is not the evidence itself. You can click through the records,
+inspect them, search them, and operate the system.
+
+[BEAT]
+
+Documents are the memory.
+
+Actors do the repetitive work.
+
+Quasar is where a human drives.
+
+* Install the public StarIntel stack — 1:30–3:05
+
+[VISUAL: terminal, large font. Keep command history visible.]
+
+I am starting from the public StarIntel Server repository.
+
+#+begin_src sh
+git clone https://github.com/lost-rob0t/starintel-server
+cd starintel-server
+cp .env.example .env
+#+end_src
+
+The local stack is Nix-built and Docker-run. CouchDB stores documents. RabbitMQ
+moves messages. Valkey handles runtime coordination. The Lisp server owns the
+StarIntel HTTP and actor-routing layer.
+
+This is a development stack, so I keep every service on localhost.
+
+[VISUAL: fast cut while secret files are generated; do not expose values.]
+
+#+begin_src sh
+install -d -m 0700 secrets
+openssl rand -base64 32 > secrets/couchdb_password
+openssl rand -base64 48 > secrets/couchdb_secret
+openssl rand -hex 24 | tr '[:lower:]' '[:upper:]' > secrets/erlang_cookie
+openssl rand -base64 32 > secrets/rabbitmq_password
+openssl rand -base64 32 > secrets/valkey_password
+openssl rand -base64 48 > secrets/auth_pepper
+openssl rand -base64 48 > secrets/auth_bootstrap_secret
+chmod 0600 secrets/*
+#+end_src
+
+Then build and load the project images and start the stack.
+
+#+begin_src sh
+nix run .#load-images
+docker compose up --detach --wait
+curl --fail http://127.0.0.1:5000/health
+#+end_src
+
+[VISUAL: CAPTURE LIVE health response. Do not pre-render output.]
+
+If this health check does not pass during rehearsal, this shot does not go in
+the video.
+
+Now I bootstrap one local administrator credential.
+
+#+begin_src sh
+bootstrap_secret="$(<secrets/auth_bootstrap_secret)"
+
+curl --fail --silent --show-error \
+  --request POST \
+  --header 'Content-Type: application/json' \
+  --header "X-Star-Bootstrap-Secret: $bootstrap_secret" \
+  --data '{"owner":"youtube-demo"}' \
+  --output /tmp/starintel-bootstrap.json \
+  http://127.0.0.1:5000/auth/bootstrap
+
+api_key="$(jq --exit-status -r '.api_key' /tmp/starintel-bootstrap.json)"
+test -n "$api_key"
+printf 'local StarIntel credential created\n'
+#+end_src
+
+[PRODUCTION: the bootstrap response is written to a file; do not open it on
+screen. The credential never needs to be visible.]
+
+And now I can ask the server who I am.
+
+#+begin_src sh
+curl --fail --silent \
+  --header "Authorization: Bearer $api_key" \
+  http://127.0.0.1:5000/auth/context |
+  jq '{principal_id, principal_type, owner}'
+#+end_src
+
+[VISUAL: CAPTURE LIVE. Zoom only the principal type/owner fields.]
+
+That is enough infrastructure. Now we make it do something.
+
+* Run a public actor — 3:05–4:40
+
+[VISUAL: switch to Quasar UI.]
+
+I am using Quasar's public browser actor runtime for the first demo because it
+is easy to reproduce and the exact flow is covered by the project's end-to-end
+tests.
+
+From the public Quasar UI repository:
+
+#+begin_src sh
+git clone https://github.com/lost-rob0t/quasar-ui
+cd quasar-ui
+npm ci
+npm run dev
+#+end_src
+
+[VISUAL: open the local Vite URL shown by the command.]
+
+In Settings, actor execution is opt-in. I enable it.
+
+Then I create a target with the built-in actor:
+
+#+begin_example
+actor  = quasar.actor.target-input-expansion
+target = https://example.com/research
+#+end_example
+
+This is deliberately harmless demo input.
+
+[VISUAL: create the target in the UI. Then cut immediately to resulting graph.]
+
+The actor classifies the target and returns a declarative transform plan. Quasar
+validates that plan and applies it through the normal operation path.
+
+The useful part is what happens next: the URL is not just text in a textbox.
+It becomes a typed record that the rest of the system can address.
+
+[VISUAL: click the generated node. Show ID, dtype, dataset/data, and relation.]
+
+That is the actor model in miniature.
+
+Input comes in.
+
+A worker transforms it.
+
+New documents and relationships become visible.
+
+And the original record remains inspectable.
+
+[OPTIONAL LIVE-NETWORK SHOT]
+
+If the public Legistar endpoint is healthy during rehearsal, I also run the
+built-in =quasar.actor.city-legistar-calendar= actor against a supported
+municipality.
+
+That actor can turn a public civic calendar into bounded event and relation
+documents.
+
+If the endpoint is flaky, I cut the shot. The deterministic target-expansion
+actor is the required demo.
+
+* Why the graph matters — 4:40–5:45
+
+[VISUAL: pan across graph; select a node, inspect document, traverse relation.]
+
+The graph is where this stops feeling like a database demo.
+
+A normal search result gives me a page.
+
+A StarIntel record can have a stable identity, sources, evidence, time,
+geography, and explicit relations to other records.
+
+That means I can ask different questions later without recollecting the same
+thing from scratch.
+
+What is connected to this source?
+
+What changed?
+
+Which records came from the same observation?
+
+Which event has geography?
+
+Which document has no source yet?
+
+Which actor produced this relation?
+
+The important rule is that the graph itself is not proof.
+
+An edge on screen should point back to the documents and provenance that justify
+it.
+
+That is why I care about keeping the boring metadata.
+
+* GPT Auto Dig — 5:45–7:15
+
+[VISUAL: terminal in public =starintel-gpt-auto-dig= checkout.]
+
+Now for the research side.
+
+GPT Auto Dig is public too. At its core it is an evidence-first research corpus:
+Git-backed StarIntel documents plus tooling to validate, search, and render
+them.
+
+#+begin_src sh
+git clone https://github.com/lost-rob0t/starintel-gpt-auto-dig
+cd starintel-gpt-auto-dig
+
+git clone https://github.com/lost-rob0t/starintel-doc.nim .starintel-doc-nim
+nimble buildFast
+nimble validate
+#+end_src
+
+[VISUAL: CAPTURE LIVE validator summary.]
+
+The validator checks the document contract and source-reference shapes. It also
+writes an =unverifed= report for records that have empty source arrays.
+
+That distinction matters.
+
+A record existing in the graph does not magically make it true.
+
+Now I search the public corpus.
+
+#+begin_src sh
+python3 scripts/starintel.py search flock --with-location | head -n 40
+#+end_src
+
+[VISUAL: CAPTURE LIVE only. Pick one record with source information; do not
+claim anything beyond what the record itself supports.]
+
+This is the part I want normal research tools to get better at.
+
+The output is not just a paragraph from a model.
+
+It is something I can inspect, validate, link, compare, and feed into another
+workflow.
+
+For a visual read-only view, the same repository can build its static research
+site.
+
+#+begin_src sh
+nimble site
+#+end_src
+
+[VISUAL: optional browser shot of generated local site if rehearsal passes.]
+
+* The full loop — 7:15–8:25
+
+[VISUAL: dslide showing TARGET → ACTOR → DOCUMENTS → RELATIONS → QUASAR →
+NEW TARGETS.]
+
+Now put the pieces together.
+
+A human or another system creates a target.
+
+An actor accepts work.
+
+The actor emits StarIntel documents and relations.
+
+Those records are stored and routed.
+
+Quasar projects them into a graph a human can operate.
+
+Research data such as Auto Dig packets can use the same document model.
+
+And new targets can be created from what you learned.
+
+That is the loop.
+
+It is not "AI searches the internet and tells you the answer."
+
+It is closer to an evidence operating system where automation can do more of
+the repetitive collection and transformation, while the records stay visible
+enough for you to challenge them.
+
+* Why this is useful outside OSINT nerd land — 8:25–9:30
+
+[VISUAL: quick cards: city meeting → event docs; company → sources/relations;
+software project → changes/docs; research topic → evidence graph.]
+
+You do not have to care about intelligence jargon to want this.
+
+A journalist can keep claims attached to sources.
+
+A researcher can stop losing provenance between tools.
+
+A developer can build one actor without rebuilding the whole pipeline.
+
+A civic-data nerd can collect public meetings and connect them to places,
+organizations, and documents.
+
+A team can keep machine-generated work inspectable instead of burying it in
+chat history.
+
+And because the core pieces are ordinary software — Git repositories, typed
+documents, services, actors, a graph UI — you can inspect the implementation
+while it runs.
+
+That is the sell.
+
+Not "trust the AI."
+
+Trust less.
+
+Keep more evidence.
+
+Make the machinery inspectable.
+
+* What is still rough — 9:30–10:05
+
+[VISUAL: simple "experimental" slide, then GitHub issue/commit montage.]
+
+StarIntel is still experimental.
+
+Some actor implementations are private.
+
+Some server paths still have legacy compatibility code.
+
+The full Quasar runtime is heavier than the standalone UI.
+
+And a development stack is not the same thing as a hardened public service.
+
+I would rather show you those boundaries than fake polish that is not there
+yet.
+
+The public repos are moving fast, and the video description should link the
+exact revisions used for this recording.
+
+* Closing / CTA — 10:05–10:35
+
+[VISUAL: Quasar graph. Slowly zoom out.]
+
+If this idea clicks for you, do one thing.
+
+Clone the public repos.
+
+Run the local demo.
+
+Then build one actor or one dataset that matters to you.
+
+Do not start with "AI that knows everything."
+
+Start with one source, one typed document, one relation you can defend, and one
+actor that saves you boring work.
+
+That is how the graph becomes useful.
+
+[ON SCREEN]
+
+#+begin_example
+starintel-server
+quasar / quasar-ui
+starintel-gpt-auto-dig
+
+docs + code + demo links in description
+#+end_example
+
+StarIntel: turn the open web into an evidence graph.
+
+* Recording notes :noexport:
+
+- Target runtime: approximately 10–11 minutes after cuts.
+- Record terminal at 1440p or 4K with font large enough for mobile viewers.
+- Use jump cuts through package/image build time; show command start and final
+  live result, not dead waiting.
+- Never show secret file contents or an API key.
+- Keep all services bound to localhost.
+- Rehearse every command in =demo.org= on a clean temporary workspace.
+- Replace every =CAPTURE LIVE= instruction with the actual captured shot only
+  after the command succeeds.
+- If the Legistar actor cannot pass rehearsal, remove that entire optional beat.
+- Do not use screenshots or output from private actor repositories.
+- Do not imply Auto Dig records are independently verified merely because they
+  validate structurally.
+- Use active StarIntel release wording exactly as recorded by the current schema
+  lock: release 0.9.1 over schema 0.9.0, unless rehearsal finds a newer lock.
+
+* YouTube packaging :noexport:
+
+** Primary title
+
+#+begin_example
+Search Gives You Tabs. StarIntel Gives You an Evidence Graph.
+#+end_example
+
+** Alternate titles
+
+#+begin_example
+I Built an Evidence Graph for the Open Web — StarIntel
+StarIntel: Turn the Open Web Into an Evidence Graph
+What If Search Results Became a Living Evidence Graph?
+#+end_example
+
+** Thumbnail copy
+
+Keep it to one short contrast:
+
+#+begin_example
+TABS  ->  EVIDENCE GRAPH
+#+end_example
+
+Use a real Quasar graph screenshot from the final rehearsal as the visual.
+Do not use a fake/generated UI.
+
+** Description
+
+#+begin_example
+Search finds pages. StarIntel turns observations into typed, source-preserving
+documents that actors can expand and Quasar can project into an investigation
+graph.
+
+In this video I build the public stack locally, bootstrap the StarIntel server,
+run a real public Quasar actor on harmless demo input, inspect the resulting
+documents and relations, then validate and search the public GPT Auto Dig
+corpus.
+
+Everything shown is tied to public repositories and the exact revisions used
+for the recording will be linked below.
+
+Repos:
+- starintel-server: <PINNED PUBLIC REVISION>
+- quasar-ui: <PINNED PUBLIC REVISION>
+- quasar: <OPTIONAL PINNED PUBLIC REVISION>
+- starintel-gpt-auto-dig: <PINNED PUBLIC REVISION>
+- starintel-doc.nim: <PINNED PUBLIC REVISION>
+
+StarIntel is experimental. This is a localhost development demo, not a hardened
+public deployment.
+
+Chapters:
+00:00 Search gives you tabs
+00:35 Documents, actors, Quasar
+01:30 Install StarIntel
+03:05 Run a public actor
+04:40 Why the graph matters
+05:45 GPT Auto Dig
+07:15 The full StarIntel loop
+08:25 Why normal people should care
+09:30 What is still rough
+10:05 Build one useful thing
+#+end_example
+
+Update chapter timestamps after the final edit.
+
+** Pinned comment
+
+#+begin_example
+If you try one thing from this video, clone the public repos and reproduce the
+target-input-expansion demo locally. Then build one actor or one dataset you
+actually care about.
+
+If a command has changed since this recording, check the pinned revisions and
+current repo docs first. StarIntel is moving fast.
+#+end_example
+
+** Short-form pull quote
+
+#+begin_example
+Not "trust the AI."
+
+Trust less.
+Keep more evidence.
+Make the machinery inspectable.
+#+end_example
+
+* Provenance :noexport:
+
+Primary evidence is indexed in:
+[[file:../../../editorial/topics/starintel-for-everyone.org][the linked editorial topic]].
+
+The script intentionally describes command results as live-capture
+requirements instead of inventing output.  Final recording must pin the exact
+source revisions in =demo.org=.
