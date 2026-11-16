@@ -1,0 +1,92 @@
+:PROPERTIES:
+:ID: blog-actor-field-guide
+:END:
+#+title: A Field Guide to StarIntel Actors
+#+date: [2026-10-26 Mon]
+#+description: A scoped introduction to StarIntel collection, enrichment, monitoring, and server actors, with inputs, outputs, examples, and evidence limits.
+#+slug: starintel-actor-field-guide
+#+tags: starintel actors field-guide
+#+status: DRAFT
+#+revision: 1
+
+An actor is a worker with a particular job and an explicit message boundary. In StarIntel, that job might be collecting a page, checking a username, evaluating a document against a watch rule, or maintaining a query projection. Giving those jobs names makes it possible to ask what each worker accepts and what it actually produces.
+
+This guide introduces the capabilities verified in the maintained actor manifest registry and the related server and projection documentation inspected on October 26. It is a scoped inventory, not a claim that every actor in every StarIntel repository has been audited. The 20 manifest entries below are only one part of the actor landscape. Server services, a document-to-Prolog projection worker, and proposed orchestration roles need their own descriptions and maturity labels.
+
+The examples are fictional task descriptions. They were not executed while writing this article.
+
+* Reading the inventory
+
+A declared capability means a manifest and implementation describe that operation. It does not establish that a live provider works today, that every output uses the current canonical contract, or that the full producer-to-server-to-client path has passed.
+
+Three service arrangements appear in the registry. Target workers receive a request naming the actor and its subject. Document-stream workers consume documents already moving through the system. Server plugins run inside the server's actor host. The server owns recurring work and dispatch; an actor's continuous availability does not give it a separate scheduling authority.
+
+Several manifest output names still describe retained legacy formats. The tables deliberately use readable output descriptions rather than suggesting that those formats are all interchangeable with canonical documents.
+
+* Collection workers
+
+| Actor | Purpose and input | Declared output | Fictional example | Maturity limit |
+|-------+-------------------+-----------------+--------------------+----------------|
+| =bluesky= | Account, post, thread, relationship, or search collection from a supplied target | Account and post records with relations | Collect an invented test account's thread in a provider fixture | Implemented target worker; live-provider and canonical end-to-end acceptance are not established here |
+| =reddit= | Collect a post, user, subreddit, or search result | Submissions, comments, accounts, and relations | Parse a saved fictional subreddit response | Implemented target worker; backend and output-contract checks remain separate |
+| =x= | Account, post, thread, or search collection using a configured session backend | Posts, accounts, and relations | Parse an invented thread response | Implemented target worker; credentials and provider behavior require independent verification |
+| =youtube= | Channel/video collection and search, plus local import and statistics operations | Video, comment, and account records | Import a fictional channel fixture for inspection | Implemented collection/import surface; no live collection was run for this guide |
+| =discord-watch= | Read an authorized channel through an official bot transport | Messages, users, and relations | Reconcile a synthetic channel-history fixture | Implemented worker with checkpoint behavior; a fixture does not prove access to any real channel |
+| =telegram= | Collect channel history and reconcile recent messages | Post records | Replay an invented channel history twice | Implemented continuous target worker; provider and durable readback acceptance must be checked for the selected revision |
+| =web= | Collect a supplied URL through a site adapter or generic fallback | Documents selected by the adapter and mapping | Extract a fictional directory page from a local fixture | Implemented target worker; broad output support is not proof that every site or mapping works |
+| =cracked= | Crawl or resume a bounded same-origin frontier | Extracted page and indicator results through configured sinks | Crawl a small fixture site and resume its saved frontier | Implemented crawl pipeline; distinct from the single-URL web worker |
+| =crimethinc-podcasts= | Ingest a podcast catalog and its episode material | Episodes, transcripts, captures, and follow-up targets | Process a saved fictional episode and audio fixture | Implemented ingest pipeline; transcription dependencies and live-source acceptance are separate |
+| =fec= | Synchronize campaign-finance API or bulk operations from an explicit target | Organizations, people, sources, finance records, and relations | Replay a synthetic filing and its amendment | Canonical manifest and document path are implemented; this does not certify all finance operations or live-provider cases |
+| =domain-hunt= | Query certificate-transparency material for a supplied domain scope | Domain records | Find subdomains beneath =example.invalid= in saved certificate data | Implemented server plugin; native service acceptance remains unverified in the current coverage effort |
+| =org-member= | Enumerate an organization roster from an organization or target | People, organizations, relations, and sources | Parse a fictional organization's saved team page | Implemented server plugin; native service acceptance remains unverified |
+| =kiwifarms= | Collect bounded forum pages or threads | Source records | Parse a fabricated forum thread fixture | Implemented server plugin; native service acceptance remains unverified |
+
+A platform-shaped fixture can test parsing and relationships without collecting a real conversation. Live operation adds separate questions about credentials, source access, changing upstream responses, and whether the resulting records survive server readback unchanged.
+
+* Enrichment and analysis workers
+
+| Actor | Purpose and input | Declared output | Fictional example | Maturity limit |
+|-------+-------------------+-----------------+--------------------+----------------|
+| =generate-usernames= | Produce bounded candidates from supplied identity material | Generated candidate documents and targets | Generate candidates for a wholly invented test identity | Canonical utility path implemented; candidates are suggestions, not discovered accounts |
+| =user-hunt= | Check supplied usernames against configured providers | Unverified provider observations | Record a fixture response for =synthetic_example_42= | Canonical observation path implemented; a provider match does not establish who owns an account |
+| =whats-my-name-user-hunt= | Check usernames with the WhatsMyName-backed provider dataset | Account, website, and relation records in the retained manifest vocabulary | Exercise saved positive and negative provider responses | Implemented enrichment worker; distinct from the canonical =user-hunt= output contract |
+| =melissa= | Query or batch an operator-configured enrichment provider | Person records | Test a synthetic provider response with a fake adapter | Implemented enrichment worker; provider access and factual identity accuracy are not established by fixture tests |
+| =background-report= | Query source mirrors, resolve candidate identities, and build a report | Source and analysis records | Build an evidence-linked report from invented records | Declared server-hosted analysis pipeline; its public role/input mapping still needs acceptance clarification |
+
+These workers need different standards of interpretation. A generated username is a hypothesis. A successful provider lookup is an observation. A report is derived analysis whose claims still need support. Combining them must preserve those distinctions.
+
+* Document-stream workers
+
+| Actor | Purpose and input | Declared output | Fictional example | Maturity limit |
+|-------+-------------------+-----------------+--------------------+----------------|
+| =watchlist= | Evaluate message and social-post documents against configured word, expression, or author rules | Alert records and optional notifications | Match a deliberately planted marker in a synthetic message | Canonical utility path implemented; matching a rule is not evidence of a real-world incident |
+| =username-targets= | Find usernames in incoming documents and use destination manifests to plan bounded work | Targets for selected actors | Turn a fictional username into a provider-check request | Canonical utility path implemented; planned work and confirmed processing are separate outcomes |
+
+These are routing and evaluation capabilities. They do not create source access, convert a candidate match into an identity claim, or establish that a downstream target has completed.
+
+* Beyond the 20-entry manifest registry
+
+The following components explain why “20 actors tested” must not become “all actors covered.” They have different interfaces and are not additional entries in that manifest count.
+
+| Service or role | Input and purpose | Output | Fictional example | Maturity |
+|-----------------+-------------------+--------+--------------------+----------|
+| Document-to-Prolog shard worker | A normalized document projection envelope, scoped to an operator-selected dataset | Preserved originals, processing receipts, and rebuildable query projections | Replay revision 1 of a fictional policy document | Implemented packaged projection worker; not yet a subscription to the canonical server change stream |
+| URL extractor | Supported historical message content | Extracted URL and relation records | Extract a documentation URL from a synthetic legacy message | Retained legacy actor; canonical input is explicitly refused pending replacement |
+| Pattern matcher | A document and a configured predicate | Delivery to the pattern's subscribers | Route a synthetic message matching a fixed predicate | Implemented internal matching mechanism; not an independently advertised collector |
+| Target dispatcher | An accepted target and its registered destination | Delivery to the selected local or remote worker | Route one fictional collection request | Implemented server service; delivery alone does not establish durable result readback |
+| Event consumer | Runtime actor-event deliveries | Processed operational events with retry or quarantine handling | Process a synthetic worker-failure event | Implemented operational service; runtime events are not observations about world events |
+| Storage service actors | Typed read, insert, or delete requests | Operation results or explicit failures | Insert and read back a synthetic document | Implemented internal persistence services; these are not collection actors |
+
+The older server username-hunt implementation is also a separate compatibility path. Its shared name must not be taken as evidence that it has the Python worker's current canonical observation contract. This guide does not recommend treating the two implementations as interchangeable.
+
+The server's source-orchestration protocol additionally names planning, collection, geographic resolution, correlation, and projection roles. A protocol example is a vocabulary for an intended responsibility. It is not evidence that a corresponding worker is registered or runnable. Those roles remain outside this implemented inventory until a manifest, source, and execution evidence establish them.
+
+* What the current evidence can support
+
+The current synthetic coverage effort exercises the 20 manifest actors across multiple kinds of checks. It still records failures, blocked controls, skipped cases, and unrun service tests. It does not establish full coverage, and its results must not be extended to the additional services above.
+
+A useful acceptance record identifies the exact worker revision, input fixture, expected output, transport path, and persisted readback. Local parsing tests, a broker confirmation, and a server round trip answer different questions. The field guide gives a reader names and boundaries; execution evidence must establish which boundary was actually crossed.
+
+#+begin_quote
+AI provenance: drafted from maintained capability manifests, actor documentation, server source, and current verification summaries inspected on October 26, 2026. Capability descriptions are summarized for public readers; private implementation code and infrastructure details are omitted. Examples are invented and were not executed. This is an editorial draft awaiting review and is not authorized for publication.
+#+end_quote
